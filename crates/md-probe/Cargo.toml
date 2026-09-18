@@ -1,0 +1,20 @@
+# A measurement tool, not part of the tool.  spec/html.md section 10.2 says the second
+# half of what `CODE_INDENT = 1000` does -- a block quote, heading, fence, html block,
+# setext heading, thematic break or list item starting at any indentation -- "was never
+# measured and is not visible in a diff of the same kind: it shows up as a *missing* code
+# block, not as an extra one".  This renders every markdown fragment of the corpus through
+# comrak so the Python's rendering of the same fragments can be compared fragment by
+# fragment, before any of Phase 4 is written against an assumption.
+[package]
+name = "md-probe"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+comrak.workspace = true
+serde_json = "1"
+
+[lints]
+workspace = true

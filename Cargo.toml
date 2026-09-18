@@ -6,7 +6,7 @@
 # pinned to the crates they were measuring, and nothing here depends on them.
 [workspace]
 resolver = "2"
-members = ["crates/luadox", "crates/luadox-cli"]
+members = ["crates/luadox", "crates/luadox-cli", "crates/md-probe"]
 exclude = ["spike", "fallback-probe", "oracle"]
 
 [workspace.package]
@@ -23,6 +23,10 @@ blake2 = "0.10"
 glob = "0.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# 0.50 and newer are edition 2024, which needs Cargo 1.85; the workspace is pinned to
+# 1.83.  0.49.0 is the newest that builds here.  Pinned exactly, like the parser: a
+# markdown library that moves changes every page without anybody changing the tool.
+comrak = { version = "=0.49.0", default-features = false }
 
 [workspace.lints.clippy]
 indexing_slicing = "deny"
