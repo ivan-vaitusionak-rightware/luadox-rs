@@ -13,13 +13,14 @@ These fixtures are the second corpus that does.
 The expected output is produced by spec/fixtures/regenerate.py from the pinned oracle
 and checked in, so this needs no oracle to run -- only a built binary.
 
-Only the json level is graded here. The LuaLS and html outputs are checked in too, and
-become gates when their renderers exist in Phase 3 and Phase 4.
+The json document and the LuaLS definition file are both graded. The html output is
+checked in too, and becomes a gate when its renderer exists in Phase 4.
 """
 
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import subprocess
 import sys
@@ -44,22 +45,35 @@ sys.path.insert(0, str(FIXTURES))
 import regenerate  # noqa: E402
 
 
-def render(name: str, out: Path) -> tuple[int, dict | None, dict | None]:
+def render(name: str, renderer: str, out: Path) -> tuple[int, Path, dict | None]:
+    """Runs one renderer over one fixture, returning its exit code, where it wrote, and
+    the diagnostics of that run."""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp = Path(tmpdir)
         config = tmp / 'fixture.conf'
         regenerate.write_config(config, name)
-        doc = out / 'doc.json'
-        diag = out / 'diagnostics.json'
-        argv = [str(BINARY), '-c', str(config), '-r', 'json', '-o', str(doc),
+        target = out / renderer
+        diag = out / ('diagnostics-' + renderer + '.json')
+        argv = [str(BINARY), '-c', str(config), '-r', renderer, '-o', str(target),
                 '--diagnostics-json', str(diag), '--diagnostics-root', str(SRC)]
         proc = subprocess.run(argv, cwd=str(tmp), capture_output=True)
-        if not doc.exists():
+        written = target / 'luadox.lua' if renderer == 'luals' else target / 'luadox.json'
+        if not written.exists():
             sys.stderr.write(proc.stderr.decode('utf-8', 'replace'))
-            return proc.returncode, None, None
-        return (proc.returncode,
-                json.loads(doc.read_text(encoding='utf-8')),
+        return (proc.returncode, written,
                 json.loads(diag.read_text(encoding='utf-8')) if diag.exists() else None)
+
+
+def compare_luals(expected: Path, actual: Path, show: int) -> list[str]:
+    """Byte comparison, reported as a unified diff so a failure names the lines rather
+    than two digests."""
+    want = expected.read_bytes()
+    got = actual.read_bytes() if actual.exists() else b''
+    if want == got:
+        return []
+    return list(difflib.unified_diff(
+        want.decode('utf-8').splitlines(), got.decode('utf-8').splitlines(),
+        'oracle', 'rust', lineterm='', n=1))[:show]
 
 
 def main() -> int:
@@ -81,25 +95,39 @@ def main() -> int:
         for name in names:
             out = Path(tmpdir) / name
             out.mkdir(parents=True, exist_ok=True)
-            code, doc, diag = render(name, out)
-            expected_path = EXPECTED / name / 'doc.json'
-            if doc is None:
-                print(f'{name}: FAILED -- produced no doc.json (exit {code})')
-                failed += 1
-                continue
-            expected = json.loads(expected_path.read_text(encoding='utf-8'))
-            paths = diff_json(expected, doc)
-            want = json.loads((EXPECTED / name / 'exit.json').read_text())['json']
+            problems: list[str] = []
+            notes: list[str] = []
+
+            code, written, diag = render(name, 'json', out)
+            if not written.exists():
+                problems.append('produced no doc.json (exit {})'.format(code))
+            else:
+                expected = json.loads((EXPECTED / name / 'doc.json')
+                                      .read_text(encoding='utf-8'))
+                paths = diff_json(expected, json.loads(written.read_text(encoding='utf-8')))
+                notes.append('{} json differences'.format(len(paths)))
+                problems.extend('json {}'.format(p) for p in paths[:args.show])
+                want = json.loads((EXPECTED / name / 'exit.json').read_text())['json']
+                if code != want:
+                    notes.append('exit {} vs {}'.format(code, want))
             delta = diagnostics_delta(EXPECTED / name / 'diagnostics-json.json', diag)
-            status = 'ok' if not paths else 'FAILED'
-            if paths:
+            if delta:
+                notes.append(delta.lstrip(', '))
+
+            code, written, diag = render(name, 'luals', out)
+            diff = compare_luals(EXPECTED / name / 'luadox.lua', written, args.show)
+            notes.append('luals ' + ('identical' if not diff else 'DIFFERS'))
+            problems.extend(diff)
+            delta = diagnostics_delta(EXPECTED / name / 'diagnostics-luals.json', diag)
+            if delta:
+                notes.append('luals ' + delta.lstrip(', '))
+
+            status = 'ok' if not problems else 'FAILED'
+            if problems:
                 failed += 1
-            note = f', exit {code} vs {want}' if code != want else ''
-            print(f'{name}: {status} ({len(paths)} json differences{note}{delta})')
-            for p in paths[:args.show]:
-                print(f'   ! {p}')
-            if len(paths) > args.show:
-                print(f'   ! ... {len(paths) - args.show} more')
+            print('{}: {} ({})'.format(name, status, ', '.join(notes)))
+            for line in problems[:args.show]:
+                print('   ! {}'.format(line))
 
     print(f'\n{len(names) - failed}/{len(names)} fixtures match')
     return 1 if failed else 0

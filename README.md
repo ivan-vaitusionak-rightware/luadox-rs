@@ -6,8 +6,8 @@ Rewriting luadox in Rust.
 |---|---|---|
 | 0 | oracle and differential harness | done |
 | 1 | parser spike, go/no-go | done -- **full_moon 2.2.0** |
-| 2 | IR + json renderer | **L1 green on the corpus and on 16/16 fixtures** |
-| 3 | LuaLS renderer | specified (`spec/luals.md`), not started |
+| 2 | IR + json renderer | **L1 green on the corpus and on 17/17 fixtures** |
+| 3 | LuaLS renderer | **L2 byte-identical on the corpus and on 17/17 fixtures** |
 | 4 | html renderer | specified (`spec/html.md`), not started |
 | 5 | packaging and cutover | not started |
 
@@ -136,6 +136,11 @@ it moves `doc.json` and no html page.
 ```
 L1  structured parity (doc.json)
   205 differing JSON paths: 205 explained, 0 not
+
+L2  byte parity (html, luals)
+  html/ not produced by the candidate -- 591 file(s) skipped
+  1/1 files identical
+
 IMPROVEMENTS (output diffs justified by a named fix)
   * A field value whose expression spans more than one line is no longer dropped.
       doc.json (.value)
@@ -147,10 +152,10 @@ OK: rendered output matches, or every difference is a named fix
 
 Exit code 1, as the oracle's. **0.20 s** against the oracle's 3.4 s for the same render.
 
-And `python spec/run.py`, the second corpus:
+And `python spec/run.py`, the second corpus, grading both renderers:
 
 ```
-16/16 fixtures match
+17/17 fixtures match
 ```
 
 ### What is covered
@@ -251,6 +256,76 @@ is `prerender::fit_to_row`, and its `Err` is the `compact-block-content` report.
 independent implementations agree on what it finds: 240 elements, `h5` 166, `pre` 166,
 `ul` 85.
 
+## Phase 3: the LuaLS renderer
+
+`luadox -r luals`, implemented against `spec/luals.md` rather than against
+`render/luals.py`: reading the Python while porting is how a port inherits a behaviour
+without noticing it is one. The spec's provenance and this repository's oracle agree --
+`a35e6095e2b882940a7d3987956d0f298160f45b`, not dirty -- and the spec anticipates the
+sixth patch, so there is nothing to reconcile.
+
+```
+17/17 luals fixtures byte-identical
+
+corpus: luals/luadox.lua, 24532 lines
+  oracle    1042134 bytes on disk, sha cd7b62605fc6490f
+  candidate 1017602 bytes on disk, sha cd7b62605fc6490f
+  identical after newline normalisation: True
+```
+
+The 24 532-byte difference on disk is one byte per line. The Python opens its output in
+text mode, so on Windows it writes CRLF and its bytes are a property of the host; this
+writes LF unconditionally, as `spec/html.md` §11 recommends, and `normalize.newlines` is
+the rule both sides are digested through.
+
+**Byte parity is against the pinned oracle, not against the newer renderer on
+`origin/pr4-review`.** So: no `---@enum`, no `---@deprecated`, nothing for `@since`, and
+every field `= nil` whatever the source assigned. Adopting the newer one is a change to
+the *oracle*, and belongs there first.
+
+### What this renderer taught the IR
+
+One Phase 2 defect, which only this renderer could have surfaced. `parse_raw_content`
+walks a block's lines followed by a sentinel row `(-1, '', None)`, and that sentinel
+appends an **empty line** to the block's last markdown fragment. I had skipped it. The
+line is invisible everywhere content is trimmed -- a doc comment, a json value, an
+inlined description -- which is why L1 was green without it, and visible in exactly one
+place:
+
+```
+oracle                                  rust (before)
+  ---Declared second, ordered first…      ---Declared second, ordered first…
+  ---                                     ---*read-only*
+  ---*read-only*
+```
+
+It is what separates a field's description from the `*meta*` line this renderer appends
+after it.
+
+### Two things about it that are easy to assume wrongly
+
+* **It maps type names; the html renderer does not.** `@treturn void` reads `void` on an
+  html page and `nil` in `luadox.lua`. A shared "format a type" helper between the two
+  renderers is already wrong.
+* **It resolves a cross reference against the element being emitted**, where the json
+  renderer resolves against the collection that element is in. The Python's laziness
+  makes the difference invisible until two renderers disagree about a bare `@{Foo}`.
+
+### The one deliberate divergence
+
+A diagnostic, recorded in `improvements.toml` because `spec/luals.md` §8.2 asks for it:
+the duplicate `untyped` report is emitted once rather than twice. The prerender stage
+already reports every parameter with no `@tparam`, and the oracle's renderer reports the
+same parameter again under the same category at the same line with a different message.
+Across all 17 fixtures it is the only luals-run diagnostic difference in either
+direction:
+
+```
+rust only  : none
+oracle only: {'untyped': 1}
+  [untyped] types: parameter "a" of Shape.undocumented has no documented type
+```
+
 ## The parser decision
 
 **full_moon 2.2.0**, on this evidence.
@@ -324,8 +399,8 @@ golden/                   manifest.sha256 (594 lines), diagnostics.json, decls.j
 oracle-patches/           the six commits that make the oracle out of origin/luals-all
 spec/luals.md             what the LuaLS renderer must emit (Phase 3)
 spec/html.md              what the html renderer must emit (Phase 4)
-spec/fixtures/            16 fixtures, one source file each, rendered by the oracle
-spec/run.py               grades the Rust against them
+spec/fixtures/            17 fixtures, one source file each, rendered by the oracle
+spec/run.py               grades the Rust against them, json and luals
 spike/                    the Phase 1 parser spike (tree-sitter-lua, rustc 1.83)
 fallback-probe/           the same corpus through full_moon: decls.rs is the graded
                           comparison that decided the parser
@@ -341,6 +416,7 @@ crates/luadox/            the library
   prerender.rs            what parsing could not decide
   json.rs                 an ordered JSON value, written as Python writes one
   render/json.rs          the json renderer
+  render/luals.rs         the LuaLS renderer
   render/row.rs           the one-line renderers
 crates/luadox-cli/        [[bin]] name = "luadox"
 ```
