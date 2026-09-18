@@ -58,3 +58,40 @@ one produces a real page entry. Zero occurrences in the production corpus today.
 appears, the page it lands on is named here.
 """
 present_in_corpus = false
+
+# ---------------------------------------------------------------------------------
+# A diagnostic is not an improvement in the sense above -- diagnostics are never held to
+# parity and never fail a run -- but a *new* category is worth naming here so the delta
+# report can be read without archaeology. This entry explains nothing at L1 or L2 by
+# construction, which is why it is marked as not exercised by the corpus.
+
+[[improvement]]
+level = "L1"
+json_path_contains = "(this entry explains no output difference)"
+fix = "A new diagnostic: compact-block-content."
+why = """
+A `@compact` collection has no detail box, so the html renderer puts a member's entire
+documentation into the one-line synopsis cell, while a non-compact row gets only the
+first sentence and the rest goes to a detail box. When that documentation is a code
+block, a heading or a list it is emitted but unreadable: the stylesheet has no rule for a
+block element inside `div.synopsis td`, so a `<pre>` falls through to
+`div.body pre { margin: 0 2em }` inside an already-padded cell.
+
+On the pinned corpus that is 240 elements over 50 files: 166 carrying `<h5>` and `<pre>`
+from an `@example` on a member of a compact `@table`, and 85 carrying `<ul>` from a
+bullet list in a property tooltip. Nothing reported it -- it reads correctly in the
+source and in the html, and is wrong only in a browser.
+
+The Python finds this by matching a regular expression against rendered html (luadox
+PR #14, branch `luals-compact-block-content`, which is not in the pinned oracle). The
+Rust makes it unrepresentable instead: `markdown::Inline` has no public constructor, the
+only route to it is the fallible `Block::into_inline`, and every one-line renderer in
+`render::row` takes `RowContent`, which only that conversion produces. A future tag
+combination that puts block content in a row fails to compile rather than shipping a
+broken page.
+
+The diagnostic is raised at the single conversion site, `prerender::fit_to_row`. It moves
+no rendered output: doc.json is unchanged by it, and the html bytes the oracle produces
+for these 240 cases must still be reproduced in Phase 4.
+"""
+present_in_corpus = false

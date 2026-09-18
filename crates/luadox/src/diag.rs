@@ -8,6 +8,7 @@ use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Category {
+    CompactBlockContent,
     Conflicts,
     References,
     Snippets,
@@ -19,7 +20,8 @@ pub enum Category {
 }
 
 impl Category {
-    pub const ALL: [Category; 8] = [
+    pub const ALL: [Category; 9] = [
+        Category::CompactBlockContent,
         Category::Conflicts,
         Category::References,
         Category::Snippets,
@@ -32,6 +34,7 @@ impl Category {
 
     pub fn as_str(self) -> &'static str {
         match self {
+            Category::CompactBlockContent => "compact-block-content",
             Category::Conflicts => "conflicts",
             Category::References => "references",
             Category::Snippets => "snippets",

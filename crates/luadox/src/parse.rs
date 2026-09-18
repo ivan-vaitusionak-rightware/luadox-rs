@@ -1333,6 +1333,7 @@ static EMPTY: Item = Item {
     returns: Vec::new(),
     compact: Vec::new(),
     collections: Vec::new(),
+    row: None,
     fields: Vec::new(),
     functions: Vec::new(),
     empty: false,

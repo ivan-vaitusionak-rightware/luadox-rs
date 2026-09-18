@@ -7,6 +7,7 @@
 use crate::content::{self, Parsed};
 use crate::diag::Category;
 use crate::ir::{Content, Fragment, ItemId, Kind};
+use crate::markdown::RowContent;
 use crate::parse::Parser;
 
 /// Prepares every page for rendering and returns them in render order: classes, then
@@ -110,6 +111,7 @@ fn classmod(parser: &mut Parser, topref: ItemId) {
                 item.content = parsed.content;
             }
             apply_deprecated(parser, id);
+            fit_to_row(parser, id, &parser.item(colref).compact.clone(), "fields");
             parser.item_mut(colref).fields.push(id);
         }
 
@@ -136,6 +138,12 @@ fn classmod(parser: &mut Parser, topref: ItemId) {
                 item.content = parsed.content;
             }
             apply_deprecated(parser, id);
+            fit_to_row(
+                parser,
+                id,
+                &parser.item(colref).compact.clone(),
+                "functions",
+            );
             parser.item_mut(colref).functions.push(id);
         }
     }
@@ -165,6 +173,40 @@ fn manual(parser: &mut Parser, topref: ItemId) {
             item.level = level;
         }
         parser.item_mut(topref).collections.push(colref);
+    }
+}
+
+/// Reduces an element's documentation to what a one-line row can present, when the
+/// collection it is in is `@compact` for its kind.
+///
+/// A compact row carries the element's whole documentation, because there is no detail
+/// box to put the rest in. So a code block, a heading or a list lands inside a one-line
+/// table cell, where the stylesheet has no rule for it -- 240 elements over 50 files on
+/// the pinned corpus, all of them rendered and none of them readable.
+///
+/// This is the one place `RowContent` can be built, and therefore the one place the
+/// invariant can be broken. Its `Err` is the report; the fix belongs to whoever wrote the
+/// tag -- drop `@compact` for that collection, or keep its members' documentation to
+/// prose.
+fn fit_to_row(parser: &mut Parser, id: ItemId, compact: &[String], kind: &str) {
+    if !compact.iter().any(|c| c == kind) {
+        return;
+    }
+    match RowContent::try_from(&parser.item(id).content) {
+        Ok(row) => parser.item_mut(id).row = Some(row),
+        Err(too_big) => {
+            let item = parser.item(id);
+            let (name, file, line) = (item.name.clone(), item.file.clone(), item.line);
+            parser.diagnostics.add(
+                Category::CompactBlockContent,
+                format!(
+                    "{name} is in a compact collection, so its {too_big} renders inside a \
+                     one-line table row"
+                ),
+                Some(&file),
+                line,
+            );
+        }
     }
 }
 

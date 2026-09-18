@@ -267,7 +267,7 @@ impl Parser {
                         }
                         None
                     }
-                    Err(e) => Some(format!("{e} (looked in {})", path.display())),
+                    Err(e) => Some(os_error(&e, &path)),
                 }
             }
         };
@@ -456,6 +456,30 @@ impl Parser {
             *slot = Fragment::Markdown(Markdown::resolved(rest));
         }
         first
+    }
+}
+
+/// A failure to read a file, worded and pathed the way Python's `OSError` prints one.
+///
+/// The wording is not parity for its own sake: a run of this tool is compared against a
+/// run of the Python, and a message that says the same thing differently turns 71 real
+/// reports into 142 lines of delta that hide the reports that actually changed. The
+/// errno is POSIX, as Python's is on every platform, rather than the host's own code.
+fn os_error(e: &std::io::Error, path: &Path) -> String {
+    let path = std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf());
+    let path = path.display().to_string();
+    let path = path.strip_prefix(r"\\?\").unwrap_or(&path);
+    match e.kind() {
+        std::io::ErrorKind::NotFound => {
+            format!("[Errno 2] No such file or directory: '{path}'")
+        }
+        std::io::ErrorKind::PermissionDenied => {
+            format!("[Errno 13] Permission denied: '{path}'")
+        }
+        std::io::ErrorKind::InvalidData => {
+            format!("'utf-8' codec can't decode the bytes of '{path}'")
+        }
+        _ => format!("{e}: '{path}'"),
     }
 }
 

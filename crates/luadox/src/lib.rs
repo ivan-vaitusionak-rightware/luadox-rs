@@ -16,6 +16,7 @@ pub mod diag;
 pub mod ir;
 pub mod json;
 pub mod lua;
+pub mod markdown;
 pub mod parse;
 pub mod prerender;
 pub mod render;

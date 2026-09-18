@@ -256,6 +256,11 @@ pub struct Item {
     pub compact: Vec<String>,
     /// For a top-level element: its collections, in render order.
     pub collections: Vec<ItemId>,
+    /// This element's documentation reduced to what a one-line context can present,
+    /// when it is in a `@compact` collection and therefore gets no detail box. `None`
+    /// when it is not in one, or when the documentation did not fit -- see
+    /// `markdown::RowContent`.
+    pub row: Option<crate::markdown::RowContent>,
     /// For a collection: the elements it contains, in render order.
     pub fields: Vec<ItemId>,
     pub functions: Vec<ItemId>,
@@ -293,6 +298,7 @@ impl Item {
             returns: Vec::new(),
             compact: Vec::new(),
             collections: Vec::new(),
+            row: None,
             fields: Vec::new(),
             functions: Vec::new(),
             empty: false,
