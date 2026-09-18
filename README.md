@@ -171,6 +171,42 @@ but not identical.
 * **Encodings other than utf-8**, likewise an error rather than a wrong read.
 * **The yaml renderer**, dropped at Tier 2 as the plan says.
 
+### Where each diagnostic category comes from
+
+Nine categories, and which run can raise them. A json run cannot show `types`, because
+both of its sites are in the LuaLS renderer -- so an "it never fires" reading of a json
+run is a reading of the wrong run.
+
+| category | raised by | exercised by |
+|---|---|---|
+| `snippets` | parse | corpus (71), `code_snippets` |
+| `structure` | parse | corpus (0), `within_order`, `code_snippets` |
+| `references` | parse, prerender | `xrefs`, `within_order` |
+| `untyped` | prerender | `module_globals` |
+| `undocumented-enum-members` | `validate_enums` | corpus (41), `enum` |
+| `undocumented-section-members` | parse | corpus (35) |
+| `conflicts` | parse (4 sites, 2 reachable) | `conflicts` |
+| `types` | **the LuaLS renderer** (2 sites) | `types`, via the oracle's luals run |
+| `compact-block-content` | prerender | corpus (240) -- Rust only, see below |
+
+Two of the four `conflicts` sites cannot be reached from any source, and are defensive
+rather than dead:
+
+* *`reference "X" with the same name already exists`* needs `_add_reference` called twice
+  on one object. The only repeat call is the implicit module added through the
+  `for scope in reversed(ref.scopes) ... else` fallback, and that fallback requires
+  `modref.name not in self.topsyms` -- false once the module is added, and false too in
+  the one branch that leaves a module added-but-unregistered. The conditions exclude each
+  other.
+* *`could not determine which class or module X belongs to`* needs a scope stack with no
+  top-level element in it. `scopes[0]` is the file's implicit module on every path:
+  `@class` and `@module` rebind to `[scopes[0], ref]`, `@table` appends, and a manual
+  section is scoped `[topref]`.
+
+Both are ported anyway. `Category::ALL` is the union of what the two Python branches
+declare, and it is printed verbatim when `allow_incomplete` names something unknown, so
+dropping a member would change output.
+
 ### The three design decisions that cost the most to get right
 
 1. **The scan stays line-driven; the facts do not.** luadox semantics *are* line-shaped,
