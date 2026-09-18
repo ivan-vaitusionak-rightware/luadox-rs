@@ -1,0 +1,30 @@
+# The Rust luadox.  Laid out the way it will sit under `scripts/rust` in the ui
+# repository -- same toolchain pin, same lint wall -- so landing it there is a directory
+# move rather than a port.
+#
+# `spike/` and `fallback-probe/` stay outside the workspace: they are Phase 1 evidence,
+# pinned to the crates they were measuring, and nothing here depends on them.
+[workspace]
+resolver = "2"
+members = ["crates/luadox", "crates/luadox-cli"]
+exclude = ["spike", "fallback-probe", "oracle"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.83"
+publish = false
+
+[workspace.dependencies]
+# Pinned exactly: a parser that moves changes the parse without anybody changing the
+# tool.  See README, "The parser decision".
+full_moon = "=2.2.0"
+blake2 = "0.10"
+glob = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[workspace.lints.clippy]
+indexing_slicing = "deny"
+unwrap_used = "deny"
+expect_used = "deny"

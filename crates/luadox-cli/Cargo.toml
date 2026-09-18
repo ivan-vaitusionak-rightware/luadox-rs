@@ -1,0 +1,16 @@
+[package]
+name = "luadox-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "luadox"
+path = "src/main.rs"
+
+[dependencies]
+luadox = { path = "../luadox" }
+
+[lints]
+workspace = true
