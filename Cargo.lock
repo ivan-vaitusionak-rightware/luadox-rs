@@ -206,6 +206,7 @@ name = "luadox"
 version = "0.1.0"
 dependencies = [
  "blake2",
+ "comrak",
  "full_moon",
  "glob",
  "serde",

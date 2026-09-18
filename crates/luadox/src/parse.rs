@@ -470,6 +470,42 @@ impl Parser {
         }
     }
 
+    /// Registers the html renderer's search pseudo-page.
+    ///
+    /// It exists so the relative paths on the search and landing pages come out right,
+    /// and it is deliberately *not* a top-level symbol: it must never appear in a sidebar
+    /// list. `--search` cannot collide with a documented name, because a Lua comment
+    /// begins with the same two characters.
+    pub fn add_search_ref(&mut self) -> ItemId {
+        let mut item = Item::new(Kind::Pseudo, "search.html", None, "--search");
+        item.flags.display = Some("Search".to_string());
+        let id = self.push(item);
+        self.ensure_name(id);
+        self.ensure_topsym(id);
+        self.refs.insert("--search".to_string(), id);
+        id
+    }
+
+    /// Resolves an element's content in place, against whatever is focused.
+    pub fn resolve_item_content(&mut self, id: ItemId) {
+        let mut content = std::mem::take(&mut self.item_mut(id).content);
+        self.resolve_content(&mut content);
+        self.item_mut(id).content = content;
+    }
+
+    /// The compact display name of an element: its `@display`, or its symbol with the
+    /// page's own name stripped off the front.
+    pub fn display_compact(&self, id: ItemId) -> String {
+        let item = self.item(id);
+        if let Some(display) = &item.flags.display {
+            return display.clone();
+        }
+        match item.symbol.strip_prefix(&item.topsym) {
+            Some(rest) => rest.trim_start_matches([':', '.']).to_string(),
+            None => item.symbol.clone(),
+        }
+    }
+
     /// The element an opaque id names, for a `@see` list or a mixin phrase.
     pub fn item_by_id(&self, id: &str) -> Option<ItemId> {
         self.by_id.get(id).copied()

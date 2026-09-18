@@ -25,6 +25,9 @@ pub enum Kind {
     Function,
     Manual,
     Module,
+    /// The html renderer's search pseudo-page, whose type really is the empty string:
+    /// it is what makes the search and landing pages' body class `other-search`.
+    Pseudo,
     Section,
     Table,
 }
@@ -37,6 +40,7 @@ impl Kind {
             Kind::Function => "function",
             Kind::Manual => "manual",
             Kind::Module => "module",
+            Kind::Pseudo => "",
             Kind::Section => "section",
             Kind::Table => "table",
         }
@@ -45,7 +49,10 @@ impl Kind {
     /// Classes, modules and manual pages each render to their own page, and every other
     /// element traces up to one of them.
     pub fn is_top(self) -> bool {
-        matches!(self, Kind::Class | Kind::Module | Kind::Manual)
+        matches!(
+            self,
+            Kind::Class | Kind::Module | Kind::Manual | Kind::Pseudo
+        )
     }
 
     /// A collection can hold fields and functions. Classes and modules count themselves
@@ -53,7 +60,7 @@ impl Kind {
     pub fn is_collection(self) -> bool {
         matches!(
             self,
-            Kind::Class | Kind::Module | Kind::Manual | Kind::Section | Kind::Table
+            Kind::Class | Kind::Module | Kind::Manual | Kind::Pseudo | Kind::Section | Kind::Table
         )
     }
 

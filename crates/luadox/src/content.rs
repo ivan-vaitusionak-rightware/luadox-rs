@@ -437,6 +437,29 @@ impl Parser {
         }
     }
 
+    /// The first sentence of already-resolved content, left where it is.
+    ///
+    /// `skip_leading` steps over leading non-markdown fragments so a `@deprecated` box
+    /// cannot become an element's summary; without it, a leading fragment that is not
+    /// markdown yields nothing at all.
+    pub fn peek_first_sentence(&self, content: &Content, skip_leading: bool) -> String {
+        let at = if skip_leading {
+            content
+                .0
+                .iter()
+                .position(|f| matches!(f, Fragment::Markdown(_)))
+        } else {
+            match content.0.first() {
+                Some(Fragment::Markdown(_)) => Some(0),
+                _ => None,
+            }
+        };
+        let Some(Fragment::Markdown(md)) = at.and_then(|n| content.0.get(n)) else {
+            return String::new();
+        };
+        util::first_sentence(&md.get()).0.to_string()
+    }
+
     /// The first sentence of a content tree, resolved and removed from it. A leading
     /// fragment that is not markdown yields nothing, which is how a section that opens
     /// with an admonition keeps its own name as its heading.

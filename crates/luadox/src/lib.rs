@@ -10,6 +10,7 @@
 //! is the document made inspectable and therefore what the differential harness compares.
 //! The LuaLS and html renderers are Phase 3 and Phase 4.
 
+pub mod assets;
 pub mod config;
 pub mod content;
 pub mod diag;
@@ -49,7 +50,7 @@ impl fmt::Display for Error {
             Error::UnknownRenderer(name) => {
                 write!(
                     f,
-                    "unknown renderer \"{name}\", valid types are: json, luals"
+                    "unknown renderer \"{name}\", valid types are: html, json, luals"
                 )
             }
             Error::Io(msg) => write!(f, "{msg}"),
@@ -87,11 +88,11 @@ pub fn run(options: &Options) -> Result<Outcome, Error> {
         .renderer
         .clone()
         .unwrap_or_else(|| config.get_or("project", "renderer", "html"));
-    // The html renderer is Phase 4. Asking for it says so rather than rendering
-    // something that is not what was asked for.
     let extension = match renderer.as_str() {
         "json" => ".json",
         "luals" => ".lua",
+        // The html renderer writes a directory, not a file.
+        "html" => "",
         _ => return Err(Error::UnknownRenderer(renderer)),
     };
 
@@ -142,6 +143,19 @@ pub fn run(options: &Options) -> Result<Outcome, Error> {
     parser.validate_enums();
 
     let toprefs = prerender::process(&mut parser);
+    if renderer == "html" {
+        let out = html_out_dir(options, &parser.config);
+        let written = write_html(&mut parser, &toprefs, &out)?;
+        if let Some(path) = &options.diagnostics_json {
+            write_diagnostics(&parser, path, options.diagnostics_root.as_deref())?;
+        }
+        return Ok(Outcome {
+            exit_code: parser.diagnostics.exit_code(),
+            summary: parser.diagnostics.summary(),
+            output: out.join(format!("{written} files")),
+        });
+    }
+
     let document = match renderer.as_str() {
         "luals" => render::luals::render(&mut parser, &toprefs).map_err(Error::Config)?,
         _ => render::json::render(&mut parser, &toprefs).write(),
@@ -226,7 +240,18 @@ fn input_files(config: &Config) -> Vec<PathBuf> {
                 continue;
             };
             let mut found: Vec<PathBuf> = entries.filter_map(Result::ok).collect();
-            found.sort();
+            // Case-insensitive, then exact: deterministic, and the order the Python
+            // happens to produce on Windows.
+            //
+            // `glob.glob` does not sort at all -- it returns `os.scandir` order, which on
+            // NTFS is case-insensitive alphabetical and on ext4 is hash order. So the
+            // order files are read in, which decides the module list in a sidebar, the
+            // order of the search index and the previous/next chain, is a property of the
+            // machine that built the docs. Sorting here makes it a property of the input.
+            found.sort_by(|a, b| {
+                let key = |p: &PathBuf| p.to_string_lossy().to_lowercase();
+                key(a).cmp(&key(b)).then_with(|| a.cmp(b))
+            });
             for path in found {
                 let path = std::fs::canonicalize(&path).unwrap_or(path);
                 let path = strip_verbatim(&path);
@@ -247,6 +272,60 @@ fn strip_verbatim(path: &Path) -> PathBuf {
         Some(rest) => PathBuf::from(rest),
         None => path.to_path_buf(),
     }
+}
+
+/// Renders and writes the whole site, returning how many files it wrote.
+fn write_html(
+    parser: &mut Parser,
+    toprefs: &[crate::ir::ItemId],
+    out: &Path,
+) -> Result<usize, Error> {
+    std::fs::create_dir_all(out).map_err(|e| Error::Io(format!("{}: {e}", out.display())))?;
+
+    // The files project.css, project.js and project.favicon name, copied flat. One that
+    // does not exist is reported and skipped, and the run continues -- but its tag is
+    // still emitted on every page, which is why the shipped production docs carry a dangling
+    // custom-styles-lua.css.
+    let (found, missing) = render::html::config_files(parser);
+    for name in missing {
+        parser.diagnostics.add(
+            Category::Structure,
+            format!("file \"{name}\" does not exist, skipping"),
+            None,
+            None,
+        );
+    }
+    for path in found {
+        if let Some(name) = path.file_name() {
+            std::fs::copy(&path, out.join(name))
+                .map_err(|e| Error::Io(format!("{}: {e}", path.display())))?;
+        }
+    }
+
+    let pages = render::html::render(parser, toprefs).map_err(Error::Config)?;
+    let written = pages.len();
+    for page in pages {
+        let target = out.join(&page.path);
+        if let Some(dir) = target.parent() {
+            std::fs::create_dir_all(dir)
+                .map_err(|e| Error::Io(format!("{}: {e}", dir.display())))?;
+        }
+        // LF unconditionally, as spec/html.md section 11 recommends: the Python writes
+        // through text mode, so its bytes are a property of the host.
+        std::fs::write(&target, &page.bytes)
+            .map_err(|e| Error::Io(format!("{}: {e}", target.display())))?;
+    }
+    Ok(written + 1)
+}
+
+fn html_out_dir(options: &Options, config: &Config) -> PathBuf {
+    options
+        .out
+        .clone()
+        .or_else(|| config.get("project", "out").map(str::to_string))
+        .or_else(|| config.get("project", "outdir").map(str::to_string))
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("out"))
 }
 
 fn out_path(options: &Options, config: &Config, extension: &str) -> PathBuf {

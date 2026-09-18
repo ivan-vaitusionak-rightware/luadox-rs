@@ -345,6 +345,233 @@ fn html_block_tag(line: &str) -> Option<String> {
     HTML_BLOCKS.contains(&name.as_str()).then_some(name)
 }
 
+// ---------------------------------------------------------------------------------
+// Rendering
+//
+// comrak is pinned exactly, like the parser: a markdown library that moves changes every
+// page without anybody changing the tool. 0.50 and newer are edition 2024, which needs
+// Cargo 1.85 against this workspace's 1.83 pin, so 0.49.0 is the newest that builds.
+//
+// harness/markdown_parity.py renders every markdown fragment of the corpus through both
+// this and the Python's commonmark, and they agree on all 4014 distinct fragments. The
+// divergences spec/html.md section 10.2 names are real -- the same harness shows them on
+// constructed input -- and the corpus contains none of them. It is the guard that keeps
+// that true.
+
+/// The options the oracle's `commonmark` run is equivalent to: raw HTML through, no GFM
+/// extensions, no smart punctuation.
+fn render_options() -> comrak::Options<'static> {
+    let mut options = comrak::Options::default();
+    // `autogen/enums/FocusScopeTypeEnums.lua` writes `<b>` in a doc comment, and the
+    // oracle passes it through.
+    options.render.r#unsafe = true;
+    options
+}
+
+/// Renders markdown to HTML, rewriting each `luadox:<id>` destination into a real href.
+///
+/// The Python does the rewrite inside its renderer subclass, at the moment the link is
+/// written; here it is a pass over the AST before formatting, which is the same thing said
+/// out loud. A destination whose id does not resolve is left as it was: the Python raises
+/// `KeyError` there and calls it a parser bug, and a documentation tool should not die
+/// rendering a page over one.
+pub fn to_html(md: &str, href_for: &dyn Fn(&str) -> Option<String>) -> String {
+    let arena = comrak::Arena::new();
+    let options = render_options();
+    let root = comrak::parse_document(&arena, md, &options);
+    for node in root.descendants() {
+        let mut ast = node.data.borrow_mut();
+        if let comrak::nodes::NodeValue::Link(link) = &mut ast.value {
+            if let Some(id) = link.url.strip_prefix("luadox:") {
+                if let Some(href) = href_for(id) {
+                    link.url = href;
+                }
+            }
+        }
+    }
+    let mut out = String::new();
+    if comrak::format_html(root, &options, &mut out).is_err() {
+        return String::new();
+    }
+    out
+}
+
+/// Strips markdown down to plain text, for the search index.
+///
+/// The substitutions and their order are the Python's `_markdown_to_text`, which is a
+/// sequence of regular expressions over the markdown source rather than anything to do
+/// with the parser.
+pub fn to_text(md: &str) -> String {
+    let text = remove_fenced_blocks(md);
+    let text = unwrap_delimited(&text, '`', '`');
+    let text = text.replace('#', "");
+    let text = unwrap_delimited(&text, '*', '*');
+    let text = unwrap_links(&text);
+    let text = unwrap_braced_refs(&text);
+    collapse_whitespace(&text)
+}
+
+/// `re.sub(r'\s+', ' ', text)`: every run of whitespace becomes one space, and nothing
+/// is trimmed.
+///
+/// The trimming is the difference that matters. Every content block ends with the
+/// sentinel's empty line, so a fragment flattens to text with a trailing space, and
+/// `_content_to_text` then joins the fragments with a newline which the search index turns
+/// into another space. That is where the *two* spaces before an admonition's title in
+/// `index.js` come from, and trimming here loses them.
+fn collapse_whitespace(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut in_space = false;
+    for c in text.chars() {
+        if c.is_whitespace() {
+            if !in_space {
+                out.push(' ');
+            }
+            in_space = true;
+        } else {
+            out.push(c);
+            in_space = false;
+        }
+    }
+    out
+}
+
+/// ```` ```.*?``` ```` with DOTALL: the shortest run between two triple-backtick marks.
+fn remove_fenced_blocks(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(open) = rest.find("```") {
+        let after = rest.get(open + 3..).unwrap_or("");
+        match after.find("```") {
+            Some(close) => {
+                out.push_str(rest.get(..open).unwrap_or(""));
+                rest = after.get(close + 3..).unwrap_or("");
+            }
+            None => break,
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+/// `` `([^`]+)` `` and `\*([^*]+)\*`: the delimiters removed, the text kept.
+fn unwrap_delimited(text: &str, open: char, close: char) -> String {
+    let chars: Vec<char> = text.chars().collect();
+    let mut out = String::with_capacity(text.len());
+    let mut i = 0usize;
+    while let Some(&c) = chars.get(i) {
+        if c != open {
+            out.push(c);
+            i += 1;
+            continue;
+        }
+        let mut j = i + 1;
+        let mut inner = String::new();
+        while let Some(&c) = chars.get(j) {
+            if c == close {
+                break;
+            }
+            inner.push(c);
+            j += 1;
+        }
+        if inner.is_empty() || chars.get(j) != Some(&close) {
+            out.push(c);
+            i += 1;
+            continue;
+        }
+        out.push_str(&inner);
+        i = j + 1;
+    }
+    out
+}
+
+/// `!?\[([^]]*)\]\([^)]+\)`: a link or an inline image reduced to its text.
+fn unwrap_links(text: &str) -> String {
+    let chars: Vec<char> = text.chars().collect();
+    let mut out = String::with_capacity(text.len());
+    let mut i = 0usize;
+    while let Some(&c) = chars.get(i) {
+        let bang = c == '!' && chars.get(i + 1) == Some(&'[');
+        let open = if bang { i + 1 } else { i };
+        if chars.get(open) != Some(&'[') {
+            out.push(c);
+            i += 1;
+            continue;
+        }
+        let mut j = open + 1;
+        let mut label = String::new();
+        while let Some(&c) = chars.get(j) {
+            if c == ']' {
+                break;
+            }
+            label.push(c);
+            j += 1;
+        }
+        if chars.get(j) != Some(&']') || chars.get(j + 1) != Some(&'(') {
+            out.push(c);
+            i += 1;
+            continue;
+        }
+        let mut k = j + 2;
+        let mut url = String::new();
+        while let Some(&c) = chars.get(k) {
+            if c == ')' {
+                break;
+            }
+            url.push(c);
+            k += 1;
+        }
+        if url.is_empty() || chars.get(k) != Some(&')') {
+            out.push(c);
+            i += 1;
+            continue;
+        }
+        out.push_str(&label);
+        i = k + 1;
+    }
+    out
+}
+
+/// `@{a|b}` -> `b`, then `@{a}` -> `a`.
+fn unwrap_braced_refs(text: &str) -> String {
+    let chars: Vec<char> = text.chars().collect();
+    let mut out = String::with_capacity(text.len());
+    let mut i = 0usize;
+    while let Some(&c) = chars.get(i) {
+        if !(c == '@' && chars.get(i + 1) == Some(&'{')) {
+            out.push(c);
+            i += 1;
+            continue;
+        }
+        let mut j = i + 2;
+        let mut name = String::new();
+        let mut label: Option<String> = None;
+        while let Some(&c) = chars.get(j) {
+            if c == '}' {
+                break;
+            }
+            if c == '|' && label.is_none() {
+                label = Some(String::new());
+                j += 1;
+                continue;
+            }
+            match label.as_mut() {
+                Some(text) => text.push(c),
+                None => name.push(c),
+            }
+            j += 1;
+        }
+        if name.is_empty() || chars.get(j) != Some(&'}') {
+            out.push(c);
+            i += 1;
+            continue;
+        }
+        out.push_str(label.as_deref().unwrap_or(&name));
+        i = j + 1;
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
