@@ -1,0 +1,11 @@
+{
+  "allowed": [],
+  "diagnostics": [
+    {
+      "category": "untyped",
+      "file": "types.lua",
+      "line": 19,
+      "message": "Shape.undocumented() missing @tparam for \"a\" parameter"
+    }
+  ]
+}

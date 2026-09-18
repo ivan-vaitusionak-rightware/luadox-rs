@@ -1,0 +1,29 @@
+{
+  "allowed": [],
+  "diagnostics": [
+    {
+      "category": "types",
+      "file": "types.lua",
+      "line": 15,
+      "message": "type name \"Unknown\" does not resolve to a documented class or table"
+    },
+    {
+      "category": "types",
+      "file": "types.lua",
+      "line": 15,
+      "message": "type name \"engine::Color\" uses C++ scope syntax; use \".\""
+    },
+    {
+      "category": "untyped",
+      "file": "types.lua",
+      "line": 19,
+      "message": "Shape.undocumented() missing @tparam for \"a\" parameter"
+    },
+    {
+      "category": "untyped",
+      "file": "types.lua",
+      "line": 19,
+      "message": "parameter \"a\" of Shape.undocumented has no documented type"
+    }
+  ]
+}

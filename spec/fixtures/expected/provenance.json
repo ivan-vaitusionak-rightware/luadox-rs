@@ -1,0 +1,39 @@
+{
+  "assets_not_checked_in": {
+    "img/i-bitbucket.svg": "d221f49e7c9c3a2a4f3fee976485ffc2b902383581aed8f241fbf7840148f1f3",
+    "img/i-download.svg": "ddd256ebdd3abf22b6173d3ea96a58d4e4ba054780c8b9bc46ea9b42db662228",
+    "img/i-github.svg": "3d135d870389e765c8655d75c88334f5c21295bef854d6ca681a81c5412ee808",
+    "img/i-gitlab.svg": "11a0802cda853853934cf93394cf3d1443bfbc26512163e7f2593229d0f799cd",
+    "img/i-left.svg": "a78e1fd6a12acd47bfcc563e01280a91d7650554eb4b0fd2f79335e4dba91b78",
+    "img/i-right.svg": "62013ad8671b1af5d4ffda0a7284073db6354329b6f461871c54fc67f2415913",
+    "js-search.min.js": "8bf5f7880b6a46922fbc2f7353fc274d9c17a024bcbbf4dbaaf74fdf60bd9b7f",
+    "luadox.css": "3e49f9276dc8a7800c21568f402e5a718ef2d681d4b6430c50b870dbb9267c8e",
+    "prism.css": "49137a715073b8db477883a2bc8cc339110a89b89ef09a63077caf5a10ce2752",
+    "prism.js": "412a2b865c1abb5611c1aeb57d0f035d8df6f243ccfeb7e819ac1c796ab0b6e0",
+    "search.js": "ef44161a031618a5303da995d2692461e031b4a122fdd1bbd6ffa495d381a2d8"
+  },
+  "fixtures": [
+    "admonitions",
+    "class_basic",
+    "code_snippets",
+    "compact",
+    "deprecated_since",
+    "enum",
+    "explicit_module",
+    "inherits_multi",
+    "luals_config",
+    "manual",
+    "module_globals",
+    "naming",
+    "nested_table",
+    "types",
+    "within_order",
+    "xrefs"
+  ],
+  "normalisations": {
+    "assets_version": "kept verbatim; normalise ?<hex> to ?ASSETS_VERSION on both sides before comparing a candidate implementation",
+    "newlines": "every rendered file is copied with its line endings reduced to LF; the oracle writes CRLF on Windows and its byte-read default templates add a second CR, so its raw bytes are a property of the host (see spec/html.md, \"Line endings\")"
+  },
+  "oracle_commit": "a35e6095e2b882940a7d3987956d0f298160f45b",
+  "oracle_dirty": false
+}

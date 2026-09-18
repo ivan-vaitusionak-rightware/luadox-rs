@@ -1,0 +1,11 @@
+{
+  "allowed": [],
+  "diagnostics": [
+    {
+      "category": "snippets",
+      "file": "code_snippets.lua",
+      "line": 17,
+      "message": "cannot read snippet \"nosuchfile.lua\": [Errno 2] No such file or directory: '<repo>\\\\spec\\\\fixtures\\\\snippets\\\\nosuchfile.lua'"
+    }
+  ]
+}

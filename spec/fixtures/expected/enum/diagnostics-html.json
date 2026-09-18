@@ -1,0 +1,17 @@
+{
+  "allowed": [],
+  "diagnostics": [
+    {
+      "category": "structure",
+      "file": "enum.lua",
+      "line": 13,
+      "message": "@enum member FocusScope.Text is not assigned an integer value"
+    },
+    {
+      "category": "undocumented-enum-members",
+      "file": "enum.lua",
+      "line": 7,
+      "message": "@enum member FocusScope.Undocumented has no doc comment"
+    }
+  ]
+}
