@@ -1,0 +1,60 @@
+# Differences between the Rust luadox and the Python oracle that are deliberate.
+#
+# This file is a changelog of improvements, not a list of excuses. An entry earns its
+# place by naming the defect it fixes; an entry whose difference has gone away is an
+# error, the same as an unexplained difference, because a stale entry hides a
+# regression.
+#
+# Only RENDERED OUTPUT is held to parity: html, luals and json. Diagnostics, exit codes
+# and error handling are expected to improve and are reported as a delta, never as a
+# failure -- so they do not belong here.
+#
+# There is no wildcard. An L2 entry names every file it explains, and an L1 entry names
+# the JSON path fragment every difference it explains must contain. That is what keeps
+# the list from quietly becoming the specification: an entry that would need hundreds of
+# filenames is not an improvement, it is an unreviewed rewrite of the output.
+#
+#   level                = "L1" (json) or "L2" (html / luals bytes)
+#   paths                = output files this entry explains (L2)
+#   json_path_contains   = fragment every differing JSON path must contain (L1)
+#   fix                  = the defect being fixed, in one line
+#   why                  = why the rendered output moves as a result
+#   present_in_corpus    = false when the corpus does not exercise it yet, so the entry
+#                          is allowed to explain nothing
+
+[[improvement]]
+level = "L1"
+json_path_contains = ".value"
+fix = "A field value whose expression spans more than one line is no longer dropped."
+why = """
+The Python's `_parse_field` returns None whenever the brackets or quotes on the line
+are unbalanced, which is how it detects a continuation. 205 field values in the corpus
+are lost that way, all of them `MessageType:find(...)` calls in autogen/metadata. The
+parser knows where the expression ends, so the value survives into `doc.json`.
+
+No html page moves: `html.py:171` renders a field's value only inside an `@enum`, and
+every enum member in this corpus is an integer literal on one line. The LuaLS renderer
+does not read `value` at all.
+"""
+
+[[improvement]]
+level = "L1"
+json_path_contains = ".value"
+fix = "A `--` inside a string literal no longer truncates the line."
+why = """
+`strip_trailing_comment` is `re.sub(r'--.*', '', line)`, so `S.sep = "a--b"` loses its
+value. Zero occurrences in the production corpus today, so this explains no difference here;
+the entry exists so the harness accepts one the day a string containing `--` is added.
+"""
+present_in_corpus = false
+
+[[improvement]]
+level = "L2"
+paths = []
+fix = "A declaration inside a `--[[ ]]` long comment is no longer documented."
+why = """
+The line scanner has no notion of a long comment, so `--- function L:ghost() end` inside
+one produces a real page entry. Zero occurrences in the production corpus today. When one
+appears, the page it lands on is named here.
+"""
+present_in_corpus = false

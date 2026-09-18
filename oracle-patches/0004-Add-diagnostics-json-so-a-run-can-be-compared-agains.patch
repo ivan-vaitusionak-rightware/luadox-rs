@@ -1,0 +1,85 @@
+From 3608e6f38513522cf5ab6647769e2f91538ab6ee Mon Sep 17 00:00:00 2001
+From: Ivan Vaitusionak <170527310+ivan-vaitusionak-rightware@users.noreply.github.com>
+Date: Fri, 18 Sep 2026 18:01:44 +0200
+Subject: [PATCH 4/5] Add --diagnostics-json so a run can be compared against
+ another implementation
+
+---
+ luadox/diagnostics.py | 26 ++++++++++++++++++++++++++
+ luadox/main.py        |  9 +++++++++
+ 2 files changed, 35 insertions(+)
+
+diff --git a/luadox/diagnostics.py b/luadox/diagnostics.py
+index e78bcce..a532ace 100644
+--- a/luadox/diagnostics.py
++++ b/luadox/diagnostics.py
+@@ -14,6 +14,8 @@
+ 
+ __all__ = ['Diagnostics']
+ 
++import json
++import os
+ import re
+ from configparser import ConfigParser
+ from dataclasses import dataclass
+@@ -69,6 +71,30 @@ class Diagnostics:
+             emit('%s', message)
+         self.entries.setdefault(category, []).append(Entry(file, line, message))
+ 
++    def dump_json(self, path: str, root: Optional[str] = None) -> None:
++        """
++        Writes every collected diagnostic to `path` as JSON so a run can be compared
++        against another implementation's.  File paths are emitted relative to `root`
++        (default: the current directory) with forward slashes, so the dump does not
++        depend on where the tree is checked out.
++        """
++        base = os.path.abspath(root or os.getcwd())
++
++        def relative(file: Optional[str]) -> Optional[str]:
++            if not file:
++                return None
++            return os.path.relpath(os.path.abspath(file), base).replace(os.sep, '/')
++
++        records = [{'category': category, 'file': relative(entry.file),
++                    'line': entry.line, 'message': entry.message}
++                   for category, entries in self.entries.items() for entry in entries]
++        records.sort(key=lambda r: (r['category'], r['file'] or '', r['line'] or 0,
++                                    r['message']))
++        with open(path, 'w', encoding='utf-8', newline='\n') as f:
++            json.dump({'allowed': sorted(self.allowed), 'diagnostics': records}, f,
++                      indent=2, ensure_ascii=True, sort_keys=True)
++            f.write('\n')
++
+     def summarize(self) -> int:
+         """
+         Reports the number of problems in each category -- allowed categories as
+diff --git a/luadox/main.py b/luadox/main.py
+index ecaba8c..c185f39 100644
+--- a/luadox/main.py
++++ b/luadox/main.py
+@@ -217,6 +217,12 @@ def main():
+                    help='Path to custom search template (html renderer)')    
+     p.add_argument('--sidebar-template', action='store', type=str, metavar='FILE',
+                    help='Path to custom sidebar template (html renderer)')    
++    p.add_argument('--diagnostics-json', action='store', type=str, metavar='FILE',
++                   help='Write every diagnostic to FILE as JSON, for comparing this run '
++                   'against another implementation of luadox')
++    p.add_argument('--diagnostics-root', action='store', type=str, metavar='DIR',
++                   help='Base directory --diagnostics-json paths are relative to '
++                   '(default: the current directory)')
+     p.add_argument('--nofollow', action='store_true',
+                    help="Disable following of require()'d files (default false)")
+     p.add_argument('--encoding', action='store', type=str, metavar='CODEC', default=None,
+@@ -286,6 +292,9 @@ def main():
+         log.exception('unhandled error rendering around %s:%s: %s', parser.ctx.file, parser.ctx.line, e)
+         sys.exit(1)
+ 
++    if args.diagnostics_json:
++        parser.diagnostics.dump_json(args.diagnostics_json, args.diagnostics_root)
++
+     exitcode = parser.diagnostics.summarize()
+     if exitcode:
+         sys.exit(exitcode)
+-- 
+2.53.0.windows.2
+

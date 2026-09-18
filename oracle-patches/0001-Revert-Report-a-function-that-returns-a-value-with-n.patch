@@ -1,0 +1,99 @@
+From ed0114f2f9a528bbde0a06fbd7d15a9e8bc46e7f Mon Sep 17 00:00:00 2001
+From: Ivan Vaitusionak <170527310+ivan-vaitusionak-rightware@users.noreply.github.com>
+Date: Fri, 18 Sep 2026 17:57:16 +0200
+Subject: [PATCH 1/5] Revert "Report a function that returns a value with no
+ @treturn"
+
+This reverts commit e8c91cd674a479bc199a7eea53d71573a291c8ac.
+---
+ luadox/parse.py     | 33 +--------------------------------
+ luadox/prerender.py |  8 --------
+ 2 files changed, 1 insertion(+), 40 deletions(-)
+
+diff --git a/luadox/parse.py b/luadox/parse.py
+index 8a92297..ac9b361 100644
+--- a/luadox/parse.py
++++ b/luadox/parse.py
+@@ -17,7 +17,7 @@ import sys
+ import os
+ import re
+ from configparser import ConfigParser
+-from typing import IO, Optional, Union, Tuple, List, Dict, Type, Match, Pattern
++from typing import IO, Optional, Union, Tuple, List, Dict, Type, Match
+ 
+ from . import tags
+ from .diagnostics import Diagnostics
+@@ -166,32 +166,6 @@ class Parser:
+             return None, None
+ 
+ 
+-
+-    # Lua block openers that must be closed by `end`.  `repeat` is closed by `until`, so it
+-    # is tracked separately; a one-line `function() ... end` opens and closes on its line.
+-    RE_BLOCK_OPEN: Pattern[str] = re.compile(r'\b(function|if|for|while|do)\b')
+-    RE_BLOCK_CLOSE: Pattern[str] = re.compile(r'\bend\b')
+-    RE_RETURN_VALUE: Pattern[str] = re.compile(r'\breturn\s+(?!end\b)\S')
+-
+-    def _returns_value(self, line_number: int) -> bool:
+-        """
+-        Whether the function whose signature starts at `line_number` returns a value.
+-
+-        Scans the body to the `end` that closes it, so a `return` belonging to a nested
+-        function is not attributed to this one.  A bare `return` (used to leave early)
+-        does not count: it yields nothing to document.
+-        """
+-        depth = 0
+-        for line in self.code[line_number - 1:]:
+-            code = strip_trailing_comment(line)
+-            if depth and self.RE_RETURN_VALUE.search(code):
+-                return True
+-            depth += len(self.RE_BLOCK_OPEN.findall(code))
+-            depth -= len(self.RE_BLOCK_CLOSE.findall(code))
+-            if depth <= 0:
+-                break
+-        return False
+-
+     def _parse_function(self, line: str) -> ParseFuncResult:
+         """
+         Looks for a function signature in the given raw line of code, and returns
+@@ -378,9 +352,6 @@ class Parser:
+         # TODO: preprocess all lines within --[[-- ... ]] comment block with --- prefixes
+         # in order to support multi-line block comments.
+         code = [line.strip() for line in code.splitlines()]
+-        # Kept so _returns_value() can look at a function's body, which the feed has not
+-        # reached yet when the function's signature is parsed.
+-        self.code = code
+         self.feed = iter(enumerate(code, 1))
+ 
+         # Current scope, 2-tuple of (type, name) where type can be class, module, or
+@@ -592,8 +563,6 @@ class Parser:
+                                 file=path, line=n, scopes=scopes[:], symbol=name,
+                                 collection=collection, **{kwarg: extra}
+                             )
+-                            if refcls == FunctionRef and n is not None:
+-                                ref.userdata['returns_value'] = self._returns_value(n)
+                             break
+                     if self._check_disconnected_reference(ref):
+                         self._add_reference(ref, modref)
+diff --git a/luadox/prerender.py b/luadox/prerender.py
+index 8c3b23a..ec6b9cb 100644
+--- a/luadox/prerender.py
++++ b/luadox/prerender.py
+@@ -135,14 +135,6 @@ class Prerenderer:
+                             '{}() missing @tparam for "{}" parameter'.format(ref.name, param),
+                             ref.file, ref.line)
+ 
+-                # A function that yields a value but documents no @treturn leaves the
+-                # caller without a type, the same gap an undocumented parameter leaves.
+-                if ref.userdata.get('returns_value') and not returns:
+-                    self.parser.diagnostics.add(
+-                        'untyped',
+-                        '{}() returns a value but has no @treturn'.format(ref.name),
+-                        ref.file, ref.line)
+-
+                 ref.title = ref.display
+                 ref.params = params
+                 ref.returns = returns
+-- 
+2.53.0.windows.2
+

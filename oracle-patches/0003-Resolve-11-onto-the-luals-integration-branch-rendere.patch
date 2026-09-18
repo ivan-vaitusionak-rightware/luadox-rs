@@ -1,0 +1,39 @@
+From 58d4261bfa31ede0472d1ef9c8e4a2ffffebab37 Mon Sep 17 00:00:00 2001
+From: Ivan Vaitusionak <170527310+ivan-vaitusionak-rightware@users.noreply.github.com>
+Date: Fri, 18 Sep 2026 18:01:43 +0200
+Subject: [PATCH 3/5] Resolve #11 onto the luals integration branch:
+ renderer-identical member resolution
+
+---
+ luadox/parse.py | 12 +++++-------
+ 1 file changed, 5 insertions(+), 7 deletions(-)
+
+diff --git a/luadox/parse.py b/luadox/parse.py
+index c1c35bc..6fed995 100644
+--- a/luadox/parse.py
++++ b/luadox/parse.py
+@@ -616,16 +616,14 @@ class Parser:
+         for colref in self.parsed[TableRef]:
+             if not colref.flags.get('enum'):
+                 continue
+-            # Resolve members the way the renderers do (by name and @within) so
+-            # validation can't disagree with what is emitted.
+-            members = [ref for ref in self.parsed[FieldRef]
+-                       if ref.within == colref.name
+-                       or (not ref.within and ref.collection is not None
+-                           and ref.collection.name == colref.name)]
++            # Resolve members exactly as the renderers do, so validation can't
++            # disagree with what is emitted.
++            members = self.get_elements_in_collection(FieldRef, colref)
+             if not members:
+                 self.diagnostics.add(
+                     'structure',
+-                    '@enum {} has no members with an integer value'.format(colref.name),
++                    '@enum {} has no members; the tag must be on a table of integer '
++                    'constants'.format(colref.name),
+                     colref.file, colref.line)
+                 continue
+             for member in members:
+-- 
+2.53.0.windows.2
+
