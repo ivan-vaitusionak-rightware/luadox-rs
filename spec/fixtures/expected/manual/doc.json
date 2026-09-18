@@ -1,0 +1,113 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "8783fe2647fe6e593444674cfb630532393d31b8",
+      "type": "class",
+      "name": "Doc",
+      "sections": [
+        {
+          "id": "8783fe2647fe6e593444674cfb630532393d31b8",
+          "type": "class",
+          "symbol": "Doc",
+          "heading": "Doc",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "A class the manual page links to."
+            }
+          ],
+          "functions": [
+            {
+              "id": "b379826dc005237fd296473d94a0d4612dce5d69",
+              "name": "Doc.read",
+              "display": "Doc.read",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Reads a value."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "manuals": [
+    {
+      "id": "b7439102313913fbb2fb05e93d457bf14ebd353b",
+      "type": "manual",
+      "name": "index",
+      "sections": [
+        {
+          "id": "2c7ee1ea5f4a600c0c54cb19b6c24337ec8b5fe6",
+          "type": "section",
+          "symbol": "manual_title",
+          "heading": "Manual Title",
+          "level": 1,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Body of the first section."
+            },
+            {
+              "type": "admonition",
+              "level": "note",
+              "title": "A tag with no comment prefix",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Manual pages accept tags at the start of a line."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "b50f99a3cea7436a77a2eb40048839391c6f3b58",
+          "type": "section",
+          "symbol": "a_sub-section",
+          "heading": "A Sub-Section",
+          "level": 2,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Text in the sub-section, linking to [Doc](luadox:8783fe2647fe6e593444674cfb630532393d31b8) and to [`Doc.read`](luadox:b379826dc005237fd296473d94a0d4612dce5d69).\n\n```\n# This hash inside a fence is not a heading.\n```"
+            }
+          ]
+        },
+        {
+          "id": "ea122a13c11ee5f40122f64a7302e832af9a1cc2",
+          "type": "section",
+          "symbol": "third_level",
+          "heading": "Third Level",
+          "level": 3,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Text at level three.\n\n#### Fourth Level\n\nA level-four heading creates no section reference."
+            }
+          ]
+        },
+        {
+          "id": "c213cb3d006e12a7834020769580e7efc1cbc7f7",
+          "type": "section",
+          "symbol": "a_sub-section2",
+          "heading": "A Sub-Section",
+          "level": 2,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "A second heading with the same text, so the symbol is suffixed."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

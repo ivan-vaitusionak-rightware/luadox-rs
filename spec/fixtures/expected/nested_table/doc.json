@@ -1,0 +1,81 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "3ba4b3af63e10c9076df3e74e2a50716676de68a",
+      "type": "class",
+      "name": "Palette",
+      "sections": [
+        {
+          "id": "3ba4b3af63e10c9076df3e74e2a50716676de68a",
+          "type": "class",
+          "symbol": "Palette",
+          "heading": "Palette",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "A palette."
+            }
+          ]
+        },
+        {
+          "id": "a2290b262dab1e97256225af602b404457f4fdfb",
+          "type": "table",
+          "symbol": "Colors",
+          "heading": "Named colour slots",
+          "fields": [
+            {
+              "id": "81f6049e303d8b8bf618840ec9290d8a90b5a0b9",
+              "name": "Colors.Primary",
+              "display": "Colors.Primary",
+              "value": "1",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "The primary colour."
+                }
+              ]
+            },
+            {
+              "id": "5d6257eb3a82ac86e7cba7777d1dfc6e8890d5b2",
+              "name": "Colors.Secondary",
+              "display": "Colors.Secondary",
+              "value": "3",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "The secondary colour, back at the outer level."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "2a35a4e400f66f500722c68e40e7e5445c12d217",
+          "type": "table",
+          "symbol": "Accents",
+          "heading": "A nested group of accents",
+          "fields": [
+            {
+              "id": "96305d6c7294609f3ec7e5871f22ffa5f1c76e17",
+              "name": "Accents.Warm",
+              "display": "Accents.Warm",
+              "value": "2",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "The warm accent."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "manuals": []
+}

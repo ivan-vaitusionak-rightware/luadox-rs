@@ -1,0 +1,78 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "cd494c3d9577f2c0594a952387e6ec9579d54940",
+      "type": "class",
+      "name": "Link",
+      "sections": [
+        {
+          "id": "cd494c3d9577f2c0594a952387e6ec9579d54940",
+          "type": "class",
+          "symbol": "Link",
+          "heading": "Link",
+          "fields": [
+            {
+              "id": "d030d533e0ddfe60a0718a28149d72e6fb1ebd1f",
+              "name": "Link.target",
+              "display": "Link.target",
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "The target field, declared after the function that references it."
+                }
+              ]
+            }
+          ],
+          "functions": [
+            {
+              "id": "f20945fbe344e9e1a3453bb430afc2e468acb2c0",
+              "name": "Link.get",
+              "display": "Link.get",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Refers forward to [Link.target](luadox:d030d533e0ddfe60a0718a28149d72e6fb1ebd1f), to [a renamed target](luadox:d030d533e0ddfe60a0718a28149d72e6fb1ebd1f), and to\n[`Link.target`](luadox:d030d533e0ddfe60a0718a28149d72e6fb1ebd1f) in backticks.\n\nUnresolvable: NoSuchThing, with text, and `NoSuchAlso`."
+                },
+                {
+                  "type": "see",
+                  "refs": [
+                    {
+                      "refid": "d030d533e0ddfe60a0718a28149d72e6fb1ebd1f"
+                    }
+                  ]
+                },
+                {
+                  "type": "see",
+                  "refs": []
+                }
+              ],
+              "returns": [
+                {
+                  "types": [
+                    {
+                      "name": "Link",
+                      "refid": "cd494c3d9577f2c0594a952387e6ec9579d54940"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "The same object."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "manuals": []
+}

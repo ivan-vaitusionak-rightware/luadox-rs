@@ -1,0 +1,62 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "8783fe2647fe6e593444674cfb630532393d31b8",
+      "type": "class",
+      "name": "Doc",
+      "sections": [
+        {
+          "id": "8783fe2647fe6e593444674cfb630532393d31b8",
+          "type": "class",
+          "symbol": "Doc",
+          "heading": "Doc",
+          "functions": [
+            {
+              "id": "b379826dc005237fd296473d94a0d4612dce5d69",
+              "name": "Doc.read",
+              "display": "Doc.read",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Reads a value."
+                },
+                {
+                  "type": "admonition",
+                  "level": "note",
+                  "title": "Careful with this",
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "The note body continues on a second line.\n\nAnd a second paragraph inside the note."
+                    }
+                  ]
+                },
+                {
+                  "type": "admonition",
+                  "level": "warning",
+                  "title": "Warning",
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "Data loss is possible."
+                    }
+                  ]
+                },
+                {
+                  "type": "markdown",
+                  "value": "Text after both admonitions, back at the outer level."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "manuals": []
+}

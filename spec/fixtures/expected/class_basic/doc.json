@@ -1,0 +1,130 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "b325db938a25407e452fbf426e16590ec91f88ec",
+      "type": "class",
+      "name": "Widget",
+      "sections": [
+        {
+          "id": "b325db938a25407e452fbf426e16590ec91f88ec",
+          "type": "class",
+          "symbol": "Widget",
+          "heading": "Widget",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "A widget on the screen.\n\nThe second paragraph is body text, not synopsis text."
+            }
+          ],
+          "fields": [
+            {
+              "id": "7b3433608d9053ae8d87931561e65c783efcfe08",
+              "name": "Widget.label",
+              "display": "Widget.label",
+              "types": [
+                {
+                  "name": "string"
+                }
+              ],
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "The label shown on the widget."
+                }
+              ]
+            }
+          ],
+          "functions": [
+            {
+              "id": "2a08b249376904ec46f5beaaacdb77084e3cd1cf",
+              "name": "Widget.move",
+              "display": "Widget:move",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Moves the widget. The rest of this line is body, not synopsis.\n\nA second paragraph of the method body."
+                }
+              ],
+              "params": [
+                {
+                  "name": "x",
+                  "types": [
+                    {
+                      "name": "number"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "Horizontal position."
+                    }
+                  ]
+                },
+                {
+                  "name": "y",
+                  "types": [
+                    {
+                      "name": "number"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "Vertical position."
+                    }
+                  ]
+                }
+              ],
+              "returns": [
+                {
+                  "types": [
+                    {
+                      "name": "boolean"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "Whether the move happened."
+                    }
+                  ]
+                },
+                {
+                  "types": [
+                    {
+                      "name": "string"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "A diagnostic message."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "8fceb498c50f70b4a4476ccc8eeaddc8e1a12964",
+              "name": "Widget.reset",
+              "display": "Widget.reset",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A function with no documented return at all."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "manuals": []
+}

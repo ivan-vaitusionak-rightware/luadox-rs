@@ -1,0 +1,67 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "f8b942e13e886792de2e6d882291ce5589fc5200",
+      "type": "class",
+      "name": "Application",
+      "sections": [
+        {
+          "id": "f8b942e13e886792de2e6d882291ce5589fc5200",
+          "type": "class",
+          "symbol": "Application",
+          "heading": "Application",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "The application object type."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "b325db938a25407e452fbf426e16590ec91f88ec",
+      "type": "class",
+      "name": "Widget",
+      "sections": [
+        {
+          "id": "b325db938a25407e452fbf426e16590ec91f88ec",
+          "type": "class",
+          "symbol": "Widget",
+          "heading": "Widget",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "A widget.\n\nInherits properties from [WidgetMetadata](luadox:f579785d593fb848d6d6460f63f64d4a9aa9c622) and [Application](luadox:f8b942e13e886792de2e6d882291ce5589fc5200)."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f579785d593fb848d6d6460f63f64d4a9aa9c622",
+      "type": "class",
+      "name": "WidgetMetadata",
+      "sections": [
+        {
+          "id": "f579785d593fb848d6d6460f63f64d4a9aa9c622",
+          "type": "class",
+          "symbol": "WidgetMetadata",
+          "heading": "WidgetMetadata",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Metadata for Widget."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "manuals": []
+}

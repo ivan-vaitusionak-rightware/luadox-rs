@@ -1,4 +1,29 @@
 {
   "allowed": [],
-  "diagnostics": []
+  "diagnostics": [
+    {
+      "category": "references",
+      "file": "within_order.lua",
+      "line": 35,
+      "message": "unknown @order anchor reference middle"
+    },
+    {
+      "category": "references",
+      "file": "within_order.lua",
+      "line": 39,
+      "message": "unknown @order anchor reference middle"
+    },
+    {
+      "category": "references",
+      "file": "within_order.lua",
+      "line": 43,
+      "message": "unknown @order anchor reference nosuchmember"
+    },
+    {
+      "category": "structure",
+      "file": "within_order.lua",
+      "line": 45,
+      "message": "comment block is not connected with any section, ignoring"
+    }
+  ]
 }

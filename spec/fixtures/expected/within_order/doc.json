@@ -1,0 +1,167 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "1d5ab3e414c7b6f9040c3184b4dc3bbfd5cff369",
+      "type": "class",
+      "name": "Ordered",
+      "sections": [
+        {
+          "id": "1d5ab3e414c7b6f9040c3184b4dc3bbfd5cff369",
+          "type": "class",
+          "symbol": "Ordered",
+          "heading": "Ordered"
+        },
+        {
+          "id": "41b0956d21021e569271dafe04ac7956406a65f9",
+          "type": "section",
+          "symbol": "Members",
+          "heading": "Members",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "This sentence is the section heading; this one is the body."
+            }
+          ],
+          "fields": [
+            {
+              "id": "6fa053d4ed9cc2136b68678512da68780a333d26",
+              "name": "Ordered.alpha",
+              "display": "Ordered.alpha",
+              "meta": "read-only",
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Declared second, ordered first by default."
+                }
+              ]
+            },
+            {
+              "id": "decef7bd1ed99b2352b3c1ef3e4dd47b2cea05be",
+              "name": "Ordered.gamma",
+              "display": "renamed",
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Declared in Extras, rendered in Members."
+                }
+              ]
+            },
+            {
+              "id": "15c6bb389aa17b3caec89e717ca7e8bf7f57896b",
+              "name": "Ordered.beta",
+              "display": "Ordered.beta",
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Declared first, ordered last."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "72281293d9f10111c000af7824d0adc214484f09",
+          "type": "section",
+          "symbol": "Extras",
+          "heading": "Extras",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "A second section."
+            }
+          ],
+          "fields": [
+            {
+              "id": "a39b8eb6d2600f2df55fa4eb8e67cfadb8db7483",
+              "name": "Ordered.delta",
+              "display": "Ordered.delta",
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Stays in Extras."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "72c66dfc1904519f595f6b6a9507e42a050b9bf0",
+          "type": "section",
+          "symbol": "Anchored",
+          "heading": "Anchored ordering, and a @field injected from the comment block rather than from a\nline of code",
+          "fields": [
+            {
+              "id": "c1cc326f6f45e0d166171ee2636a672b71200a83",
+              "name": "Ordered.middle",
+              "display": "Ordered.middle",
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "The anchor."
+                }
+              ]
+            },
+            {
+              "id": "6a8d19b9c65a5b785dd2ee2ffd9e078a3db233bd",
+              "name": "Ordered.ahead",
+              "display": "Ordered.ahead",
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Placed before the anchor even though it is declared after it."
+                }
+              ]
+            },
+            {
+              "id": "bfb7f8140202f7f99cfc5ff18e01afa49d1b4b64",
+              "name": "Ordered.behind",
+              "display": "Ordered.behind",
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Placed after the anchor."
+                }
+              ]
+            },
+            {
+              "id": "d57e8f3d805d494fcd15624c795268a985390122",
+              "name": "Ordered.stray",
+              "display": "Ordered.stray",
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Anchored on a name nothing declares, which is reported rather than ignored."
+                }
+              ]
+            },
+            {
+              "id": "1e02219179022f2ee2d9a022c989d2c8e2bb41d2",
+              "name": "Ordered.injected",
+              "display": "Ordered.injected",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A field with no line of code under it."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "manuals": []
+}

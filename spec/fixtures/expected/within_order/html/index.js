@@ -4,6 +4,12 @@ var docs = [
 {path:"class/Ordered.html#Ordered.alpha", type:"field", title:"Ordered.alpha", text:"Declared second, ordered first by default."},
 {path:"class/Ordered.html#Ordered.gamma", type:"field", title:"renamed", text:"Declared in Extras, rendered in Members."},
 {path:"class/Ordered.html#Ordered.delta", type:"field", title:"Ordered.delta", text:"Stays in Extras."},
+{path:"class/Ordered.html#Ordered.middle", type:"field", title:"Ordered.middle", text:"The anchor."},
+{path:"class/Ordered.html#Ordered.ahead", type:"field", title:"Ordered.ahead", text:"Placed before the anchor even though it is declared after it."},
+{path:"class/Ordered.html#Ordered.behind", type:"field", title:"Ordered.behind", text:"Placed after the anchor."},
+{path:"class/Ordered.html#Ordered.stray", type:"field", title:"Ordered.stray", text:"Anchored on a name nothing declares, which is reported rather than ignored."},
+{path:"class/Ordered.html#Ordered.injected", type:"field", title:"Ordered.injected", text:"A field with no line of code under it."},
 {path:"class/Ordered.html#Members", type:"section", title:"This sentence is the section heading; this one is the body", text:""},
 {path:"class/Ordered.html#Extras", type:"section", title:"A second section", text:""},
+{path:"class/Ordered.html#Anchored", type:"section", title:"", text:""},
 ];

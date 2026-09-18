@@ -1,0 +1,47 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "0ffed07b284bb849048097f21f5add317bd3b962",
+      "type": "class",
+      "name": "Snip",
+      "sections": [
+        {
+          "id": "0ffed07b284bb849048097f21f5add317bd3b962",
+          "type": "class",
+          "symbol": "Snip",
+          "heading": "Snip",
+          "functions": [
+            {
+              "id": "ff15eadb514836b9906638519445e64783bbb546",
+              "name": "Snip.demo",
+              "display": "Snip.demo",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Shows how the three code forms render.\n\nA fenced block written by hand:\n\n```lua\nlocal s = Snip.demo()\n```\n\n##### Example\n\n```lua\nlocal s = Snip.demo()\nprint(s)\n```\n\nText after the inline example.\n##### Example\n\n```lua\n-- A snippet file pulled in by @example lua hello.lua.\nlocal snip = Snip.demo()\nprint(snip)\n```\n\n##### Example\n\n```lua\nMISSING SNIPPET: nosuchfile.lua\n```"
+                }
+              ]
+            },
+            {
+              "id": "0bc54485976de8d06ef4c3ee84445a385837e883",
+              "name": "Snip.other",
+              "display": "Snip.other",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "The two code forms the production corpus never uses.\n\n##### Usage\n\n```heads\nMISSING SNIPPET: its\n```\n\n##### Usage\n\n```lua\nSnip.other()\n```\n\n```lua\n-- no heading above this one\n```\n\n```text\nplain text, not lua\n```"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "manuals": []
+}

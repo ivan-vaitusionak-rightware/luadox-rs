@@ -1,0 +1,74 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [],
+  "modules": [
+    {
+      "id": "a456f882ba9464679cefb396b37b47e2a780291d",
+      "type": "module",
+      "name": "enum",
+      "sections": [
+        {
+          "id": "a456f882ba9464679cefb396b37b47e2a780291d",
+          "type": "module",
+          "symbol": "enum",
+          "heading": "enum"
+        },
+        {
+          "id": "b05d61e4846624849d420433a1459eda2dce66d9",
+          "type": "table",
+          "symbol": "FocusScope",
+          "heading": "Focus scope kinds",
+          "enum": true,
+          "fields": [
+            {
+              "id": "2bc993a5f15b7a2b750450233e29ba189c1c3cea",
+              "name": "FocusScope.Trap",
+              "display": "FocusScope.Trap",
+              "value": "0",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Focus is trapped inside the scope."
+                }
+              ]
+            },
+            {
+              "id": "b184dba83e0fc779635168364a76676e5615d517",
+              "name": "FocusScope.Undocumented",
+              "display": "FocusScope.Undocumented",
+              "value": "1"
+            },
+            {
+              "id": "bda77de937a69e814f156a8c199bf0e83eada64b",
+              "name": "FocusScope.Hex",
+              "display": "FocusScope.Hex",
+              "value": "0x10",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A hexadecimal value."
+                }
+              ]
+            },
+            {
+              "id": "87a70be583ce42e26f1c8626dc6b7902b6fca957",
+              "name": "FocusScope.Text",
+              "display": "FocusScope.Text",
+              "value": "\"no\"",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A value that is not an integer literal."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "manuals": []
+}

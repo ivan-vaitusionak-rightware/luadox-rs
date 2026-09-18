@@ -1,0 +1,108 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "c77452dc21fbd84bd5136276104865ce405eaa68",
+      "type": "class",
+      "name": "Legacy",
+      "sections": [
+        {
+          "id": "c77452dc21fbd84bd5136276104865ce405eaa68",
+          "type": "class",
+          "symbol": "Legacy",
+          "heading": "Legacy",
+          "deprecated": "Use @{Modern} instead.",
+          "since": "1.2",
+          "content": [
+            {
+              "type": "admonition",
+              "level": "deprecated",
+              "title": "Deprecated",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Use [Modern](luadox:2300a81d384b01df30931538ba87e1a88fccfe03) instead."
+                }
+              ]
+            },
+            {
+              "type": "markdown",
+              "value": "A legacy class."
+            }
+          ],
+          "fields": [
+            {
+              "id": "2e2e85c5d9bc4bfd370fa789b821d3a52dc4aaf2",
+              "name": "Legacy.old",
+              "display": "Legacy.old",
+              "value": "nil",
+              "deprecated": true,
+              "since": "2.0",
+              "content": [
+                {
+                  "type": "admonition",
+                  "level": "deprecated",
+                  "title": "Deprecated",
+                  "content": []
+                },
+                {
+                  "type": "markdown",
+                  "value": "An old field, deprecated with no explanation."
+                }
+              ]
+            }
+          ],
+          "functions": [
+            {
+              "id": "fd984a6066767dd7bdd350be8c07dcb16f2542ec",
+              "name": "Legacy.run",
+              "display": "Legacy:run",
+              "deprecated": "Call @{Modern} instead.",
+              "content": [
+                {
+                  "type": "admonition",
+                  "level": "deprecated",
+                  "title": "Deprecated",
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "Call [Modern](luadox:2300a81d384b01df30931538ba87e1a88fccfe03) instead."
+                    }
+                  ]
+                },
+                {
+                  "type": "markdown",
+                  "value": "An old method."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2300a81d384b01df30931538ba87e1a88fccfe03",
+      "type": "class",
+      "name": "Modern",
+      "sections": [
+        {
+          "id": "2300a81d384b01df30931538ba87e1a88fccfe03",
+          "type": "class",
+          "symbol": "Modern",
+          "heading": "Modern",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "The replacement class."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "manuals": []
+}

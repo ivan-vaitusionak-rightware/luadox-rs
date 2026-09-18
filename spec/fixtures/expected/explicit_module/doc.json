@@ -1,0 +1,77 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [],
+  "modules": [
+    {
+      "id": "c9930685c4e77b833a628c11cb0aab8f05ff1a7f",
+      "type": "module",
+      "name": "gfx",
+      "sections": [
+        {
+          "id": "c9930685c4e77b833a628c11cb0aab8f05ff1a7f",
+          "type": "module",
+          "symbol": "gfx",
+          "heading": "gfx",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Graphics helpers."
+            }
+          ],
+          "fields": [
+            {
+              "id": "400be0149867b2b8268b7310380378169e404b6c",
+              "name": "gfx.backend",
+              "display": "gfx.backend",
+              "types": [
+                {
+                  "name": "string"
+                }
+              ],
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "The current backend name."
+                }
+              ]
+            }
+          ],
+          "functions": [
+            {
+              "id": "38a31bc17d4bd7763fb02ca9bba3314f4e2c4219",
+              "name": "gfx.draw",
+              "display": "gfx.draw",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Draws a rectangle."
+                }
+              ],
+              "params": [
+                {
+                  "name": "w",
+                  "types": [
+                    {
+                      "name": "number"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "Width."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "manuals": []
+}

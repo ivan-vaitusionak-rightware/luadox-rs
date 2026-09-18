@@ -129,6 +129,14 @@ def generate(name: str, dest: Path) -> dict:
         config = tmp / 'fixture.conf'
         write_config(config, name)
 
+        # The json renderer first: it is the document made inspectable, so a fixture
+        # whose json matches has its parsing, resolution and content assembly matched,
+        # and any later difference is a rendering bug rather than a resolution one.
+        json_out = tmp / 'doc.json'
+        json_diag = tmp / 'diagnostics-json.json'
+        json_exit = run('json', config, json_out, json_diag, tmp)
+        copy_lf(json_out, dest / 'doc.json')
+
         luals_out = tmp / 'luals'
         luals_diag = tmp / 'diagnostics-luals.json'
         luals_exit = run('luals', config, luals_out, luals_diag, tmp)
@@ -146,11 +154,12 @@ def generate(name: str, dest: Path) -> dict:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 copy_lf(path, target)
 
-        for src, dst in ((luals_diag, 'diagnostics-luals.json'),
+        for src, dst in ((json_diag, 'diagnostics-json.json'),
+                         (luals_diag, 'diagnostics-luals.json'),
                          (html_diag, 'diagnostics-html.json')):
             shutil.copyfile(src, dest / dst)
         (dest / 'exit.json').write_text(
-            json.dumps({'luals': luals_exit, 'html': html_exit},
+            json.dumps({'json': json_exit, 'luals': luals_exit, 'html': html_exit},
                        indent=2, sort_keys=True) + '\n',
             encoding='utf-8', newline='\n')
 

@@ -1,0 +1,94 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [],
+  "modules": [
+    {
+      "id": "b32408ad717560ddb7acc819c17340bb59b9f0ce",
+      "type": "module",
+      "name": "module_globals",
+      "sections": [
+        {
+          "id": "b32408ad717560ddb7acc819c17340bb59b9f0ce",
+          "type": "module",
+          "symbol": "module_globals",
+          "heading": "module_globals",
+          "fields": [
+            {
+              "id": "22e84921b4dc3e25b91975796a0c15ec6ead4f89",
+              "name": "log.level",
+              "display": "log.level",
+              "types": [
+                {
+                  "name": "integer"
+                }
+              ],
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "The current log level."
+                }
+              ]
+            },
+            {
+              "id": "4600dbd19c57eb0cf52cab200671603b85cdebb6",
+              "name": "module_globals.answer",
+              "display": "module_globals.answer",
+              "value": "42",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A bare global field."
+                }
+              ]
+            }
+          ],
+          "functions": [
+            {
+              "id": "ac57883331b21bd7891e7fd336bd5c82da975e6f",
+              "name": "log.write",
+              "display": "log.write",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Writes a log line."
+                }
+              ],
+              "params": [
+                {
+                  "name": "msg",
+                  "types": [
+                    {
+                      "name": "string"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "The message."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "990d91cf94f646acc07135e71655b28675d59342",
+              "name": "module_globals.ping",
+              "display": "module_globals.ping",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A bare global function."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "manuals": []
+}

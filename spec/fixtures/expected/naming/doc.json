@@ -1,0 +1,110 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "2047243377722f86970518a3010c2ca045a8a746",
+      "type": "class",
+      "name": "Actual",
+      "sections": [
+        {
+          "id": "2047243377722f86970518a3010c2ca045a8a746",
+          "type": "class",
+          "symbol": "Actual",
+          "heading": "Actual"
+        }
+      ]
+    },
+    {
+      "id": "f0c8492ec9a94b552964dbb459100c48d57a2d8a",
+      "type": "class",
+      "name": "Aliased",
+      "sections": [
+        {
+          "id": "f0c8492ec9a94b552964dbb459100c48d57a2d8a",
+          "type": "class",
+          "symbol": "Aliased",
+          "heading": "Aliased",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "A class reachable under a second name."
+            }
+          ],
+          "functions": [
+            {
+              "id": "c5a6f2aa32f9e6ce55ecd0018e3e382e4e7f7db6",
+              "name": "Shell.make",
+              "display": "Shell.make",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Returns an aliased thing."
+                }
+              ],
+              "returns": [
+                {
+                  "types": [
+                    {
+                      "name": "Alias",
+                      "refid": "f0c8492ec9a94b552964dbb459100c48d57a2d8a"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "The aliased class, referenced by its alias."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ad81965920460f6212e97d3da11227a0b6f74cf8",
+      "type": "class",
+      "name": "Shell",
+      "sections": [
+        {
+          "id": "ad81965920460f6212e97d3da11227a0b6f74cf8",
+          "type": "class",
+          "symbol": "Shell",
+          "heading": "Shell"
+        },
+        {
+          "id": "f7227c86a4f9fb01adaa7becf2de7a30dfab66a4",
+          "type": "section",
+          "symbol": "Statics",
+          "heading": "Statics",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Members here are requalified onto Shell."
+            }
+          ],
+          "fields": [
+            {
+              "id": "cd5aab864313478bd4c05198527d024860b97e6f",
+              "name": "Shell.thing",
+              "display": "Shell.thing",
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A field whose source symbol is requalified by the section's @scope."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "manuals": []
+}

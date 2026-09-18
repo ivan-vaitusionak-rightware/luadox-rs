@@ -1,0 +1,192 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "0a2eb219ee682a7c13f96ec3e3c186f262efa275",
+      "type": "class",
+      "name": "Color",
+      "sections": [
+        {
+          "id": "0a2eb219ee682a7c13f96ec3e3c186f262efa275",
+          "type": "class",
+          "symbol": "Color",
+          "heading": "Color"
+        }
+      ]
+    },
+    {
+      "id": "730a5447f3a2213608e196102d72f88da471b779",
+      "type": "class",
+      "name": "Shape",
+      "sections": [
+        {
+          "id": "730a5447f3a2213608e196102d72f88da471b779",
+          "type": "class",
+          "symbol": "Shape",
+          "heading": "Shape",
+          "functions": [
+            {
+              "id": "ae5c70db50912f11219002e9f1b1ffddb6e41d96",
+              "name": "Shape.paint",
+              "display": "Shape.paint",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Paints a shape."
+                }
+              ],
+              "params": [
+                {
+                  "name": "on",
+                  "types": [
+                    {
+                      "name": "bool"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "Whether to paint."
+                    }
+                  ]
+                },
+                {
+                  "name": "count",
+                  "types": [
+                    {
+                      "name": "int"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "How many times."
+                    }
+                  ]
+                },
+                {
+                  "name": "ratio",
+                  "types": [
+                    {
+                      "name": "float"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "The ratio."
+                    }
+                  ]
+                },
+                {
+                  "name": "precise",
+                  "types": [
+                    {
+                      "name": "double"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "The precise ratio."
+                    }
+                  ]
+                },
+                {
+                  "name": "color",
+                  "types": [
+                    {
+                      "name": "Color",
+                      "refid": "0a2eb219ee682a7c13f96ec3e3c186f262efa275"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "A documented class used as a type."
+                    }
+                  ]
+                },
+                {
+                  "name": "thing",
+                  "types": [
+                    {
+                      "name": "Unknown"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "A name that resolves to nothing."
+                    }
+                  ]
+                },
+                {
+                  "name": "scoped",
+                  "types": [
+                    {
+                      "name": "engine::Color"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "A C++ scoped name."
+                    }
+                  ]
+                },
+                {
+                  "name": "label",
+                  "types": [
+                    {
+                      "name": "string"
+                    },
+                    {
+                      "name": "nil"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "A union of two built-ins."
+                    }
+                  ]
+                }
+              ],
+              "returns": [
+                {
+                  "types": [
+                    {
+                      "name": "void"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "e7eff506045d7bb95728f7233a210d9f943c6785",
+              "name": "Shape.undocumented",
+              "display": "Shape.undocumented",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A function whose parameter has no @tparam at all."
+                }
+              ],
+              "params": [
+                {
+                  "name": "a"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "manuals": []
+}

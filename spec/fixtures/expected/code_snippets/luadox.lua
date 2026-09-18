@@ -37,3 +37,27 @@ Snip = {}
 ---```
 ---@return any
 function Snip.demo() end
+
+---The two code forms the production corpus never uses.
+---
+---##### Usage
+---
+---```heads
+---MISSING SNIPPET: its
+---```
+---
+---##### Usage
+---
+---```lua
+---Snip.other()
+---```
+---
+---```lua
+----- no heading above this one
+---```
+---
+---```text
+---plain text, not lua
+---```
+---@return any
+function Snip.other() end

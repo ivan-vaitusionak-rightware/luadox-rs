@@ -1,0 +1,17 @@
+{
+  "allowed": [],
+  "diagnostics": [
+    {
+      "category": "references",
+      "file": "xrefs.lua",
+      "line": 1,
+      "message": "reference \"NoSuchThing\" could not be resolved"
+    },
+    {
+      "category": "references",
+      "file": "xrefs.lua",
+      "line": 1,
+      "message": "reference \"NoSuchThing\" could not be resolved"
+    }
+  ]
+}

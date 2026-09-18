@@ -1,0 +1,135 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "697f98abd9ab4b9b9133f10e411409b676f21363",
+      "type": "class",
+      "name": "Config",
+      "sections": [
+        {
+          "id": "697f98abd9ab4b9b9133f10e411409b676f21363",
+          "type": "class",
+          "symbol": "Config",
+          "heading": "Config"
+        },
+        {
+          "id": "1a7b4430af225a03177f74a2693ac8d37ea6d979",
+          "type": "section",
+          "symbol": "Flags",
+          "heading": "Flags",
+          "compact": [
+            "fields"
+          ],
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Everything after the first sentence stays in the section body."
+            }
+          ],
+          "fields": [
+            {
+              "id": "db592f36007a2625285d16572391d558bc506ded",
+              "name": "Config.verbose",
+              "display": "Config.verbose",
+              "value": "false",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Enables logging."
+                }
+              ]
+            },
+            {
+              "id": "d7a97a5860423f15f9cb248f5b1270090806d1d2",
+              "name": "Config.trace",
+              "display": "Config.trace",
+              "value": "false",
+              "deprecated": "Use verbose instead.",
+              "content": [
+                {
+                  "type": "admonition",
+                  "level": "deprecated",
+                  "title": "Deprecated",
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "Use verbose instead."
+                    }
+                  ]
+                },
+                {
+                  "type": "markdown",
+                  "value": "Enables tracing."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f3230797e86e6af44a8c02da1a67022c2f9fbd01",
+          "type": "section",
+          "symbol": "Calls",
+          "heading": "Calls",
+          "compact": [
+            "fields",
+            "functions"
+          ],
+          "content": [
+            {
+              "type": "markdown",
+              "value": "This section compacts both fields and functions."
+            }
+          ],
+          "fields": [
+            {
+              "id": "4888670ce3e01b6df3792de875cf61014c972682",
+              "name": "Config.retries",
+              "display": "Config.retries",
+              "value": "3",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "The retry count."
+                }
+              ]
+            }
+          ],
+          "functions": [
+            {
+              "id": "2343fa1906a3bb8debe606333a8deb1b2778394f",
+              "name": "Config.reload",
+              "display": "Config.reload",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Reloads the configuration."
+                }
+              ],
+              "params": [
+                {
+                  "name": "force",
+                  "types": [
+                    {
+                      "name": "boolean"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "Reload even when unchanged."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "manuals": []
+}

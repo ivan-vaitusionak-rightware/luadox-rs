@@ -23,3 +23,23 @@ Ordered.beta = nil
 ---Stays in Extras.
 ---@type any
 Ordered.delta = nil
+
+---The anchor.
+---@type any
+Ordered.middle = nil
+
+---Placed before the anchor even though it is declared after it.
+---@type any
+Ordered.ahead = nil
+
+---Placed after the anchor.
+---@type any
+Ordered.behind = nil
+
+---Anchored on a name nothing declares, which is reported rather than ignored.
+---@type any
+Ordered.stray = nil
+
+---A field with no line of code under it.
+---@type any
+Ordered.injected = nil

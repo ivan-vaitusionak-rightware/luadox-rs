@@ -1,0 +1,102 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "790a8981f29b631ea80bebbcc6d1ecc8b265e39e",
+      "type": "class",
+      "name": "Base",
+      "sections": [
+        {
+          "id": "790a8981f29b631ea80bebbcc6d1ecc8b265e39e",
+          "type": "class",
+          "symbol": "Base",
+          "heading": "Base"
+        }
+      ]
+    },
+    {
+      "id": "09228d3a913ca8912c3dc2fff26f5204cabd084f",
+      "type": "class",
+      "name": "Derived",
+      "hierarchy": [
+        {
+          "name": "Base",
+          "refid": "790a8981f29b631ea80bebbcc6d1ecc8b265e39e"
+        },
+        {
+          "name": "Middle",
+          "refid": "93c9fd62007ba4085efb43dcea736ea89ce5081e"
+        },
+        {
+          "name": "Derived",
+          "refid": "09228d3a913ca8912c3dc2fff26f5204cabd084f"
+        }
+      ],
+      "parents": [
+        {
+          "name": "Middle",
+          "refid": "93c9fd62007ba4085efb43dcea736ea89ce5081e"
+        },
+        {
+          "name": "Mixin",
+          "refid": "f39f5e1f87bc37fcbd83e9164f553acb37be33cf"
+        }
+      ],
+      "sections": [
+        {
+          "id": "09228d3a913ca8912c3dc2fff26f5204cabd084f",
+          "type": "class",
+          "symbol": "Derived",
+          "heading": "Derived",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "A class with several parents, one of which does not exist."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "93c9fd62007ba4085efb43dcea736ea89ce5081e",
+      "type": "class",
+      "name": "Middle",
+      "hierarchy": [
+        {
+          "name": "Base",
+          "refid": "790a8981f29b631ea80bebbcc6d1ecc8b265e39e"
+        },
+        {
+          "name": "Middle",
+          "refid": "93c9fd62007ba4085efb43dcea736ea89ce5081e"
+        }
+      ],
+      "sections": [
+        {
+          "id": "93c9fd62007ba4085efb43dcea736ea89ce5081e",
+          "type": "class",
+          "symbol": "Middle",
+          "heading": "Middle"
+        }
+      ]
+    },
+    {
+      "id": "f39f5e1f87bc37fcbd83e9164f553acb37be33cf",
+      "type": "class",
+      "name": "Mixin",
+      "sections": [
+        {
+          "id": "f39f5e1f87bc37fcbd83e9164f553acb37be33cf",
+          "type": "class",
+          "symbol": "Mixin",
+          "heading": "Mixin"
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "manuals": []
+}

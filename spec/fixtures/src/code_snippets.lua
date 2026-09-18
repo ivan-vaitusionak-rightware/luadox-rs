@@ -17,3 +17,15 @@
 --- @example lua nosuchfile.lua
 function Snip.demo()
 end
+
+--- The two code forms the production corpus never uses.
+---
+--- @usage heads its block the way @example does; @code heads nothing.
+--- @usage
+---   Snip.other()
+--- @code
+---   -- no heading above this one
+--- @code text
+---   plain text, not lua
+function Snip.other()
+end
