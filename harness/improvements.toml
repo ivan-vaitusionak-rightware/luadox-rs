@@ -128,3 +128,40 @@ It moves no rendered output. `luadox.lua` is byte-identical on all 17 fixtures a
 pinned corpus.
 """
 present_in_corpus = false
+
+[[improvement]]
+level = "L2"
+paths = ["html/class/DepthTargetPass.html"]
+fix = "comrak has no CODE_INDENT equivalent, so one indented continuation line becomes a code block."
+why = """
+The oracle sets `commonmark.blocks.CODE_INDENT = 1000` globally at import time, which
+disables indented code blocks -- and, because the same constant drives
+`parser.indented`, also lets a block quote, heading, fence, html block, setext heading,
+thematic break or list item start at any indentation. comrak has no equivalent knob:
+`comrak::options::Parse` has nothing about indentation. Both halves are divergences.
+
+Measured by harness/markdown_parity.py, which renders every string the oracle's
+`_markdown_to_html` is called with through both libraries -- 7451 renders, 4962 distinct
+strings -- exactly one differs:
+
+    lua/src/autogen/DepthTargetPass.lua:21
+      --- @see TargetPass for a target with color attachments and for a sampler you configure
+      ---      yourself.
+
+    markdown handed to the renderer:
+      '     yourself.'
+
+    oracle:  <p>yourself.</p>
+    comrak:  <pre><code> yourself.
+             </code></pre>
+
+The continuation is indented five spaces after the `@see` line, which puts it past four
+once the tag's own indent is taken off. The fix belongs in the source -- that line is
+mis-indented whatever renders it -- and the source is the production tree, which this project
+only reads. Until it is fixed there, this page differs.
+
+The second half of the divergence is not exercised: the corpus has 42 lines indented four
+or more spaces starting with `-`, and 6 following a blank line, and all of them are
+paragraph continuations where `indented` decides nothing. markdown_parity.py is the guard
+that keeps that true, and it fails on any difference on a page this file does not name.
+"""

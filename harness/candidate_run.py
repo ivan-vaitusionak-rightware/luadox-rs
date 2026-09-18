@@ -17,10 +17,11 @@ Outputs, under _build/candidate/ by default:
 
     manifest.sha256    a digest per output file, for the L2 compare
     luals/luadox.lua   L2 -- the LuaLS definition file
+    html/              L2 -- the 591-file rendered site
 
-The html renderer is Phase 4, so nothing under `html/` is produced.  The differ reports a
-whole output tree the candidate did not produce as skipped rather than as 592 failures,
-and any file *inside* a tree it did produce as a difference like any other.
+The differ reports a whole output tree the candidate did not produce as skipped rather
+than as 591 failures, and any file *inside* a tree it did produce as a difference like any
+other.
 """
 
 from __future__ import annotations
@@ -28,6 +29,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -35,6 +37,10 @@ import time
 from pathlib import Path
 
 LF = chr(10)
+
+# The same pair oracle_run.py normalises with, on bytes.
+RE_ASSETS_VERSION = re.compile(rb'\?[0-9a-f]{7,64}(?=["\'])')
+ASSETS_VERSION_TOKEN = b'?ASSETS_VERSION'
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import corpus  # noqa: E402
@@ -94,16 +100,19 @@ def main() -> int:
     print('  diagnostics: ' + (', '.join('{} {}'.format(v, k)
                                          for k, v in sorted(by_cat.items())) or 'none'))
 
-    luals = out / 'luals'
-    if luals.exists():
-        shutil.rmtree(luals)
-    luals_code, elapsed = run('luals', luals, None)
-    timings['luals'] = elapsed
-    for path in sorted(luals.rglob('*')):
-        if path.is_file():
-            rel = path.relative_to(luals).as_posix()
-            manifest.append('{}  luals/{}'.format(digest(path), rel))
-    print('  luals: exit {} in {:.2f}s'.format(luals_code, elapsed))
+    for renderer in ('luals', 'html'):
+        target = out / renderer
+        if target.exists():
+            shutil.rmtree(target)
+        code, elapsed = run(renderer, target, None)
+        timings[renderer] = elapsed
+        files = 0
+        for path in sorted(target.rglob('*')):
+            if path.is_file():
+                rel = path.relative_to(target).as_posix()
+                manifest.append('{}  {}/{}'.format(digest(path), renderer, rel))
+                files += 1
+        print('  {}: exit {} in {:.2f}s, {} files'.format(renderer, code, elapsed, files))
 
     manifest.sort(key=lambda line: line.split('  ', 1)[1])
     (out / 'manifest.sha256').write_text(LF.join(manifest) + LF,
@@ -124,9 +133,15 @@ def main() -> int:
 
 
 def digest(path: Path) -> str:
-    """The same rule oracle_run.py digests with: line endings normalised, because the
-    Python's are a property of the host and not of the tool."""
-    return hashlib.sha256(normalize.newlines(path.read_bytes())).hexdigest()
+    """
+    The same rule oracle_run.py digests with: line endings normalised, because the
+    Python's are a property of the host and not of the tool, and the asset bundle's
+    cache-buster reduced to a token, because it is a sha256 over bytes the two
+    implementations store differently.
+    """
+    data = normalize.newlines(path.read_bytes())
+    data = RE_ASSETS_VERSION.sub(ASSETS_VERSION_TOKEN, data)
+    return hashlib.sha256(data).hexdigest()
 
 
 def run(renderer: str, out: Path, diagnostics: Path | None) -> tuple[int, float]:

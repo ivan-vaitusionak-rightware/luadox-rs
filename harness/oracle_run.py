@@ -35,7 +35,7 @@ import normalize  # noqa: E402
 # The asset bundle's cache-buster is a sha256 over the assets, so it differs by
 # construction between two implementations that ship the same bytes differently.
 # Both sides normalise it to a fixed token before the L2 compare.
-RE_ASSETS_VERSION = re.compile(rb'\?[0-9a-f]{8,64}(?=["\'])')
+RE_ASSETS_VERSION = re.compile(rb'\?[0-9a-f]{7,64}(?=["\'])')
 ASSETS_VERSION_TOKEN = b'?ASSETS_VERSION'
 
 

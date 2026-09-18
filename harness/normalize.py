@@ -18,7 +18,7 @@ CORPUS_TOKEN = '<corpus>'
 # The asset bundle's cache-buster is a sha256 over the assets.  Two implementations
 # shipping identical assets still differ here if either re-encodes a byte, so it is
 # compared as "present and well-formed", not by value.
-RE_ASSETS_VERSION = re.compile(r'\?[0-9a-f]{8,64}(?=["\'])')
+RE_ASSETS_VERSION = re.compile(r'\?[0-9a-f]{7,64}(?=["\'])')
 ASSETS_VERSION_TOKEN = '?ASSETS_VERSION'
 
 
@@ -32,7 +32,19 @@ def newlines(data: bytes) -> bytes:
     bake this machine into the expectation.  A port writes LF unconditionally and is
     compared after this rule, which is what spec/fixtures/expected/ already stores.
     """
-    return data.replace(b'\r\n', b'\n').replace(b'\r', b'\n')
+    # A CR CR LF run first, and as ONE line break.  It is what a default template
+    # produces on Windows -- read as bytes out of a CRLF checkout, then written
+    # through text mode, which turns the LF of each CRLF into CRLF again.  Reducing
+    # it in two steps would make it two lines, inventing a difference rather than
+    # removing one: six lines of search.tmpl.html are the only place it occurs in the
+    # corpus, and they are why search.html was the last page to differ.
+    crcrlf = bytes([13, 13, 10])
+    crlf = bytes([13, 10])
+    cr = bytes([13])
+    lf = bytes([10])
+    for run in (crcrlf, crlf, cr):
+        data = data.replace(run, lf)
+    return data
 
 
 def message(text: str, corpus_root: Path, token: str = CORPUS_TOKEN) -> str:

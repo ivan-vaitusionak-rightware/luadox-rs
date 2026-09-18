@@ -1,20 +1,28 @@
 """
-Renders every markdown fragment of the corpus through both markdown libraries and reports
-where they disagree.
+Renders every markdown string the html renderer hands to its markdown library, through
+both libraries, and reports where they disagree.
 
 spec/html.md section 10.2 names two divergences from `commonmark.blocks.CODE_INDENT =
 1000` and says the second was never measured, because it "shows up as a *missing* code
-block, not as an extra one" -- a diff of rendered pages would show it as a changed page
-without saying why.  This measures it directly, fragment by fragment, before any of the
-html renderer is written against an assumption.
+block, not as an extra one" -- a diff of rendered pages shows a changed page without
+saying why. This measures it directly, string by string.
 
-    python harness/markdown_parity.py                # every fragment in _build/oracle/doc.json
+    python harness/markdown_parity.py
     python harness/markdown_parity.py --show 20
 
-The fragments come from `doc.json`, which is the markdown the renderer is handed *after*
-resolution -- the same strings `_markdown_to_html` receives.  Links keep their
-`luadox:<id>` destinations on both sides, so a difference here is a markdown difference
-and nothing else.
+**The strings come from the renderer, not from `doc.json`.** An earlier version of this
+script read the markdown values out of `doc.json` and reported zero differences, which was
+wrong: the json renderer writes `md.get().strip()`, so every fragment had already lost the
+leading whitespace that the whole question is about. The one real divergence in the corpus
+is a `@see` continuation indented five spaces, and stripping made it invisible. Here the
+oracle's own `_markdown_to_html` is wrapped and its argument recorded, so what is compared
+is exactly what it was given.
+
+This is also the guard section 10.2 asks for, and an exact one rather than the heuristic it
+proposed: it fails when the corpus grows markdown the two renderers disagree on, whatever
+the construct -- including the leading-pipe table dialect, which comrak cannot reproduce at
+all. A difference on a page harness/improvements.toml already names is reported and does
+not fail.
 """
 
 from __future__ import annotations
@@ -22,6 +30,7 @@ from __future__ import annotations
 import argparse
 import collections
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -30,30 +39,52 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import corpus  # noqa: E402
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10 ships tomli instead
+    import tomli as tomllib
+
 PROBE = corpus.ROOT / 'target' / 'release' / (
     'md-probe.exe' if sys.platform == 'win32' else 'md-probe')
 
 
-def fragments(doc: dict) -> list[tuple[str, str]]:
-    """Every markdown value in the document, with the JSON path it sits at."""
-    found: list[tuple[str, str]] = []
+def collect_from_oracle() -> list[tuple[str, str]]:
+    """
+    Runs the oracle's html renderer over the pinned corpus with `_markdown_to_html`
+    wrapped, and returns every (page, markdown) it was called with.
+    """
+    corpus.ensure_oracle_importable()
+    from luadox.render.html import HTMLRenderer  # noqa: E402
 
-    def walk(node, path: str) -> None:
-        if isinstance(node, dict):
-            if node.get('type') == 'markdown' and node.get('value'):
-                found.append((path, node['value']))
-            for key, value in node.items():
-                walk(value, f'{path}.{key}')
-        elif isinstance(node, list):
-            for i, value in enumerate(node):
-                walk(value, f'{path}[{i}]')
+    seen: list[tuple[str, str]] = []
+    original = HTMLRenderer._markdown_to_html
 
-    walk(doc, '$')
-    return found
+    def spy(self, md):
+        ref = self.ctx.ref
+        seen.append((getattr(ref, 'name', '?') if ref else '?', md))
+        return original(self, md)
+
+    HTMLRenderer._markdown_to_html = spy
+    here = os.getcwd()
+    saved = sys.argv
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.chdir(corpus.CONFIG_CWD)
+            from luadox.main import main  # noqa: E402
+            sys.argv = ['luadox', '-c', str(corpus.CONFIG), '-r', 'html', '-o', tmpdir]
+            try:
+                main()
+            except SystemExit:
+                pass
+    finally:
+        sys.argv = saved
+        os.chdir(here)
+        HTMLRenderer._markdown_to_html = original
+    return seen
 
 
 def render_python(texts: list[str]) -> list[str]:
-    """The oracle's own renderer, imported rather than reimplemented."""
+    """The oracle's own markdown renderer, imported rather than reimplemented."""
     corpus.ensure_oracle_importable()
     import commonmark  # noqa: E402
     import commonmark_extensions.tables  # noqa: E402
@@ -80,60 +111,69 @@ def render_rust(texts: list[str]) -> list[str]:
         return json.loads(dst.read_text(encoding='utf-8'))
 
 
-def classify(md: str, a: str, b: str) -> str:
+def classify(a: str, b: str) -> str:
     """What kind of divergence this is, named rather than counted."""
-    if '<ul>' in a and '<ul>' not in b and '<pre>' in b:
-        return 'indented list item became an indented code block'
+    if '<table' in a or '<table' in b:
+        return 'the leading-pipe table dialect, which comrak cannot reproduce'
     if '<pre>' in b and '<pre>' not in a:
-        return 'an indented block became an indented code block'
+        return 'a block indented four spaces became an indented code block'
     if '<pre>' in a and '<pre>' not in b:
         return 'an indented code block stopped being one'
-    if '<table' in a or '<table' in b:
-        return 'table dialect'
     return 'other'
+
+
+def allowed_pages() -> set[str]:
+    """The pages an L2 improvements entry already names."""
+    path = Path(__file__).resolve().parent / 'improvements.toml'
+    if not path.exists():
+        return set()
+    entries = tomllib.loads(path.read_text(encoding='utf-8')).get('improvement', [])
+    return {Path(name).stem
+            for entry in entries if entry.get('level') == 'L2'
+            for name in entry.get('paths') or []}
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--doc', type=Path, default=corpus.BUILD_DIR / 'oracle' / 'doc.json')
     ap.add_argument('--show', type=int, default=4)
     args = ap.parse_args()
 
-    doc = json.loads(args.doc.read_text(encoding='utf-8'))
-    found = fragments(doc)
+    found = collect_from_oracle()
     texts = [text for _, text in found]
-    # The same fragment appears on many pages; render each distinct one once.
+    # The same string is rendered on many pages; render each distinct one once.
     distinct = list(dict.fromkeys(texts))
-    print(f'{len(found)} markdown fragments, {len(distinct)} distinct')
+    print(f'{len(found)} markdown renders, {len(distinct)} distinct strings')
 
-    left = render_python(distinct)
-    right = render_rust(distinct)
-    by_text = {text: (a, b) for text, a, b in zip(distinct, left, right)}
+    by_text = dict(zip(distinct, zip(render_python(distinct), render_rust(distinct))))
+    known = allowed_pages()
 
     kinds: collections.Counter[str] = collections.Counter()
     examples: dict[str, list[tuple[str, str, str, str]]] = collections.defaultdict(list)
-    differing_paths = 0
-    differing_texts = set()
-    for path, text in found:
+    unexplained = 0
+    explained = 0
+    for page, text in found:
         a, b = by_text[text]
         if a == b:
             continue
-        differing_paths += 1
-        differing_texts.add(text)
-        kind = classify(text, a, b)
+        if page in known:
+            explained += 1
+            continue
+        unexplained += 1
+        kind = classify(a, b)
         kinds[kind] += 1
         if len(examples[kind]) < args.show:
-            examples[kind].append((path, text, a, b))
+            examples[kind].append((page, text, a, b))
 
-    print(f'{differing_paths} fragment occurrences differ, '
-          f'{len(differing_texts)} distinct')
+    print(f'{explained} differ on a page improvements.toml names')
+    print(f'{unexplained} differ and are not named')
     for kind, n in kinds.most_common():
         print(f'   {n:5}  {kind}')
     for kind, rows in examples.items():
-        print(f'\n=== {kind} ===')
-        for path, text, a, b in rows[:args.show]:
-            print(f'  {path}')
+        print()
+        print(f'=== {kind} ===')
+        for page, text, a, b in rows[:args.show]:
+            print(f'  on {page}')
             print('  markdown:')
             for line in text.split('\n')[:6]:
                 print(f'    {line!r}')
@@ -143,18 +183,13 @@ def main() -> int:
             print('  comrak:')
             for line in b.strip().split('\n')[:6]:
                 print(f'    {line}')
-            print()
 
-    # This is the guard section 10.2 proposes, and an exact one rather than the heuristic
-    # it suggested: a divergence is a divergence between the two renderers, not a line
-    # that looks like it might cause one.  It covers the leading-pipe table dialect too,
-    # which is the other construct comrak cannot reproduce.
-    if differing_paths:
-        print()
-        print('FAILED: the corpus now contains markdown the two renderers disagree on')
-        return 1
     print()
-    print('OK: both renderers agree on every markdown fragment in the corpus')
+    if unexplained:
+        print('FAILED: markdown the two renderers disagree on, on a page '
+              'improvements.toml does not name')
+        return 1
+    print('OK: every markdown difference is on a page improvements.toml names')
     return 0
 
 
