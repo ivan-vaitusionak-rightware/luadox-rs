@@ -6,3 +6,4 @@
 /spike/target/
 
 __pycache__/
+/fallback-probe/target/

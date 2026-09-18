@@ -1,0 +1,9 @@
+[package]
+name = "fullmoon-probe"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.83"
+publish = false
+
+[dependencies]
+full_moon = "=2.2.0"
