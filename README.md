@@ -1,9 +1,15 @@
 # luadox-rs
 
-Rewriting luadox in Rust. Phase 0 (oracle and differential harness) and Phase 1 (parser
-spike, go/no-go) are done; Phase 2 (IR + json renderer) is in progress.
+Rewriting luadox in Rust.
 
-**The parser is full_moon 2.2.0.** See *The parser decision* below.
+| phase | | state |
+|---|---|---|
+| 0 | oracle and differential harness | done |
+| 1 | parser spike, go/no-go | done -- **full_moon 2.2.0** |
+| 2 | IR + json renderer | **L1 green on the corpus and on 16/16 fixtures** |
+| 3 | LuaLS renderer | specified (`spec/luals.md`), not started |
+| 4 | html renderer | specified (`spec/html.md`), not started |
+| 5 | packaging and cutover | not started |
 
 Everything here reads two trees and writes nothing to either:
 
@@ -61,13 +67,18 @@ Re-pinning moved 14 of 594 output files and took the diagnostics baseline from 1
 ## Running it
 
 ```sh
-python harness/oracle_run.py --levels 0,1,2 --record   # golden run, ~13 s
-python harness/dump_decls.py                           # declaration dump
-python harness/differ.py _build/oracle _build/candidate
-python harness/compare_decls.py                        # parser spike vs oracle
+cargo build --release                         # the tool
+cargo test --release                          # 34 unit tests
+cargo clippy --release --all-targets -- -D warnings
+cargo fmt --all
 
-cd spike && cargo test --release && cargo clippy --release --all-targets -- -D warnings
-./target/release/luadox-spike.exe <corpus>/lua/src ../_build/spike/decls.json
+python harness/oracle_run.py --levels 0,1,2 --record   # golden run, ~7 s
+python harness/candidate_run.py                        # the Rust over the same corpus
+python harness/differ.py                               # grade it
+python spec/run.py                                     # the 16 fixtures
+
+python harness/dump_decls.py                           # declaration dump
+python harness/compare_decls.py                        # parser spike vs oracle
 ```
 
 `--record` copies the digest manifest, the diagnostics and the provenance into `golden/`.
@@ -117,6 +128,92 @@ of 4299 shared declarations: 205 value differences, 0 argument-list differences
 All 205 value differences are one thing: a value whose expression spans more than one
 line, which the line scanner drops and the parser keeps. Named in `improvements.toml`;
 it moves `doc.json` and no html page.
+
+## Phase 2: the IR and the json renderer
+
+`luadox -r json` over the pinned corpus, graded by `harness/differ.py`:
+
+```
+L1  structured parity (doc.json)
+  205 differing JSON paths: 205 explained, 0 not
+IMPROVEMENTS (output diffs justified by a named fix)
+  * A field value whose expression spans more than one line is no longer dropped.
+      doc.json (.value)
+DIAGNOSTICS DELTA (never a failure)
+  python 147, candidate 387
+  now reported: 240 (240 compact-block-content)
+OK: rendered output matches, or every difference is a named fix
+```
+
+Exit code 1, as the oracle's. **0.20 s** against the oracle's 3.4 s for the same render.
+
+And `python spec/run.py`, the second corpus:
+
+```
+16/16 fixtures match
+```
+
+### What is covered
+
+Tags, scopes, `@within`, `@order`, name resolution, hierarchy, content assembly,
+diagnostics and config -- for both corpora, so all 27 tags including the eleven the the production project
+corpus never uses. Config is the Python `ConfigParser` dialect written by hand
+(`#`-after-whitespace inline comments, indented-continuation multi-line values). The json
+output is written by a hand-rolled ordered-object encoder, because Python dicts are
+insertion-ordered and a renderer that sorts its keys produces a document that is equal
+but not identical.
+
+### What is not, and is named rather than implied
+
+* The **LuaLS and html renderers** (Phases 3 and 4). `-r luals` and `-r html` report that
+  they are not there rather than rendering something else.
+* **`require()` crawling.** `follow = true` is an error, not a silent no-op.
+* **Encodings other than utf-8**, likewise an error rather than a wrong read.
+* **The yaml renderer**, dropped at Tier 2 as the plan says.
+
+### The three design decisions that cost the most to get right
+
+1. **The scan stays line-driven; the facts do not.** luadox semantics *are* line-shaped,
+   so `parse.rs` keeps that shape. What changed is where it gets its answers: "is there a
+   declaration on this line, and what does it say" is a lookup into a parse tree, not a
+   regular expression over raw text. That is what fixes the three lexical defects without
+   moving anything else.
+
+2. **Derived names are lazy-once, not eager.** Computing a name when an element is
+   registered lost 70 of 72 module pages: an `@enum` table asks its enclosing module for
+   a name long before that module is itself registered. `ensure_name` / `ensure_topsym`
+   reproduce the Python cached properties, which is the one piece of its laziness that is
+   load-bearing rather than incidental.
+
+3. **Cross references resolve in the renderer traversal order**, because that is where
+   the Python resolves them -- `Markdown.get()` runs the first time a renderer asks,
+   against whatever element it last focused. A field `@{Foo}` therefore resolves relative
+   to the collection it is rendered under, not to the field. This was the difference
+   between 359 unexplained refid differences and none.
+
+### One bug class made unrepresentable
+
+A `@compact` collection has no detail box, so the html renderer puts a member entire
+documentation into the one-line synopsis cell. When that is a code block, a heading or a
+list it is emitted but unreadable -- 240 elements over 50 files on this corpus, shipped
+and unnoticed for a year because it reads correctly everywhere except in a browser.
+
+The Python can only find it by matching a regular expression against rendered html. Here
+it is a type error:
+
+```
+markdown::Inline        content a one-line context can lay out; no public constructor
+markdown::Block         anything a documentation block can produce
+Block::into_inline()    the only route between them, fallible, and its TooBigForARow
+                        names the offending block kinds
+markdown::RowContent    what every one-line renderer takes; only that conversion builds it
+render::row             the one-line renderers, whose parameter is RowContent
+```
+
+There is no route by which a code block reaches a table cell. The single conversion site
+is `prerender::fit_to_row`, and its `Err` is the `compact-block-content` report. Two
+independent implementations agree on what it finds: 240 elements, `h5` 166, `pre` 166,
+`ul` 85.
 
 ## The parser decision
 
@@ -185,10 +282,29 @@ harness/dump_decls.py     the parser-level property check, Python side
 harness/normalize.py      what both sides are allowed to differ on, each rule named
 harness/differ.py         the three-bucket classifier
 harness/compare_decls.py  grades the Rust spike against the Python declaration dump
+harness/candidate_run.py  runs the Rust and normalises it the same way
 harness/improvements.toml the improvements list
 golden/                   manifest.sha256 (594 lines), diagnostics.json, decls.json
 oracle-patches/           the six commits that make the oracle out of origin/luals-all
+spec/luals.md             what the LuaLS renderer must emit (Phase 3)
+spec/html.md              what the html renderer must emit (Phase 4)
+spec/fixtures/            16 fixtures, one source file each, rendered by the oracle
+spec/run.py               grades the Rust against them
 spike/                    the Phase 1 parser spike (tree-sitter-lua, rustc 1.83)
 fallback-probe/           the same corpus through full_moon: decls.rs is the graded
                           comparison that decided the parser
+
+crates/luadox/            the library
+  config.rs               the ConfigParser dialect, by hand
+  lua.rs                  full_moon: what a parser knows about one file
+  tags.rs                 the 27 tags, as an enum
+  ir.rs                   the arena: elements, flags, content
+  parse.rs                the scan, the registry, resolution and ordering
+  content.rs              blocks into content; cross references into links
+  markdown.rs             Block / Inline, and the conversion between them
+  prerender.rs            what parsing could not decide
+  json.rs                 an ordered JSON value, written as Python writes one
+  render/json.rs          the json renderer
+  render/row.rs           the one-line renderers
+crates/luadox-cli/        [[bin]] name = "luadox"
 ```
