@@ -22,6 +22,19 @@ RE_ASSETS_VERSION = re.compile(r'\?[0-9a-f]{8,64}(?=["\'])')
 ASSETS_VERSION_TOKEN = '?ASSETS_VERSION'
 
 
+def newlines(data: bytes) -> bytes:
+    """
+    Reduces CRLF to LF before a digest.
+
+    The Python opens every output file in *text mode*, so its bytes are a function of the
+    host: LF on Linux, CRLF on Windows, and `\\r\\r\\n` for a default template whose
+    checkout is CRLF (see spec/html.md section 11).  The recorded manifest would otherwise
+    bake this machine into the expectation.  A port writes LF unconditionally and is
+    compared after this rule, which is what spec/fixtures/expected/ already stores.
+    """
+    return data.replace(b'\r\n', b'\n').replace(b'\r', b'\n')
+
+
 def message(text: str, corpus_root: Path, token: str = CORPUS_TOKEN) -> str:
     """Strips the machine out of a diagnostic message.
 

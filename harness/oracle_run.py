@@ -67,7 +67,10 @@ def digest_tree(root: Path, normalise_assets_version: bool) -> list[str]:
     for path in sorted(root.rglob('*')):
         if not path.is_file():
             continue
-        data = path.read_bytes()
+        # Line endings are normalised for every output file, not only text-looking ones:
+        # everything this tool writes goes through Python's text mode, so the bytes on
+        # disk are a property of the host rather than of the tool.
+        data = normalize.newlines(path.read_bytes())
         if normalise_assets_version:
             data = RE_ASSETS_VERSION.sub(ASSETS_VERSION_TOKEN, data)
         rel = path.relative_to(root).as_posix()

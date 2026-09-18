@@ -15,19 +15,26 @@ Outputs, under _build/candidate/ by default:
     diagnostics.json   L0 -- every (category, file, line, message), path-normalised
     provenance.json    what produced it
 
-L2 (html, luals) is not produced: those renderers are Phase 3 and Phase 4, and the differ
-skips the level when a candidate has no manifest rather than reporting 592 differences
-against output that does not exist yet.
+    manifest.sha256    a digest per output file, for the L2 compare
+    luals/luadox.lua   L2 -- the LuaLS definition file
+
+The html renderer is Phase 4, so nothing under `html/` is produced.  The differ reports a
+whole output tree the candidate did not produce as skipped rather than as 592 failures,
+and any file *inside* a tree it did produce as a difference like any other.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import shutil
 import subprocess
 import sys
 import time
 from pathlib import Path
+
+LF = chr(10)
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import corpus  # noqa: E402
@@ -63,30 +70,45 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     doc = out / 'doc.json'
     diag = out / 'diagnostics.json'
+    manifest: list[str] = []
+    timings: dict[str, float] = {}
 
-    # The config's globs are relative to this directory, so the binary is only meaningful
-    # when run from it -- which is where generate_api_docs.py runs luadox from.
-    argv = [str(BINARY), '-c', str(corpus.CONFIG), '-r', 'json', '-o', str(doc),
-            '--diagnostics-json', str(diag), '--diagnostics-root', str(corpus.CONFIG_CWD)]
-    started = time.perf_counter()
-    proc = subprocess.run(argv, cwd=str(corpus.CONFIG_CWD), capture_output=True)
-    elapsed = time.perf_counter() - started
-    log = proc.stderr.decode('utf-8', 'replace')
+    # Diagnostics ride along with the json render: they come out of parsing, which every
+    # renderer does identically, so the cheapest carrier wins.
+    code, elapsed = run('json', doc, diag)
+    timings['json'] = elapsed
     if not doc.exists():
-        sys.stderr.write(log)
-        raise SystemExit(f'the json renderer produced nothing (exit {proc.returncode})')
+        raise SystemExit('the json renderer produced nothing (exit {})'.format(code))
+    manifest.append('{}  doc.json'.format(digest(doc)))
 
     payload = normalize.diagnostics(json.loads(diag.read_text(encoding='utf-8')),
                                     corpus.CORPUS_REPO)
-    diag.write_text(json.dumps(payload, indent=2, sort_keys=True) + '\n',
-                    encoding='utf-8', newline='\n')
+    diag.write_text(json.dumps(payload, indent=2, sort_keys=True) + LF,
+                    encoding='utf-8', newline=LF)
+    manifest.append('{}  diagnostics.json'.format(digest(diag)))
 
     by_cat: dict[str, int] = {}
     for entry in payload['diagnostics']:
         by_cat[entry['category']] = by_cat.get(entry['category'], 0) + 1
-    print(f'  json: exit {proc.returncode} in {elapsed:.2f}s')
-    print('  diagnostics: ' + (', '.join(f'{v} {k}' for k, v in sorted(by_cat.items()))
-                               or 'none'))
+    print('  json: exit {} in {:.2f}s'.format(code, elapsed))
+    print('  diagnostics: ' + (', '.join('{} {}'.format(v, k)
+                                         for k, v in sorted(by_cat.items())) or 'none'))
+
+    luals = out / 'luals'
+    if luals.exists():
+        shutil.rmtree(luals)
+    luals_code, elapsed = run('luals', luals, None)
+    timings['luals'] = elapsed
+    for path in sorted(luals.rglob('*')):
+        if path.is_file():
+            rel = path.relative_to(luals).as_posix()
+            manifest.append('{}  luals/{}'.format(digest(path), rel))
+    print('  luals: exit {} in {:.2f}s'.format(luals_code, elapsed))
+
+    manifest.sort(key=lambda line: line.split('  ', 1)[1])
+    (out / 'manifest.sha256').write_text(LF.join(manifest) + LF,
+                                         encoding='utf-8', newline=LF)
+    print('  manifest: {} files'.format(len(manifest)))
 
     (out / 'provenance.json').write_text(json.dumps({
         'corpus_commit': prov.corpus_commit,
@@ -94,10 +116,32 @@ def main() -> int:
         'candidate_commit': subprocess.run(
             ['git', '-C', str(CRATE_ROOT), 'rev-parse', 'HEAD'],
             capture_output=True).stdout.decode('utf-8').strip(),
-        'exit_code': proc.returncode,
-        'seconds': {'json': round(elapsed, 2)},
-    }, indent=2, sort_keys=True) + '\n', encoding='utf-8', newline='\n')
+        'exit_code': code,
+        'renderers': sorted(timings),
+        'seconds': {k: round(v, 2) for k, v in timings.items()},
+    }, indent=2, sort_keys=True) + LF, encoding='utf-8', newline=LF)
     return 0
+
+
+def digest(path: Path) -> str:
+    """The same rule oracle_run.py digests with: line endings normalised, because the
+    Python's are a property of the host and not of the tool."""
+    return hashlib.sha256(normalize.newlines(path.read_bytes())).hexdigest()
+
+
+def run(renderer: str, out: Path, diagnostics: Path | None) -> tuple[int, float]:
+    # The config's globs are relative to this directory, so the binary is only meaningful
+    # when run from it -- which is where generate_api_docs.py runs luadox from.
+    argv = [str(BINARY), '-c', str(corpus.CONFIG), '-r', renderer, '-o', str(out)]
+    if diagnostics:
+        argv += ['--diagnostics-json', str(diagnostics),
+                 '--diagnostics-root', str(corpus.CONFIG_CWD)]
+    started = time.perf_counter()
+    proc = subprocess.run(argv, cwd=str(corpus.CONFIG_CWD), capture_output=True)
+    elapsed = time.perf_counter() - started
+    if not out.exists():
+        sys.stderr.write(proc.stderr.decode('utf-8', 'replace'))
+    return proc.returncode, elapsed
 
 
 if __name__ == '__main__':

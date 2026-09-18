@@ -81,6 +81,17 @@ def diff_json(a, b, path: str = '$', out: list[str] | None = None) -> list[str]:
     return out
 
 
+def skipped_trees(names: set[str], candidate: dict[str, str]) -> set[str]:
+    """
+    Output subtrees the candidate produced nothing at all for -- a renderer that does not
+    exist yet, rather than one that is wrong.  A subtree with even one candidate file in
+    it is compared in full, so a renderer cannot hide a missing page by being new.
+    """
+    trees = {name.split('/', 1)[0] + '/' for name in names if '/' in name}
+    return {tree for tree in trees
+            if not any(name.startswith(tree) for name in candidate)}
+
+
 def improvement_for_file(entries: list[dict], path: str) -> dict | None:
     """The L2 entry that names this output file. There is no wildcard by design."""
     for entry in entries:
@@ -192,6 +203,14 @@ def main() -> int:
         right_manifest = read_manifest(candidate_manifest)
         names = {n for n in set(left_manifest) | set(right_manifest)
                  if not n.endswith(('doc.json', 'diagnostics.json'))}
+        # A renderer that does not exist yet produces no files at all, which is a
+        # different thing from producing wrong ones.  A whole output tree the candidate
+        # is empty for is reported as skipped; a file missing from a tree it *did*
+        # produce is a difference like any other.
+        for tree in sorted(skipped_trees(names, right_manifest)):
+            count = sum(1 for name in names if name.startswith(tree))
+            print(f'  {tree} not produced by the candidate -- {count} file(s) skipped')
+            names = {name for name in names if not name.startswith(tree)}
         differing = sorted(n for n in names
                            if left_manifest.get(n) != right_manifest.get(n))
         print(f'  {len(names) - len(differing)}/{len(names)} files identical')
