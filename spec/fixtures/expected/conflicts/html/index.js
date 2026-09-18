@@ -1,0 +1,15 @@
+var docs = [
+{path:"class/Twin.html", type:"class", title:"Twin", text:""},
+{path:"class/Other.html", type:"class", title:"Other", text:""},
+{path:"class/Twin.html", type:"class", title:"Twin", text:""},
+{path:"class/Twin.html#Twin.duplicate", type:"field", title:"Twin.duplicate", text:"The first field."},
+{path:"class/Twin.html#Twin.duplicate", type:"field", title:"Twin.duplicate", text:"The second field under the same name, which does not replace the first."},
+{path:"class/Twin.html#Twin.inShared", type:"field", title:"Twin.inShared", text:"Lives in the shared-named section."},
+{path:"class/Other.html#Other.last", type:"field", title:"Other.last", text:"Declared first, pushed last."},
+{path:"class/Other.html#Other.middle", type:"field", title:"Other.middle", text:"Declared second, no order: ends up between the two."},
+{path:"class/Other.html#Other.first", type:"field", title:"Other.first", text:"Declared third, pulled to the front."},
+{path:"class/Twin.html#Twin.second", type:"field", title:"Twin.second", text:"Only on this one."},
+{path:"class/Twin.html#Shared", type:"section", title:"Shared", text:"Sections are not qualified by their page, so this one is allowed to repeat and must not be reported."},
+{path:"class/Other.html#Shared", type:"section", title:"", text:""},
+{path:"class/Other.html#Ordering", type:"section", title:"@order first, which nothing else exercises", text:""},
+];

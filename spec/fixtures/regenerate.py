@@ -56,6 +56,9 @@ RE_NEWLINES = re.compile(rb'\r*\n')
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 ORACLE = ROOT / 'oracle'
+
+sys.path.insert(0, str(ROOT / 'harness'))
+import normalize  # noqa: E402
 SRC = HERE / 'src'
 SNIPPETS = HERE / 'snippets'
 SIDEBAR = HERE / 'sidebar.tmpl.html'
@@ -67,6 +70,17 @@ KEEP_GLOBS = ('class/*.html', 'module/*.html', 'index.html', 'search.html', 'ind
 
 # Fixtures that also register a manual page: fixture name -> markdown file in src/.
 MANUALS = {'manual': 'manual.md'}
+
+# Fixtures that need a second source file, which lives under src/extra/ so that it is
+# not itself globbed as a fixture.  A conflict between two pages can only be written
+# across two files.
+EXTRA_FILES = {'conflicts': ['extra/conflicts_twin.lua']}
+
+# A diagnostic message can quote the absolute path of the file it is about, which names
+# this machine.  Only the tail below the fixture tree is behaviour, so the recorded
+# expectation carries a token instead -- and spec/run.py applies the same rule to the
+# candidate before comparing.
+FIXTURES_TOKEN = '<fixtures>'
 
 # Extra config sections a fixture needs, appended to the generated .conf verbatim.
 EXTRA_CONFIG = {
@@ -93,7 +107,9 @@ def write_config(path: Path, name: str) -> None:
         '[project]',
         'name = LuaDox Fixture',
         'title = Fixture',
-        'files = {}'.format((SRC / (name + '.lua')).as_posix()),
+        'files = {}'.format(' '.join(
+            [(SRC / (name + '.lua')).as_posix()]
+            + [(SRC / extra).as_posix() for extra in EXTRA_FILES.get(name, [])])),
         'follow = false',
         'encoding = utf8',
         'snippet_path = {}'.format(SNIPPETS.as_posix()),
@@ -157,7 +173,11 @@ def generate(name: str, dest: Path) -> dict:
         for src, dst in ((json_diag, 'diagnostics-json.json'),
                          (luals_diag, 'diagnostics-luals.json'),
                          (html_diag, 'diagnostics-html.json')):
-            shutil.copyfile(src, dest / dst)
+            payload = normalize.diagnostics(
+                json.loads(src.read_text(encoding='utf-8')), HERE, FIXTURES_TOKEN)
+            (dest / dst).write_text(
+                json.dumps(payload, indent=2, sort_keys=True) + '\n',
+                encoding='utf-8', newline='\n')
         (dest / 'exit.json').write_text(
             json.dumps({'json': json_exit, 'luals': luals_exit, 'html': html_exit},
                        indent=2, sort_keys=True) + '\n',

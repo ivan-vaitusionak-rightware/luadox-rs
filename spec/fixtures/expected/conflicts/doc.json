@@ -1,0 +1,156 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "d985208111acbe2dda9e82059d1efe3ae86ceaee",
+      "type": "class",
+      "name": "Other",
+      "sections": [
+        {
+          "id": "d985208111acbe2dda9e82059d1efe3ae86ceaee",
+          "type": "class",
+          "symbol": "Other",
+          "heading": "Other"
+        },
+        {
+          "id": "25c180f6bee20c8b9f4abdcb23b8fc6d43234c48",
+          "type": "section",
+          "symbol": "Shared",
+          "heading": "The same section name again, on a second page"
+        },
+        {
+          "id": "696735ec64d212e85ffffb69f95b6d6b2b4b0b53",
+          "type": "section",
+          "symbol": "Ordering",
+          "heading": "Ordering",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "@order first, which nothing else exercises."
+            }
+          ],
+          "fields": [
+            {
+              "id": "444329384b612f3bcc9a1332a03b377931536222",
+              "name": "Other.first",
+              "display": "Other.first",
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Declared third, pulled to the front."
+                }
+              ]
+            },
+            {
+              "id": "0982f304f7a1f622331d80af6027b276c220951d",
+              "name": "Other.middle",
+              "display": "Other.middle",
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Declared second, no order: ends up between the two."
+                }
+              ]
+            },
+            {
+              "id": "e5122c80723081a112c80a7b5a1cdd11eab7e475",
+              "name": "Other.last",
+              "display": "Other.last",
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Declared first, pushed last."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "49538f81ee33625d103dc2aaab16b1aa4372d5c5",
+      "type": "class",
+      "name": "Twin",
+      "sections": [
+        {
+          "id": "49538f81ee33625d103dc2aaab16b1aa4372d5c5",
+          "type": "class",
+          "symbol": "Twin",
+          "heading": "Twin",
+          "fields": [
+            {
+              "id": "1c9f3e4836bf9bb6ffd27114fef1cc94ba159ee4",
+              "name": "Twin.duplicate",
+              "display": "Twin.duplicate",
+              "value": "1",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "The first field."
+                }
+              ]
+            },
+            {
+              "id": "1c9f3e4836bf9bb6ffd27114fef1cc94ba159ee4",
+              "name": "Twin.duplicate",
+              "display": "Twin.duplicate",
+              "value": "2",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "The second field under the same name, which does not replace the first."
+                }
+              ]
+            },
+            {
+              "id": "d6abb9b977f4d7e1538db22295e9ca6305ae9865",
+              "name": "Twin.second",
+              "display": "Twin.second",
+              "value": "2",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Only on this one."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fc3eae910d41a64e79ae6c9498a3839a270eb29a",
+          "type": "section",
+          "symbol": "Shared",
+          "heading": "A section whose name repeats on another page",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Sections are not qualified by their\npage, so this one is allowed to repeat and must not be reported."
+            }
+          ],
+          "fields": [
+            {
+              "id": "ab8622bb5d2daffafb8ab57534f127ef93b34c74",
+              "name": "Twin.inShared",
+              "display": "Twin.inShared",
+              "value": "3",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Lives in the shared-named section."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "manuals": []
+}

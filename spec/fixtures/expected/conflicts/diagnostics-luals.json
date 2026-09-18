@@ -1,0 +1,23 @@
+{
+  "allowed": [],
+  "diagnostics": [
+    {
+      "category": "conflicts",
+      "file": "conflicts.lua",
+      "line": 7,
+      "message": "field \"Twin.duplicate\" conflicts with field name at <fixtures>/src/conflicts.lua:4"
+    },
+    {
+      "category": "conflicts",
+      "file": "extra/conflicts_twin.lua",
+      "line": 3,
+      "message": "Twin conflicts with another class or module"
+    },
+    {
+      "category": "conflicts",
+      "file": "extra/conflicts_twin.lua",
+      "line": 3,
+      "message": "class \"Twin\" conflicts with class name at <fixtures>/src/conflicts.lua:1"
+    }
+  ]
+}

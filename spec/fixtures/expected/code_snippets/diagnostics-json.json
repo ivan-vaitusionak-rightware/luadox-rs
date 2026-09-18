@@ -5,13 +5,13 @@
       "category": "snippets",
       "file": "code_snippets.lua",
       "line": 17,
-      "message": "cannot read snippet \"nosuchfile.lua\": [Errno 2] No such file or directory: '<repo>\\\\spec\\\\fixtures\\\\snippets\\\\nosuchfile.lua'"
+      "message": "cannot read snippet \"nosuchfile.lua\": [Errno 2] No such file or directory: '<fixtures>/snippets/nosuchfile.lua'"
     },
     {
       "category": "snippets",
       "file": "code_snippets.lua",
       "line": 23,
-      "message": "cannot read snippet \"its\": [Errno 2] No such file or directory: '<repo>\\\\spec\\\\fixtures\\\\snippets\\\\its'"
+      "message": "cannot read snippet \"its\": [Errno 2] No such file or directory: '<fixtures>/snippets/its'"
     }
   ]
 }

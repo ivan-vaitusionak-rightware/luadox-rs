@@ -35,6 +35,7 @@ BINARY = ROOT / 'target' / 'release' / ('luadox.exe' if sys.platform == 'win32'
                                         else 'luadox')
 
 sys.path.insert(0, str(ROOT / 'harness'))
+import normalize  # noqa: E402
 from differ import diff_json  # noqa: E402
 
 # Kept in step with regenerate.py: a fixture is one source file, plus a manual page and
@@ -104,12 +105,6 @@ def main() -> int:
     return 1 if failed else 0
 
 
-def slashes(message: str) -> str:
-    """A path's separator is the host's, not behaviour, and Python's OSError doubles a
-    Windows backslash because it prints the filename through repr()."""
-    return message.replace('\\\\', '/').replace('\\', '/')
-
-
 def diagnostics_delta(expected_path: Path, actual: dict | None) -> str:
     """Diagnostics never fail a fixture; they are reported the way the differ reports
     them, as a delta."""
@@ -118,7 +113,11 @@ def diagnostics_delta(expected_path: Path, actual: dict | None) -> str:
     expected = json.loads(expected_path.read_text(encoding='utf-8'))
 
     def keyed(payload):
-        return {(e['category'], e['file'], e['line'], slashes(e['message']))
+        # The same rule regenerate.py recorded the expectation with: a path inside a
+        # message names this machine, and only the tail below the fixture tree is
+        # behaviour.
+        return {(e['category'], e['file'], e['line'],
+                 normalize.message(e['message'], FIXTURES, regenerate.FIXTURES_TOKEN))
                 for e in payload['diagnostics']}
 
     a, b = keyed(expected), keyed(actual)
