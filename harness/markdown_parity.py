@@ -22,7 +22,6 @@ from __future__ import annotations
 import argparse
 import collections
 import json
-import os
 import subprocess
 import sys
 import tempfile
@@ -151,11 +150,11 @@ def main() -> int:
     # that looks like it might cause one.  It covers the leading-pipe table dialect too,
     # which is the other construct comrak cannot reproduce.
     if differing_paths:
-        print('
-FAILED: the corpus now contains markdown the two renderers disagree on')
+        print()
+        print('FAILED: the corpus now contains markdown the two renderers disagree on')
         return 1
-    print('
-OK: both renderers agree on every markdown fragment in the corpus')
+    print()
+    print('OK: both renderers agree on every markdown fragment in the corpus')
     return 0
 
 
