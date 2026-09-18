@@ -13,8 +13,11 @@ These fixtures are the second corpus that does.
 The expected output is produced by spec/fixtures/regenerate.py from the pinned oracle
 and checked in, so this needs no oracle to run -- only a built binary.
 
-The json document and the LuaLS definition file are both graded. The html output is
-checked in too, and becomes a gate when its renderer exists in Phase 4.
+All three renderers are graded: the json document structurally, the LuaLS definition
+file and every recorded html page byte for byte. The asset bundle's `?<version>`
+cache-buster is normalised on both sides -- it is a sha256 over bytes the two
+implementations store differently, so parity on its *value* is not required and parity on
+*where it appears* is.
 """
 
 from __future__ import annotations
@@ -57,23 +60,53 @@ def render(name: str, renderer: str, out: Path) -> tuple[int, Path, dict | None]
         argv = [str(BINARY), '-c', str(config), '-r', renderer, '-o', str(target),
                 '--diagnostics-json', str(diag), '--diagnostics-root', str(SRC)]
         proc = subprocess.run(argv, cwd=str(tmp), capture_output=True)
-        written = target / 'luadox.lua' if renderer == 'luals' else target / 'luadox.json'
+        written = {
+            'luals': target / 'luadox.lua',
+            'json': target / 'luadox.json',
+            # The html renderer writes a directory; the caller walks it.
+            'html': target,
+        }[renderer]
         if not written.exists():
             sys.stderr.write(proc.stderr.decode('utf-8', 'replace'))
         return (proc.returncode, written,
                 json.loads(diag.read_text(encoding='utf-8')) if diag.exists() else None)
 
 
-def compare_luals(expected: Path, actual: Path, show: int) -> list[str]:
-    """Byte comparison, reported as a unified diff so a failure names the lines rather
-    than two digests."""
-    want = expected.read_bytes()
-    got = actual.read_bytes() if actual.exists() else b''
+def compare_bytes(expected: Path, actual: Path, show: int) -> list[str]:
+    """
+    Byte comparison, reported as a unified diff so a failure names the lines rather than
+    two digests. The cache-buster is normalised first, on both sides.
+    """
+    def text(path: Path) -> list[str]:
+        if not path.exists():
+            return []
+        data = normalize.newlines(path.read_bytes()).decode('utf-8')
+        return normalize.RE_ASSETS_VERSION.sub(
+            normalize.ASSETS_VERSION_TOKEN, data).splitlines()
+
+    want, got = text(expected), text(actual)
     if want == got:
         return []
     return list(difflib.unified_diff(
-        want.decode('utf-8').splitlines(), got.decode('utf-8').splitlines(),
-        'oracle', 'rust', lineterm='', n=1))[:show]
+        want, got, 'oracle', 'rust', lineterm='', n=1))[:show]
+
+
+def compare_html(expected_dir: Path, actual_dir: Path, show: int) -> tuple[int, int, list[str]]:
+    """Every recorded html file of one fixture. Returns (same, total, first diff)."""
+    same = total = 0
+    first: list[str] = []
+    for want in sorted(expected_dir.rglob('*')):
+        if not want.is_file():
+            continue
+        total += 1
+        rel = want.relative_to(expected_dir)
+        diff = compare_bytes(want, actual_dir / rel, show)
+        if diff:
+            if not first:
+                first = [f'html/{rel.as_posix()}'] + diff
+        else:
+            same += 1
+    return same, total, first
 
 
 def main() -> int:
@@ -115,12 +148,21 @@ def main() -> int:
                 notes.append(delta.lstrip(', '))
 
             code, written, diag = render(name, 'luals', out)
-            diff = compare_luals(EXPECTED / name / 'luadox.lua', written, args.show)
+            diff = compare_bytes(EXPECTED / name / 'luadox.lua', written, args.show)
             notes.append('luals ' + ('identical' if not diff else 'DIFFERS'))
             problems.extend(diff)
             delta = diagnostics_delta(EXPECTED / name / 'diagnostics-luals.json', diag)
             if delta:
                 notes.append('luals ' + delta.lstrip(', '))
+
+            code, _, diag = render(name, 'html', out)
+            same, total, diff = compare_html(EXPECTED / name / 'html', out / 'html',
+                                             args.show)
+            notes.append('html {}/{}'.format(same, total))
+            problems.extend(diff)
+            delta = diagnostics_delta(EXPECTED / name / 'diagnostics-html.json', diag)
+            if delta:
+                notes.append('html ' + delta.lstrip(', '))
 
             status = 'ok' if not problems else 'FAILED'
             if problems:

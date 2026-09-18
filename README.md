@@ -8,8 +8,8 @@ Rewriting luadox in Rust.
 | 1 | parser spike, go/no-go | done -- **full_moon 2.2.0** |
 | 2 | IR + json renderer | **L1 green on the corpus and on 17/17 fixtures** |
 | 3 | LuaLS renderer | **L2 byte-identical on the corpus and on 17/17 fixtures** |
-| 4 | html renderer | specified (`spec/html.md`), not started |
-| 5 | packaging and cutover | not started |
+| 4 | html renderer | **591/592 L2 files identical; the one difference is named** |
+| 5 | packaging and cutover | not started -- the owner's call |
 
 Everything here reads two trees and writes nothing to either:
 
@@ -138,12 +138,14 @@ L1  structured parity (doc.json)
   205 differing JSON paths: 205 explained, 0 not
 
 L2  byte parity (html, luals)
-  html/ not produced by the candidate -- 591 file(s) skipped
-  1/1 files identical
+  591/592 files identical
 
 IMPROVEMENTS (output diffs justified by a named fix)
   * A field value whose expression spans more than one line is no longer dropped.
       doc.json (.value)
+  * comrak has no CODE_INDENT equivalent, so one indented continuation line becomes
+    a code block.
+      html/class/DepthTargetPass.html
 DIAGNOSTICS DELTA (never a failure)
   python 147, candidate 387
   now reported: 240 (240 compact-block-content)
@@ -152,7 +154,7 @@ OK: rendered output matches, or every difference is a named fix
 
 Exit code 1, as the oracle's. **0.20 s** against the oracle's 3.4 s for the same render.
 
-And `python spec/run.py`, the second corpus, grading both renderers:
+And `python spec/run.py`, the second corpus, grading all three renderers:
 
 ```
 17/17 fixtures match
@@ -326,6 +328,125 @@ oracle only: {'untyped': 1}
   [untyped] types: parameter "a" of Shape.undocumented has no documented type
 ```
 
+## Phase 4: the html renderer
+
+`luadox -r html`, against `spec/html.md`. **0.53 s** for the 591-file site, against the
+oracle's 3.4 s.
+
+```
+591/592 files identical
+  * comrak has no CODE_INDENT equivalent, so one indented continuation line becomes
+    a code block.
+      html/class/DepthTargetPass.html
+
+17/17 fixtures match     (78/78 recorded html files identical)
+```
+
+### The markdown library
+
+**comrak `=0.49.0`, with default features off.** 0.50 and newer are edition 2024, which
+needs Cargo 1.85 against this workspace's 1.83 pin — the plan's "comrak 0.55" is not
+available here. The default features pull `syntect`, and with it `yaml-rust`, `zlib-rs`
+and `xdg`, for syntax highlighting the foot template already does in the browser.
+
+### The one difference, measured rather than assumed
+
+`spec/html.md` §10.2 names two divergences from `commonmark.blocks.CODE_INDENT = 1000` and
+says the second was never measured, because it "shows up as a *missing* code block, not as
+an extra one". `harness/markdown_parity.py` measures both: it wraps the oracle's own
+`_markdown_to_html`, records every string it is called with, renders each through both
+libraries and compares. 7451 renders, 4962 distinct strings, **one difference**:
+
+```
+on DepthTargetPass
+markdown:  '     yourself.'
+oracle:    <p>yourself.</p>
+comrak:    <pre><code> yourself.
+           </code></pre>
+```
+
+A `@see` continuation indented five spaces, at
+`lua/src/autogen/DepthTargetPass.lua:21`. The fix belongs in the
+source — the line is mis-indented whatever renders it — and the source is a tree this
+project only reads, so it is recorded in `improvements.toml` with the page named.
+
+The **second** half of §10.2 is unexercised, and that is now a measured statement rather
+than a hope: the corpus has 42 lines indented four or more spaces starting with `-` and 6
+following a blank line, and every one is a paragraph continuation where `indented` decides
+nothing. The same harness on constructed input shows all four classes the section names,
+plus the leading-pipe table dialect comrak cannot reproduce at all — so a zero here is a
+real zero:
+
+```
+indented list after blank:    DIFFERS   <p>- one</p>        vs  <pre><code>- one
+indented text after blank:    DIFFERS   <p>just prose</p>   vs  <pre><code>just prose
+indented heading after blank: DIFFERS   <h1>not really</h1> vs  <pre><code># not really
+indented fence after blank:   DIFFERS   language-lua        vs  <pre><code>```lua
+leading pipe table:           DIFFERS   <table>             vs  <p>| a | b |
+plain paragraph / raw html / fenced code: SAME
+```
+
+It is the guard §10.2 asks for, and an exact one rather than the proposed heuristic: it
+fails on any difference on a page `improvements.toml` does not name.
+
+### Three defects this renderer surfaced
+
+Only the html path could have found any of them, which is the argument for building a
+renderer rather than trusting a green L1.
+
+1. **The search index lost a space.** `_markdown_to_text` ends with
+   `re.sub(r'\s+', ' ', text)`, which collapses but does **not** strip, and every content
+   block ends with the sentinel's empty line. So a fragment flattens with a trailing
+   space, the fragments are joined with a newline, and the index turns that into a second
+   space:
+
+   ```
+   oracle  text:"Reads a value.  Careful with this The note body continues..."
+   rust    text:"Reads a value. Careful with this The note body continues..."
+   ```
+
+2. **The order files are read in is a property of the machine.** `glob.glob` does not
+   sort; it returns `os.scandir` order, which on NTFS is case-insensitive alphabetical and
+   on ext4 is hash order. That order decides the module list in every sidebar, the order
+   of the search index and the previous/next chain — so the shipped docs already depend on
+   which machine built them. Sorting case-insensitively makes it a property of the input,
+   and agrees with the recorded oracle:
+
+   ```
+   oracle  FontWeightEnums, gfxEnums, GPUResourceMemoryTypeEnums
+   rust    FontWeightEnums, GPUResourceMemoryTypeEnums, … gfxEnums   (byte order)
+   ```
+
+   Invisible at L1, because the prerenderer sorts toprefs before the json renderer sees
+   them.
+
+3. **`mimetypes.guess_type` is the host's**, seeded from the Windows registry or
+   `/etc/mime.types` — §12.9 calls it a real portability hazard, because the same favicon
+   can produce a different `type=` on another machine. Replaced with a fixed table.
+
+### The asset bundle
+
+Compiled in: the fourteen files of the Python's `data/`, plus a `sidebar.tmpl.html` that
+**no branch of the fork ships**. A run without `project.sidebar_template` dies in the
+Python's constructor with `FileNotFoundError`; the production config sets one, so nobody has
+noticed. This ships a default, and records it as a deviation.
+
+The `?<version>` cache-buster is a sha256 over the bundle in sorted-path order. The
+implementation reproduces the oracle's `658dac8` exactly when run over the oracle's own
+files, which is how it was checked; over this bundle it differs, because these files are
+stored with LF and carry one more, so the harness normalises it to a token on both sides.
+
+### Two harness bugs it also found
+
+* `normalize.newlines` made **two** lines out of one. A default template on Windows is
+  read as bytes from a CRLF checkout and written through text mode, so each of its lines
+  ends `\r\r\n` — six lines of `search.tmpl.html`, the only place in the corpus.
+  Reducing CRLF and then CR turned that into two newlines and invented six blank lines
+  that were in neither output.
+* The cache-buster regex wanted **eight** hex digits and the version is seven, so the
+  manifest digests were never normalised at all. Harmless while both sides shipped the
+  same bundle; the moment they did not, all 579 pages differed on that one token.
+
 ## The parser decision
 
 **full_moon 2.2.0**, on this evidence.
@@ -395,6 +516,8 @@ harness/differ.py         the three-bucket classifier
 harness/compare_decls.py  grades the Rust spike against the Python declaration dump
 harness/candidate_run.py  runs the Rust and normalises it the same way
 harness/improvements.toml the improvements list
+harness/markdown_parity.py the markdown guard: both libraries over every string the
+                          renderer renders
 golden/                   manifest.sha256 (594 lines), diagnostics.json, decls.json
 oracle-patches/           the six commits that make the oracle out of origin/luals-all
 spec/luals.md             what the LuaLS renderer must emit (Phase 3)
@@ -415,8 +538,11 @@ crates/luadox/            the library
   markdown.rs             Block / Inline, and the conversion between them
   prerender.rs            what parsing could not decide
   json.rs                 an ordered JSON value, written as Python writes one
+  assets.rs               the bundle, compiled in, and the cache-buster
   render/json.rs          the json renderer
+  render/html.rs          the html renderer
   render/luals.rs         the LuaLS renderer
   render/row.rs           the one-line renderers
 crates/luadox-cli/        [[bin]] name = "luadox"
+crates/md-probe/          a measurement tool: comrak over a list of strings
 ```
