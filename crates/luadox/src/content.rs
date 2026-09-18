@@ -96,12 +96,15 @@ impl Parser {
             let parent = stack.last().map(|o| o.body).unwrap_or(0);
 
             let Some(tag) = tag else {
-                if !is_sentinel {
-                    let at = *dedent.get_or_insert(indent);
-                    let line: String = text.chars().skip(at).collect();
-                    if let Some(body) = bodies.get_mut(parent) {
-                        body.md(true).append(line);
-                    }
+                // The sentinel appends its empty line too, so every content block ends
+                // with one. That line is invisible wherever content is trimmed -- a doc
+                // comment, a json value, an inlined description -- and visible in exactly
+                // one place: it is what separates a field's description from the `*meta*`
+                // line the LuaLS renderer appends after it.
+                let at = *dedent.get_or_insert(indent);
+                let line: String = text.chars().skip(at).collect();
+                if let Some(body) = bodies.get_mut(parent) {
+                    body.md(true).append(line);
                 }
                 continue;
             };

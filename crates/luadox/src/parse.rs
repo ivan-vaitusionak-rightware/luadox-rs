@@ -30,6 +30,8 @@ pub struct Parser {
     pub items: Vec<Item>,
     /// Fully qualified name -> element, including `@alias` names.
     pub refs: HashMap<String, ItemId>,
+    /// Opaque id -> element, for a `@see` list and the LuaLS mixin phrase.
+    by_id: HashMap<String, ItemId>,
     /// Top-level elements, in the order they were registered.
     pub topsyms: Vec<ItemId>,
     topsym_index: HashMap<String, ItemId>,
@@ -65,6 +67,7 @@ impl Parser {
         Parser {
             items: Vec::new(),
             refs: HashMap::new(),
+            by_id: HashMap::new(),
             topsyms: Vec::new(),
             topsym_index: HashMap::new(),
             collections: Vec::new(),
@@ -456,8 +459,20 @@ impl Parser {
             let topref = self.topref(id);
             let item = self.item(id);
             let hash = util::ref_id(self.item(topref).kind.as_str(), &item.topsym, &item.name);
-            self.item_mut(id).id = hash;
+            self.item_mut(id).id = hash.clone();
+            // Only an element that owns its own name is reachable by id. One whose name
+            // was already taken lost that registration and is absent from this map too,
+            // so a `@see` pointing at it falls back to the raw id -- which is what the
+            // Python does, for the same reason.
+            if self.refs.get(&self.item(id).name) == Some(&id) {
+                self.by_id.entry(hash).or_insert(id);
+            }
         }
+    }
+
+    /// The element an opaque id names, for a `@see` list or a mixin phrase.
+    pub fn item_by_id(&self, id: &str) -> Option<ItemId> {
+        self.by_id.get(id).copied()
     }
 
     // -- scanning ---------------------------------------------------------------

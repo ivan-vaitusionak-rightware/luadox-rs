@@ -95,3 +95,36 @@ no rendered output: doc.json is unchanged by it, and the html bytes the oracle p
 for these 240 cases must still be reproduced in Phase 4.
 """
 present_in_corpus = false
+
+[[improvement]]
+level = "L1"
+json_path_contains = "(this entry explains no output difference)"
+fix = "The LuaLS renderer no longer reports an untyped parameter a second time."
+why = """
+The prerender stage reports every parameter that the source declares and no `@tparam`
+documents:
+
+    <name>() missing @tparam for "<param>" parameter
+
+and the oracle's LuaLS renderer then reports the same parameter again, under the same
+category, at the same line, with a different message:
+
+    parameter "<name>" of <symbol> has no documented type
+
+The two are exactly coextensive: a `@tparam` cannot parse without a type list, so "has
+no types" and "has no @tparam" are the same set. A luals run therefore reports every gap
+twice. spec/luals.md section 8.2 records this, and says an implementation that reports it
+once is better and should be recorded here rather than silently matched -- which is what
+this entry is.
+
+Measured across the 17 fixtures, the only luals-run diagnostic difference in either
+direction is this one:
+
+    rust only  : none
+    oracle only: {'untyped': 1}
+      [untyped] types: parameter "a" of Shape.undocumented has no documented type
+
+It moves no rendered output. `luadox.lua` is byte-identical on all 17 fixtures and on the
+pinned corpus.
+"""
+present_in_corpus = false

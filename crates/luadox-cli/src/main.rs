@@ -9,7 +9,7 @@ const USAGE: &str = "\
 usage: luadox [options] [FILE ...]
 
   -c, --config FILE            luadox configuration file
-  -r, --renderer TYPE          how to render the parsed content (json)
+  -r, --renderer TYPE          how to render the parsed content (json, luals)
   -o, --out PATH               where to write the rendered output
   -n, --name NAME              project name
       --snippet-path PATH      where @example <file> snippets are read from

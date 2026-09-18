@@ -47,7 +47,10 @@ impl fmt::Display for Error {
                 "no input files or directories specified on command line or config file"
             ),
             Error::UnknownRenderer(name) => {
-                write!(f, "unknown renderer \"{name}\", valid types are: json")
+                write!(
+                    f,
+                    "unknown renderer \"{name}\", valid types are: json, luals"
+                )
             }
             Error::Io(msg) => write!(f, "{msg}"),
         }
@@ -84,11 +87,13 @@ pub fn run(options: &Options) -> Result<Outcome, Error> {
         .renderer
         .clone()
         .unwrap_or_else(|| config.get_or("project", "renderer", "html"));
-    if renderer != "json" {
-        // Phase 2 ships the json renderer only, and says so rather than rendering
-        // something that is not what was asked for.
-        return Err(Error::UnknownRenderer(renderer));
-    }
+    // The html renderer is Phase 4. Asking for it says so rather than rendering
+    // something that is not what was asked for.
+    let extension = match renderer.as_str() {
+        "json" => ".json",
+        "luals" => ".lua",
+        _ => return Err(Error::UnknownRenderer(renderer)),
+    };
 
     let files = input_files(&config);
     if files.is_empty() {
@@ -137,14 +142,19 @@ pub fn run(options: &Options) -> Result<Outcome, Error> {
     parser.validate_enums();
 
     let toprefs = prerender::process(&mut parser);
-    let document = render::json::render(&mut parser, &toprefs);
+    let document = match renderer.as_str() {
+        "luals" => render::luals::render(&mut parser, &toprefs).map_err(Error::Config)?,
+        _ => render::json::render(&mut parser, &toprefs).write(),
+    };
 
-    let out = out_path(options, &parser.config);
+    let out = out_path(options, &parser.config, extension);
     if let Some(dir) = out.parent().filter(|d| !d.as_os_str().is_empty()) {
         std::fs::create_dir_all(dir).map_err(|e| Error::Io(format!("{}: {e}", dir.display())))?;
     }
-    std::fs::write(&out, document.write())
-        .map_err(|e| Error::Io(format!("{}: {e}", out.display())))?;
+    // LF unconditionally. The Python opens its output in text mode, so on Windows the
+    // same run writes CRLF and the recorded bytes become a function of the host; the
+    // fixtures store LF and the comparison normalises. See spec/html.md section 11.
+    std::fs::write(&out, document).map_err(|e| Error::Io(format!("{}: {e}", out.display())))?;
 
     if let Some(path) = &options.diagnostics_json {
         write_diagnostics(&parser, path, options.diagnostics_root.as_deref())?;
@@ -239,20 +249,20 @@ fn strip_verbatim(path: &Path) -> PathBuf {
     }
 }
 
-fn out_path(options: &Options, config: &Config) -> PathBuf {
+fn out_path(options: &Options, config: &Config, extension: &str) -> PathBuf {
     let configured = options
         .out
         .clone()
         .or_else(|| config.get("project", "out").map(str::to_string))
         .or_else(|| config.get("project", "outdir").map(str::to_string));
     let Some(dst) = configured else {
-        return PathBuf::from("./luadox.json");
+        return PathBuf::from(format!("./luadox{extension}"));
     };
     let path = PathBuf::from(&dst);
-    if path.is_file() || dst.ends_with(".json") {
+    if path.is_file() || dst.ends_with(extension) {
         path
     } else {
-        path.join("luadox.json")
+        path.join(format!("luadox{extension}"))
     }
 }
 
