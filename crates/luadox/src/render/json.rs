@@ -74,6 +74,7 @@ fn classmod(parser: &mut Parser, topref: ItemId) -> Json {
         let compact = Json::Arr(
             parser
                 .item(colref)
+                .flags
                 .compact
                 .iter()
                 .map(|m| Json::Str(m.as_str().to_string()))

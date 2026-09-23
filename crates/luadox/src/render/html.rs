@@ -849,8 +849,8 @@ impl Renderer<'_> {
             fields_has_type: false,
             functions_title: "Functions",
             functions_meta: 0,
-            fields_compact: item.compact.contains(&Member::Fields),
-            functions_compact: item.compact.contains(&Member::Functions),
+            fields_compact: item.flags.compact.contains(&Member::Fields),
+            functions_compact: item.flags.compact.contains(&Member::Functions),
         };
         for id in &item.fields {
             let field = self.parser.item(*id);

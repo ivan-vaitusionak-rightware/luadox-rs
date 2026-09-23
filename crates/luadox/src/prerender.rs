@@ -67,18 +67,11 @@ fn classmod(parser: &mut Parser, topref: ItemId) {
                 first
             }
         };
-        let compact = parser
-            .item(colref)
-            .flags
-            .compact
-            .clone()
-            .unwrap_or_default();
         let fullnames = parser.item(colref).flags.fullnames;
         {
             let item = parser.item_mut(colref);
             item.heading = heading;
             item.content = content;
-            item.compact = compact;
         }
         apply_deprecated(parser, colref);
         parser.item_mut(topref).collections.push(colref);
@@ -114,7 +107,7 @@ fn classmod(parser: &mut Parser, topref: ItemId) {
             fit_to_row(
                 parser,
                 id,
-                &parser.item(colref).compact.clone(),
+                &parser.item(colref).flags.compact.clone(),
                 Member::Fields,
             );
             parser.item_mut(colref).fields.push(id);
@@ -146,7 +139,7 @@ fn classmod(parser: &mut Parser, topref: ItemId) {
             fit_to_row(
                 parser,
                 id,
-                &parser.item(colref).compact.clone(),
+                &parser.item(colref).flags.compact.clone(),
                 Member::Functions,
             );
             parser.item_mut(colref).functions.push(id);

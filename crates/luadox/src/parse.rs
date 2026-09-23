@@ -879,7 +879,7 @@ impl Parser {
                     // bound to the element the block turns out to declare.
                     self.pending_alias(id, name);
                 }
-                Tag::Compact(elements) => self.item_mut(id).flags.compact = Some(elements),
+                Tag::Compact(members) => self.item_mut(id).flags.compact = members,
                 Tag::Fullnames => self.item_mut(id).flags.fullnames = true,
                 Tag::Deprecated(desc) => {
                     // Repeated tags accumulate rather than overwrite, so no explanation
@@ -1348,7 +1348,7 @@ static EMPTY: Item = Item {
         since: None,
         deprecated: None,
         inherits: Vec::new(),
-        compact: None,
+        compact: Vec::new(),
         fullnames: false,
         meta: None,
         types: None,
@@ -1369,7 +1369,6 @@ static EMPTY: Item = Item {
     meta: None,
     params: Vec::new(),
     returns: Vec::new(),
-    compact: Vec::new(),
     collections: Vec::new(),
     row: None,
     fields: Vec::new(),

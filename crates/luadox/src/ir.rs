@@ -85,7 +85,8 @@ pub struct Flags {
     /// bare tag.
     pub deprecated: Option<String>,
     pub inherits: Vec<String>,
-    pub compact: Option<Vec<Member>>,
+    /// The member kinds `@compact` named; empty when the tag was not given.
+    pub compact: Vec<Member>,
     pub fullnames: bool,
     pub meta: Option<String>,
     pub types: Option<Vec<String>>,
@@ -283,7 +284,6 @@ pub struct Item {
     pub meta: Option<String>,
     pub params: Vec<Param>,
     pub returns: Vec<Returned>,
-    pub compact: Vec<Member>,
     /// For a top-level element: its collections, in render order.
     pub collections: Vec<ItemId>,
     /// This element's documentation reduced to what a one-line context can present,
@@ -326,7 +326,6 @@ impl Item {
             meta: None,
             params: Vec::new(),
             returns: Vec::new(),
-            compact: Vec::new(),
             collections: Vec::new(),
             row: None,
             fields: Vec::new(),
