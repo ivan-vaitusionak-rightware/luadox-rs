@@ -119,8 +119,11 @@ fn manual(parser: &mut Parser, topref: ItemId) -> Json {
     let mut sections = Vec::new();
     for colref in parser.item(topref).collections.clone() {
         parser.focus(colref);
-        let level = Json::Int(parser.item(colref).level as i64);
-        sections.push(self_section(parser, colref, vec![("level", level)]));
+        let level = parser
+            .item(colref)
+            .heading_level
+            .map(|level| ("level", Json::Int(i64::from(level))));
+        sections.push(self_section(parser, colref, level.into_iter().collect()));
     }
     out.set("sections", Json::Arr(sections));
     out

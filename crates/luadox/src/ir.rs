@@ -93,8 +93,6 @@ pub struct Flags {
     pub types: Option<Vec<String>>,
     pub order: Option<Order>,
     pub is_enum: bool,
-    /// Heading level, for a section of a manual page.
-    pub level: Option<i32>,
 }
 
 /// The kinds of member a collection has, which is what `@compact` names: the members
@@ -297,8 +295,12 @@ pub struct Item {
     /// The symbol before `@rename` replaced it.
     pub original_symbol: Option<String>,
     pub implicit: bool,
-    /// Nesting depth of the scopes this element sits in; -1 for an implicit module.
-    pub level: i32,
+    /// Nesting depth of the table braces this element sits in, which is what closes a
+    /// `@table` scope; -1 for an implicit module or a manual page, which no brace opened.
+    pub depth: i32,
+    /// The markdown heading level of a section of a manual page. `None` for a section a
+    /// Lua source declared, which has no heading of its own.
+    pub heading_level: Option<u8>,
     pub scopes: Vec<ItemId>,
     pub within: Option<String>,
     pub collection: Option<ItemId>,
@@ -346,7 +348,8 @@ impl Item {
             symbol: symbol.to_string(),
             original_symbol: None,
             implicit: false,
-            level: 0,
+            depth: 0,
+            heading_level: None,
             scopes: Vec::new(),
             within: None,
             collection: None,

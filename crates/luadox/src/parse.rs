@@ -528,7 +528,7 @@ impl Parser {
         let modname = module_name_for(path);
         let mut modref_item = Item::new(Kind::Module, path, Some(1), &modname);
         modref_item.implicit = true;
-        modref_item.level = -1;
+        modref_item.depth = -1;
         let modref = self.push(modref_item);
 
         let mut scopes: Vec<ItemId> = vec![modref];
@@ -581,7 +581,7 @@ impl Parser {
                 table_level += code.matches('{').count() as i32;
                 table_level -= code.matches('}').count() as i32;
                 while scopes.last().is_some_and(|s| {
-                    self.item(*s).kind == Kind::Table && table_level <= self.item(*s).level
+                    self.item(*s).kind == Kind::Table && table_level <= self.item(*s).depth
                 }) {
                     scopes.pop();
                     if let Some(top) = scopes.last() {
@@ -829,7 +829,7 @@ impl Parser {
                 item.kind = kind;
                 item.line = Some(n);
                 item.symbol = name.to_string();
-                item.level = table_level;
+                item.depth = table_level;
                 item.collection = Some(*collection);
                 let snapshot = scopes.clone();
                 self.item_mut(id).scopes = snapshot;
@@ -963,7 +963,7 @@ impl Parser {
     /// cross reference can target.
     pub fn parse_manual(&mut self, name: &str, path: &str, content: &str) {
         let mut top = Item::new(Kind::Manual, path, Some(1), name);
-        top.level = -1;
+        top.depth = -1;
         let top = self.push(top);
         self.add_reference(top, None);
 
@@ -990,7 +990,7 @@ impl Parser {
                     let mut section = Item::new(Kind::Section, path, Some(n), &symbol);
                     section.scopes = vec![top];
                     section.heading = text.to_string();
-                    section.flags.level = Some(level as i32);
+                    section.heading_level = u8::try_from(level).ok();
                     let id = self.push(section);
                     self.add_reference(id, None);
                     current = id;
@@ -1335,7 +1335,8 @@ static EMPTY: Item = Item {
     symbol: String::new(),
     original_symbol: None,
     implicit: false,
-    level: 0,
+    depth: 0,
+    heading_level: None,
     scopes: Vec::new(),
     within: None,
     collection: None,
@@ -1353,7 +1354,6 @@ static EMPTY: Item = Item {
         types: None,
         order: None,
         is_enum: false,
-        level: None,
     },
     args: Vec::new(),
     value: None,

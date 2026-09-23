@@ -739,7 +739,8 @@ impl Renderer<'_> {
             // against the page, where a class collection's resolves against itself.
             self.parser.resolve_item_content(sec);
             let item = self.parser.item(sec);
-            let (level, symbol, heading) = (item.level, item.symbol.clone(), item.heading.clone());
+            let level = item.heading_level.unwrap_or(0);
+            let (symbol, heading) = (item.symbol.clone(), item.heading.clone());
             // The heading is emitted raw -- it has been through the reference rewrite, so
             // a `@{ref}` in a heading lands as literal markdown.
             out.push(format!("<h{level} id=\"{symbol}\">{heading}"));

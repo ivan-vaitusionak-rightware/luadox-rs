@@ -163,12 +163,10 @@ fn manual(parser: &mut Parser, topref: ItemId) {
         let parsed = parse_block(parser, colref);
         let heading = parser.item(colref).heading.clone();
         let heading = parser.resolve_text(&heading);
-        let level = parser.item(colref).flags.level.unwrap_or(0);
         {
             let item = parser.item_mut(colref);
             item.heading = heading;
             item.content = parsed.content;
-            item.level = level;
         }
         parser.item_mut(topref).collections.push(colref);
     }
