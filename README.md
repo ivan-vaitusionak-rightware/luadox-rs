@@ -145,7 +145,7 @@ IMPROVEMENTS (output diffs justified by a named fix)
       doc.json (.value)
   * comrak has no CODE_INDENT equivalent, so one indented continuation line becomes
     a code block.
-      html/class/DepthTargetPass.html
+      html/class/<the one corpus page>.html
 DIAGNOSTICS DELTA (never a failure)
   python 147, candidate 387
   now reported: 240 (240 compact-block-content)
@@ -337,7 +337,7 @@ oracle's 3.4 s.
 591/592 files identical
   * comrak has no CODE_INDENT equivalent, so one indented continuation line becomes
     a code block.
-      html/class/DepthTargetPass.html
+      html/class/<the one corpus page>.html
 
 17/17 fixtures match     (78/78 recorded html files identical)
 ```
@@ -358,15 +358,14 @@ an extra one". `harness/markdown_parity.py` measures both: it wraps the oracle's
 libraries and compares. 7451 renders, 4962 distinct strings, **one difference**:
 
 ```
-on DepthTargetPass
+on one corpus page
 markdown:  '     yourself.'
 oracle:    <p>yourself.</p>
 comrak:    <pre><code> yourself.
            </code></pre>
 ```
 
-A `@see` continuation indented five spaces, at
-`lua/src/autogen/DepthTargetPass.lua:21`. The fix belongs in the
+A `@see` continuation indented five spaces, on one line of one corpus file. The fix belongs in the
 source — the line is mis-indented whatever renders it — and the source is a tree this
 project only reads, so it is recorded in `improvements.toml` with the page named.
 

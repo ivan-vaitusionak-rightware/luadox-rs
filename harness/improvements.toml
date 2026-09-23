@@ -144,8 +144,7 @@ Measured by harness/markdown_parity.py, which renders every string the oracle's
 `_markdown_to_html` is called with through both libraries -- 7451 renders, 4962 distinct
 strings -- exactly one differs:
 
-    lua/src/autogen/DepthTargetPass.lua:21
-      --- @see TargetPass for a target with color attachments and for a sampler you configure
+    <the one corpus file>:21, the continuation line of a @see
       ---      yourself.
 
     markdown handed to the renderer:

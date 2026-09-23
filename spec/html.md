@@ -731,7 +731,7 @@ consulted by **eight** block starts and one continuation. With the constant at 1
 
 comrak has no equivalent knob — `comrak::options::Parse` has nothing about indentation —
 so both halves are divergences, not one. The measured cost of the first half on the production
-corpus is **one page of 578** (`class/DepthTargetPass.html`, a `@see`
+corpus is **one page of 578** (one class page, a `@see`
 continuation indented five spaces after a blank line). The second half was never measured
 and is not visible in a diff of the same kind: it shows up as a *missing* code block, not
 as an extra one.
