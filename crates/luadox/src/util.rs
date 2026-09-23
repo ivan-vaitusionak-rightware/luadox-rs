@@ -1,7 +1,7 @@
 //! Small text utilities the port needs to reproduce exactly.
 
-use blake2::digest::{Update, VariableOutput};
-use blake2::Blake2bVar;
+use blake2::digest::consts::U20;
+use blake2::{Blake2b, Digest};
 
 /// Common abbreviations whose period does not end a sentence.
 const ABBREV: [(char, &[&str]); 3] = [
@@ -158,22 +158,8 @@ pub fn shlex_split(line: &str) -> Vec<String> {
 /// The ids appear in `doc.json` and in every `luadox:` link target, so this must stay
 /// byte-for-byte what `hashlib.blake2b(s, digest_size=20).hexdigest()` produces.
 pub fn ref_id(topref_type: &str, topsym: &str, name: &str) -> String {
-    let mut hasher = match Blake2bVar::new(20) {
-        Ok(h) => h,
-        // 20 is in range for BLAKE2b, so this cannot happen; returning a marker beats
-        // panicking inside a documentation tool.
-        Err(_) => return String::from("0").repeat(40),
-    };
-    hasher.update(format!("{topref_type}#{topsym}#{name}").as_bytes());
-    let mut out = [0u8; 20];
-    if hasher.finalize_variable(&mut out).is_err() {
-        return String::from("0").repeat(40);
-    }
-    let mut hex = String::with_capacity(40);
-    for byte in out {
-        hex.push_str(&format!("{byte:02x}"));
-    }
-    hex
+    let digest = Blake2b::<U20>::digest(format!("{topref_type}#{topsym}#{name}"));
+    digest.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
 #[cfg(test)]
