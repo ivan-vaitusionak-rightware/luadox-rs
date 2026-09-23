@@ -157,7 +157,7 @@ strings -- exactly one differs:
 
 The continuation is indented five spaces after the `@see` line, which puts it past four
 once the tag's own indent is taken off. The fix belongs in the source -- that line is
-mis-indented whatever renders it -- and the source is the production tree, which this project
+mis-indented whatever renders it -- and the source is the corpus tree, which this project
 only reads. Until it is fixed there, this page differs.
 
 The second half of the divergence is not exercised: the corpus has 42 lines indented four

@@ -11,7 +11,7 @@
       "category": "types",
       "file": "types.lua",
       "line": 15,
-      "message": "type name \"engine::Color\" uses C++ scope syntax; use \".\""
+      "message": "type name \"gfx::Color\" uses C++ scope syntax; use \".\""
     },
     {
       "category": "untyped",

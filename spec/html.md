@@ -49,7 +49,7 @@ file, assuming ./out/')`.
   6  img/i-{left,right,download,github,gitlab,bitbucket}.svg
 ```
 
-591 files. `index.html` is the production manual page (`[manual] index = …`), not the
+591 files. `index.html` is the corpus's manual page (`[manual] index = …`), not the
 generated landing page, and `favicon96x96.png` is the one copied config file that exists.
 
 ---
@@ -194,7 +194,7 @@ otherwise:
 
 **`sidebar.tmpl.html` does not exist** in `luadox/data/` on any branch of the fork. A run
 without `project.sidebar_template` therefore dies in the renderer's constructor with
-`FileNotFoundError`. the production config sets it, so nobody has noticed; the fixtures set it too. Port
+`FileNotFoundError`. The production config sets it, so nobody has noticed; the fixtures set it too. Port
 the fix, not the bug: ship a default sidebar template.
 
 The three that do exist are, verbatim:
@@ -730,7 +730,7 @@ consulted by **eight** block starts and one continuation. With the constant at 1
   have made it indented code. So does a block quote's continuation.
 
 comrak has no equivalent knob — `comrak::options::Parse` has nothing about indentation —
-so both halves are divergences, not one. The measured cost of the first half on the the production project
+so both halves are divergences, not one. The measured cost of the first half on the production
 corpus is **one page of 578** (`class/DepthTargetPass.html`, a `@see`
 continuation indented five spaces after a blank line). The second half was never measured
 and is not visible in a diff of the same kind: it shows up as a *missing* code block, not

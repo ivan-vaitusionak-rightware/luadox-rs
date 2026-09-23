@@ -16,7 +16,7 @@ Shape = {}
 ---@param precise number The precise ratio.
 ---@param color Color A documented class used as a type.
 ---@param thing Unknown A name that resolves to nothing.
----@param scoped engine::Color A C++ scoped name.
+---@param scoped gfx::Color A C++ scoped name.
 ---@param label string|nil A union of two built-ins.
 ---@return nil
 function Shape.paint(on, count, ratio, precise, color, thing, scoped, label) end

@@ -5,7 +5,7 @@
 //!
 //!   * a `#` preceded by whitespace starts a comment in the middle of a value;
 //!   * a value continues onto the following lines while they are indented deeper than
-//!     the line that opened it -- which is how `files` in `engine-lua-api.conf` lists five
+//!     the line that opened it -- which is how `files` in the production config lists five
 //!     globs.
 //!
 //! No Rust INI crate claims either, so this is written by hand against the dialect rather
@@ -250,14 +250,14 @@ fn split_option(line: &str) -> Option<(&str, &str)> {
 mod tests {
     use super::*;
 
-    /// The exact shape `engine-lua-api.conf` uses: a five-line `files` value, a `#`
+    /// The exact shape the production config uses: a five-line `files` value, a `#`
     /// comment column, and a second section whose order matters.
     #[test]
     fn production_config_shape() {
         let text = concat!(
             "[project]\n",
             "# Project name that is displayed on the top bar of each page.\n",
-            "name = Engine Lua API\n",
+            "name = Example Engine Lua API\n",
             "files = ../../../lua/src/*.lua\n",
             "        ../../../lua/src/autogen/*.lua\n",
             "        ../../../lua/src/math-docs/*.lua\n",
@@ -268,7 +268,7 @@ mod tests {
             "index = ../luadox/manual/index.md\n",
         );
         let config = Config::parse(text).unwrap_or_default();
-        assert_eq!(config.get("project", "name"), Some("Engine Lua API"));
+        assert_eq!(config.get("project", "name"), Some("Example Engine Lua API"));
         assert_eq!(
             config.get("project", "files"),
             Some(concat!(

@@ -2,7 +2,7 @@
 //! two parsers can be graded against the same oracle dump with `harness/compare_decls.py`.
 //!
 //! Phase 1 left one claim unproven: the tree-sitter spike keeps "every declaration around
-//! and inside" the corpus's 40 `#ifdef ENGINE_DEBUG` lines, while full_moon was only
+//! and inside" the corpus's 40 `#ifdef` lines, while full_moon was only
 //! observed to keep every *top-level* declaration. A lost declaration is a member that
 //! silently does not render, so the claim has to be measured, not assumed.
 //!
@@ -99,8 +99,8 @@ struct Report {
 
 /// Blanks C preprocessor directives, preserving the line count exactly.
 ///
-/// The production Lua sources are run through a C preprocessor before they reach the
-/// interpreter, so 40 lines across 8 files are `#ifdef ENGINE_DEBUG` / `#endif`. They are
+/// The corpus's Lua sources are run through a C preprocessor before they reach the
+/// interpreter, so 40 lines across 8 files are `#ifdef` / `#endif` directives. They are
 /// not Lua, and no Lua parser should be asked to make sense of them; the line scanner in
 /// the Python oracle only survives them because it never parses anything.
 ///

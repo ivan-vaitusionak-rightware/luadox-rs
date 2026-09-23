@@ -451,7 +451,7 @@ no `TYPE_MAP`. `@treturn void` reads `void` on the html page and `nil` in
 two renderers is already wrong.
 
 > `types`: `bool int float double` → `boolean integer number number`; `Color` resolves;
-> `Unknown` and `engine::Color` pass through with one diagnostic each; `string|nil` stays;
+> `Unknown` and `gfx::Color` pass through with one diagnostic each; `string|nil` stays;
 > `void` → `nil`. The html page for the same function prints `bool`, `int`, `float`,
 > `double`, `void`.
 

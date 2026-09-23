@@ -128,7 +128,7 @@
                   "name": "scoped",
                   "types": [
                     {
-                      "name": "engine::Color"
+                      "name": "gfx::Color"
                     }
                   ],
                   "content": [

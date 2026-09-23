@@ -3,7 +3,7 @@
 //! Fourteen files ship in the Python's `luadox/data/`, and a fifteenth does not: the html
 //! renderer reads `sidebar.tmpl.html` from the bundle when no `project.sidebar_template`
 //! is configured, and no branch of the fork contains that file. A run without one dies in
-//! the renderer's constructor with `FileNotFoundError`. the production config sets one, so nobody
+//! the renderer's constructor with `FileNotFoundError`. The production config sets one, so nobody
 //! has noticed. This ships a default, which is the fix rather than the bug, and it is
 //! recorded in `harness/improvements.toml` because it is a deviation.
 

@@ -91,8 +91,8 @@ impl SourceFile {
 
 /// Blanks C preprocessor directives, preserving the line count exactly.
 ///
-/// The production Lua sources are run through a C preprocessor before they reach the
-/// interpreter, so 40 lines across 8 files are `#ifdef ENGINE_DEBUG` / `#endif`. They are
+/// The corpus's Lua sources are run through a C preprocessor before they reach the
+/// interpreter, so 40 lines across 8 files are `#ifdef` / `#endif` directives. They are
 /// not Lua, and no Lua parser should be asked to make sense of them; the Python's line
 /// scanner only survives them because it never parses anything.
 ///
@@ -472,7 +472,7 @@ function L:real() end
     #[test]
     fn preprocessor_directives_are_blanked_and_line_numbers_survive() {
         let source =
-            "function f()\n#ifdef ENGINE_DEBUG\n    check()\n#endif\nend\nfunction g() end\n";
+            "function f()\n#ifdef DEBUG_BUILD\n    check()\n#endif\nend\nfunction g() end\n";
         let file = parse("<test>", source);
         assert_eq!(file.blanked_directives, 2);
         assert!(file.errors.is_empty(), "{:?}", file.errors);

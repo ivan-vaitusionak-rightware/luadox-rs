@@ -9,7 +9,7 @@
 --- @tparam double precise The precise ratio.
 --- @tparam Color color A documented class used as a type.
 --- @tparam Unknown thing A name that resolves to nothing.
---- @tparam engine::Color scoped A C++ scoped name.
+--- @tparam gfx::Color scoped A C++ scoped name.
 --- @tparam string|nil label A union of two built-ins.
 --- @treturn void
 function Shape.paint(on, count, ratio, precise, color, thing, scoped, label)

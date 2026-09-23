@@ -99,7 +99,7 @@ def main() -> int:
                          'pass --allow-dirty (the recording is then not reproducible)')
 
     # The oracle runs with its cwd inside the corpus, so every path handed to it must
-    # be absolute or it lands somewhere in the production tree.
+    # be absolute or it lands somewhere in the corpus tree.
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=True)
     manifest: list[str] = []

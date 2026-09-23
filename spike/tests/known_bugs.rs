@@ -128,7 +128,7 @@ M.Activated = MessageType:find(
     );
 }
 
-/// The production Lua sources are preprocessed, so `#ifdef` lines reach the parser. They are
+/// The corpus's Lua sources are preprocessed, so `#ifdef` lines reach the parser. They are
 /// not Lua; tree-sitter localises them to an ERROR node and parses the rest, which is
 /// the error-recovery property the choice of parser was made for.
 #[test]
@@ -136,7 +136,7 @@ fn preprocessor_directives_do_not_stop_the_parse() {
     let source = r#"
 --- Before.
 function K:before() end
-#ifdef ENGINE_DEBUG
+#ifdef DEBUG_BUILD
 --- Guarded.
 function K:guarded() end
 #endif

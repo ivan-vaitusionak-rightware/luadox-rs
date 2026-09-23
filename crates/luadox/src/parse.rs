@@ -697,7 +697,7 @@ impl Parser {
     /// Both are declared memberships: the enum mirrors a C++ enumeration and a section
     /// names the group it contains, and both are usually generated from C++ whose Doxygen
     /// comments are often absent. Dropping the undocumented ones hid 35 property and
-    /// message types across 10 pages of the production Lua API.
+    /// message types across 10 pages of the production API docs.
     #[allow(clippy::too_many_arguments)]
     fn synthesize_member(
         &mut self,

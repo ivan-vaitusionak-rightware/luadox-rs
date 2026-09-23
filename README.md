@@ -16,7 +16,7 @@ Everything here reads two trees and writes nothing to either:
 | input | what it is | pinned at |
 |---|---|---|
 | `<luadox-fork>` | the Python fork | `origin/luals-all` + `oracle-patches/` |
-| `<corpus>` | the production corpus, 580 Lua files | `6fa35c5ee93c912fb7062f976e33afb62151d416` |
+| `$LUADOX_CORPUS_REPO` (see `harness/corpus.py`) | the production corpus, 580 Lua files | the commit `golden/provenance.json` records |
 
 ## What the acceptance criterion is
 
@@ -110,7 +110,7 @@ All on this machine, rustc 1.83.0 (msvc), Python 3.10.11, corpus `6fa35c5e`.
 | C toolchain in the workspace | **yes** | no |
 | licence | MIT | MPL-2.0 |
 | doc comment attachment | comments are nodes; matched to the next declaration by line | leading trivia on the declaration's own token |
-| the 40 `#ifdef ENGINE_DEBUG` / `#endif` lines | 40 localised ERROR nodes | 140 errors, 0 after preprocessing |
+| the 40 `#ifdef` / `#endif` preprocessor lines | 40 localised ERROR nodes | 140 errors, 0 after preprocessing |
 | declarations lost to those lines | none | **none** |
 
 Declaration agreement with the oracle, keyed on `(file, line, kind, local symbol)` —
@@ -163,7 +163,7 @@ And `python spec/run.py`, the second corpus, grading all three renderers:
 ### What is covered
 
 Tags, scopes, `@within`, `@order`, name resolution, hierarchy, content assembly,
-diagnostics and config -- for both corpora, so all 27 tags including the eleven the the production project
+diagnostics and config -- for both corpora, so all 27 tags including the eleven the production
 corpus never uses. Config is the Python `ConfigParser` dialect written by hand
 (`#`-after-whitespace inline comments, indented-continuation multi-line values). The json
 output is written by a hand-rolled ordered-object encoder, because Python dicts are
@@ -481,13 +481,13 @@ Why full_moon wins on the rest:
   pin instead of three.
 
 The cost that stands: **MPL-2.0** rather than MIT, which adds an entry to
-`docs/licenses/third-party-licenses.rst`. File-level copyleft on
+the consuming project's third-party licence list. File-level copyleft on
 modified MPL files only, and the dependency is unmodified.
 
 ### The preprocessing step
 
-The production Lua sources are C-preprocessed before they reach the interpreter, so 40 lines
-across 8 files are `#ifdef ENGINE_DEBUG` / `#endif`. Those are not Lua, and no Lua parser
+The corpus's Lua sources are C-preprocessed before they reach the interpreter, so 40 lines
+across 8 files are `#ifdef` / `#endif` directives. Those are not Lua, and no Lua parser
 should be asked to make sense of them — the Python line scanner only survives them
 because it never parses anything.
 
