@@ -6,6 +6,8 @@
 
 use std::fmt;
 
+use crate::ir::Order;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Tag {
     // Collection tags: each opens a new collection and becomes the current one.
@@ -31,10 +33,7 @@ pub enum Tag {
     Rename(String),
     Display(String),
     Type(Vec<String>),
-    Order {
-        whence: String,
-        anchor: Option<String>,
-    },
+    Order(Order),
 
     // Content tags: handled when the content block is assembled, not when it is scanned.
     Code {
@@ -90,7 +89,7 @@ impl Tag {
             Self::Rename(_) => "rename",
             Self::Display(_) => "display",
             Self::Type(_) => "type",
-            Self::Order { .. } => "order",
+            Self::Order(_) => "order",
             Self::Code { .. } => "code",
             Self::Usage { .. } => "usage",
             Self::Example { .. } => "example",
@@ -266,10 +265,7 @@ fn build(name: &str, args: &[&str]) -> Result<Vec<Tag>, TagError> {
         "inherits" => Tag::Inherits(args.iter().map(|s| s.to_string()).collect()),
         "since" => Tag::Since(var_string(args, 0).unwrap_or_default()),
         "type" => Tag::Type(pipe_list(need(name, args, 0)?)),
-        "order" => Tag::Order {
-            whence: one(0)?,
-            anchor: args.get(1).map(|s| s.to_string()),
-        },
+        "order" => Tag::Order(order(args)?),
         "code" => Tag::Code {
             lang: args.first().map(|s| s.to_string()),
             snippet: args.get(1).map(|s| s.to_string()),
@@ -297,6 +293,31 @@ fn build(name: &str, args: &[&str]) -> Result<Vec<Tag>, TagError> {
         other => Tag::Unrecognized(other.to_string()),
     };
     Ok(vec![tag])
+}
+
+/// `@order first`, `@order last`, `@order before <ref>` or `@order after <ref>`. The
+/// Python takes any word with an anchor as `after` and only complains about a missing
+/// anchor at render time; here a placement is one of the four or it is reported.
+fn order(args: &[&str]) -> Result<Order, TagError> {
+    let invalid = |detail: String| TagError {
+        tag: "order".to_string(),
+        detail,
+    };
+    let whence = need("order", args, 0)?;
+    let anchor = args.get(1).map(|s| s.to_string());
+    match (whence, anchor) {
+        ("first", None) => Ok(Order::First),
+        ("last", None) => Ok(Order::Last),
+        ("before", Some(anchor)) => Ok(Order::Before(anchor)),
+        ("after", Some(anchor)) => Ok(Order::After(anchor)),
+        ("first" | "last", Some(_)) => Err(invalid(format!("{whence} takes no anchor reference"))),
+        ("before" | "after", None) => {
+            Err(invalid(format!("{whence} requires an anchor reference")))
+        }
+        (other, _) => Err(invalid(format!(
+            "\"{other}\" is not a placement; write first, last, before <ref> or after <ref>"
+        ))),
+    }
 }
 
 /// `@class` also accepts the LuaCATS form `@class Name: Parent`, which becomes a class
@@ -375,6 +396,42 @@ mod tests {
             one("--- @compact fields"),
             Some(Tag::Compact(vec!["fields".into()]))
         );
+    }
+
+    #[test]
+    fn order_is_one_of_four_placements() {
+        assert_eq!(one("--- @order first"), Some(Tag::Order(Order::First)));
+        assert_eq!(one("--- @order last"), Some(Tag::Order(Order::Last)));
+        assert_eq!(
+            one("--- @order before Foo"),
+            Some(Tag::Order(Order::Before("Foo".into())))
+        );
+        assert_eq!(
+            one("--- @order after Foo"),
+            Some(Tag::Order(Order::After("Foo".into())))
+        );
+    }
+
+    #[test]
+    fn a_malformed_order_names_what_the_placement_requires() {
+        let Err(err) = parse("--- @order first Foo", true) else {
+            panic!("an absolute placement with an anchor must be rejected");
+        };
+        assert_eq!(
+            err.to_string(),
+            "@order is invalid: first takes no anchor reference"
+        );
+        let Err(err) = parse("--- @order before", true) else {
+            panic!("a relative placement without an anchor must be rejected");
+        };
+        assert_eq!(
+            err.to_string(),
+            "@order is invalid: before requires an anchor reference"
+        );
+        let Err(err) = parse("--- @order bogus Foo", true) else {
+            panic!("an unknown placement must be rejected");
+        };
+        assert!(err.detail.contains("\"bogus\" is not a placement"), "{err}");
     }
 
     #[test]

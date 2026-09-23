@@ -95,10 +95,14 @@ pub struct Flags {
     pub level: Option<i32>,
 }
 
+/// Where `@order` puts an element among its siblings. The anchor is another sibling's
+/// symbol, and only the relative placements have one.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Order {
-    pub whence: String,
-    pub anchor: Option<String>,
+pub enum Order {
+    First,
+    Last,
+    Before(String),
+    After(String),
 }
 
 /// One line of an unparsed documentation block: where it came from, its text, and the

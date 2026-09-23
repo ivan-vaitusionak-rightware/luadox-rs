@@ -49,6 +49,22 @@ the entry exists so the harness accepts one the day a string containing `--` is 
 present_in_corpus = false
 
 [[improvement]]
+level = "L1"
+json_path_contains = ".sections["
+fix = "A malformed `@order` is diagnosed instead of silently reordering."
+why = """
+`OrderTag` is `whence: str, anchor: Optional[str]`, and `_reorder_refs` reads it as
+"an anchor means relative, and anything relative that is not `before` is `after`". So
+`@order first Foo` and `@order bogus Foo` both move the element after `Foo`, and only a
+bare `@order bogus` is reported -- at render time, not at the tag. `Order` is now an enum
+of the four placements, built where the tag is parsed: an absolute placement with an
+anchor, a relative one without, or an unknown word is a structure diagnostic on the
+tag's own line and the element keeps its source order. Zero occurrences in the production
+corpus today; when one appears, the sections it moves are what this entry explains.
+"""
+present_in_corpus = false
+
+[[improvement]]
 level = "L2"
 paths = []
 fix = "A declaration inside a `--[[ ]]` long comment is no longer documented."

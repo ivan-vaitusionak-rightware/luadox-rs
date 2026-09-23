@@ -928,9 +928,7 @@ impl Parser {
                 Tag::Scope(name) => self.item_mut(id).flags.scope = Some(name),
                 Tag::Display(name) => self.item_mut(id).flags.display = Some(name),
                 Tag::Type(types) => self.item_mut(id).flags.types = Some(types),
-                Tag::Order { whence, anchor } => {
-                    self.item_mut(id).flags.order = Some(Order { whence, anchor })
-                }
+                Tag::Order(order) => self.item_mut(id).flags.order = Some(order),
                 Tag::Unrecognized(name) => self.diagnostics.add(
                     Category::Structure,
                     format!("unrecognized tag @{name}, ignoring"),
@@ -1072,31 +1070,23 @@ impl Parser {
             let Some(order) = self.item(r).flags.order.clone() else {
                 continue;
             };
-            let Some(anchor) = order.anchor else {
-                match order.whence.as_str() {
-                    "first" => {
-                        ordered.retain(|x| *x != r);
-                        ordered.insert(0, r);
-                    }
-                    "last" => {
-                        ordered.retain(|x| *x != r);
-                        ordered.push(r);
-                    }
-                    whence => {
-                        let (_, file, line) = self.locate(r);
-                        self.diagnostics.add(
-                            Category::Structure,
-                            format!("@order {whence} requires an anchor reference"),
-                            Some(&file),
-                            line,
-                        );
-                    }
+            let (anchor, offset) = match order {
+                Order::First => {
+                    ordered.retain(|x| *x != r);
+                    ordered.insert(0, r);
+                    continue;
                 }
-                continue;
+                Order::Last => {
+                    ordered.retain(|x| *x != r);
+                    ordered.push(r);
+                    continue;
+                }
+                Order::Before(anchor) => (anchor, 0),
+                Order::After(anchor) => (anchor, 1),
             };
             match ordered.iter().position(|o| self.item(*o).symbol == anchor) {
                 Some(at) => {
-                    let at = if order.whence == "before" { at } else { at + 1 };
+                    let at = at + offset;
                     ordered.retain(|x| *x != r);
                     let at = at.min(ordered.len());
                     ordered.insert(at, r);
