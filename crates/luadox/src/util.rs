@@ -211,15 +211,9 @@ mod tests {
 
     #[test]
     fn ref_id_matches_the_python() {
-        // Recorded from the oracle's doc.json: the AbstractTargetPass class.
-        assert_eq!(
-            ref_id(
-                "class",
-                "AbstractTargetPass",
-                "AbstractTargetPass"
-            ),
-            "6ded1ac673edcea4721677fc5b77a928af1835b7"
-        );
+        // What the Python computes for a class whose top symbol is its own name:
+        // hashlib.blake2b(b"class#Widget#Widget", digest_size=20).hexdigest().
+        assert_eq!(ref_id("class", "Widget", "Widget"), "b325db938a25407e452fbf426e16590ec91f88ec");
     }
 
     #[test]
