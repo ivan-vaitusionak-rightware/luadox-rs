@@ -13,7 +13,7 @@ struct Args {
     #[arg(short, long, value_name = "FILE")]
     config: Option<PathBuf>,
 
-    /// how to render the parsed content (json, luals)
+    /// how to render the parsed content
     #[arg(short, long, value_name = "TYPE")]
     renderer: Option<RendererName>,
 
