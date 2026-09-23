@@ -36,7 +36,11 @@ fn main() -> ExitCode {
                 return ExitCode::SUCCESS;
             }
             "-c" | "--config" => value().map(|v| options.config = Some(PathBuf::from(v))),
-            "-r" | "--renderer" => value().map(|v| options.renderer = Some(v)),
+            "-r" | "--renderer" => value().and_then(|v| {
+                v.parse()
+                    .map(|r| options.renderer = Some(r))
+                    .map_err(|e| e.to_string())
+            }),
             "-o" | "--out" => value().map(|v| options.out = Some(v)),
             "-n" | "--name" => value().map(|v| options.name = Some(v)),
             "--snippet-path" => value().map(|v| options.snippet_path = Some(v)),

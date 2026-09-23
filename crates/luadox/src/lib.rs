@@ -26,6 +26,7 @@ pub mod util;
 
 use std::fmt;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 use crate::config::Config;
 use crate::diag::Category;
@@ -48,9 +49,11 @@ impl fmt::Display for Error {
                 "no input files or directories specified on command line or config file"
             ),
             Self::UnknownRenderer(name) => {
+                let valid: Vec<&str> = Renderer::ALL.iter().map(|r| r.as_str()).collect();
                 write!(
                     f,
-                    "unknown renderer \"{name}\", valid types are: html, json, luals"
+                    "unknown renderer \"{name}\", valid types are: {}",
+                    valid.join(", ")
                 )
             }
             Self::Io(msg) => write!(f, "{msg}"),
@@ -60,11 +63,54 @@ impl fmt::Display for Error {
 
 impl std::error::Error for Error {}
 
+/// The output formats. A name that is not one of these is an error at the edge -- the
+/// command line or the config file -- so no string reaches the pipeline that could fall
+/// through to the wrong renderer.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Renderer {
+    Html,
+    Json,
+    Luals,
+}
+
+impl Renderer {
+    pub const ALL: [Self; 3] = [Self::Html, Self::Json, Self::Luals];
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Html => "html",
+            Self::Json => "json",
+            Self::Luals => "luals",
+        }
+    }
+
+    /// The suffix of the file a run writes; the html renderer writes a directory, not a
+    /// file.
+    pub fn extension(self) -> &'static str {
+        match self {
+            Self::Html => "",
+            Self::Json => ".json",
+            Self::Luals => ".lua",
+        }
+    }
+}
+
+impl FromStr for Renderer {
+    type Err = Error;
+
+    fn from_str(name: &str) -> Result<Self, Error> {
+        Self::ALL
+            .into_iter()
+            .find(|r| r.as_str() == name)
+            .ok_or_else(|| Error::UnknownRenderer(name.to_string()))
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct Options {
     pub config: Option<PathBuf>,
     pub files: Vec<String>,
-    pub renderer: Option<String>,
+    pub renderer: Option<Renderer>,
     pub out: Option<String>,
     pub name: Option<String>,
     pub snippet_path: Option<String>,
@@ -84,16 +130,9 @@ pub struct Outcome {
 
 pub fn run(options: &Options) -> Result<Outcome, Error> {
     let config = build_config(options)?;
-    let renderer = options
-        .renderer
-        .clone()
-        .unwrap_or_else(|| config.get_or("project", "renderer", "html"));
-    let extension = match renderer.as_str() {
-        "json" => ".json",
-        "luals" => ".lua",
-        // The html renderer writes a directory, not a file.
-        "html" => "",
-        _ => return Err(Error::UnknownRenderer(renderer)),
+    let renderer = match options.renderer {
+        Some(renderer) => renderer,
+        None => config.get_or("project", "renderer", "html").parse()?,
     };
 
     let files = input_files(&config);
@@ -143,25 +182,24 @@ pub fn run(options: &Options) -> Result<Outcome, Error> {
     parser.validate_enums();
 
     let toprefs = prerender::process(&mut parser);
-    if renderer == "html" {
-        let out = html_out_dir(options, &parser.config);
-        let written = write_html(&mut parser, &toprefs, &out)?;
-        if let Some(path) = &options.diagnostics_json {
-            write_diagnostics(&parser, path, options.diagnostics_root.as_deref())?;
+    let document = match renderer {
+        Renderer::Html => {
+            let out = html_out_dir(options, &parser.config);
+            let written = write_html(&mut parser, &toprefs, &out)?;
+            if let Some(path) = &options.diagnostics_json {
+                write_diagnostics(&parser, path, options.diagnostics_root.as_deref())?;
+            }
+            return Ok(Outcome {
+                exit_code: parser.diagnostics.exit_code(),
+                summary: parser.diagnostics.summary(),
+                output: out.join(format!("{written} files")),
+            });
         }
-        return Ok(Outcome {
-            exit_code: parser.diagnostics.exit_code(),
-            summary: parser.diagnostics.summary(),
-            output: out.join(format!("{written} files")),
-        });
-    }
-
-    let document = match renderer.as_str() {
-        "luals" => render::luals::render(&mut parser, &toprefs).map_err(Error::Config)?,
-        _ => render::json::render(&mut parser, &toprefs).write(),
+        Renderer::Luals => render::luals::render(&mut parser, &toprefs).map_err(Error::Config)?,
+        Renderer::Json => render::json::render(&mut parser, &toprefs).write(),
     };
 
-    let out = out_path(options, &parser.config, extension);
+    let out = out_path(options, &parser.config, renderer.extension());
     if let Some(dir) = out.parent().filter(|d| !d.as_os_str().is_empty()) {
         std::fs::create_dir_all(dir).map_err(|e| Error::Io(format!("{}: {e}", dir.display())))?;
     }
