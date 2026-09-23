@@ -8,3 +8,7 @@
 __pycache__/
 /fallback-probe/target/
 /target/
+
+# Golden data is recorded from the production corpus and names its files and symbols;
+# it is rebuilt with `harness/oracle_run.py --record` and not vendored here.
+/golden/
