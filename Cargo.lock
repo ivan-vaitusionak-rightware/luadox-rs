@@ -210,7 +210,6 @@ dependencies = [
  "full_moon",
  "glob",
  "serde",
- "serde_json",
 ]
 
 [[package]]
