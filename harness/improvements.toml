@@ -65,6 +65,20 @@ corpus today; when one appears, the sections it moves are what this entry explai
 present_in_corpus = false
 
 [[improvement]]
+level = "L1"
+json_path_contains = ".compact"
+fix = "An unknown `@compact` member kind is diagnosed instead of silently accepted."
+why = """
+`CompactTag.elements` is `List[str]`, so `@compact field` is a collection whose compact
+list names nothing that exists: nothing is rendered compact and nothing says why. The
+member kinds are now an enum, built where the tag is parsed: a word that is not `fields`
+or `functions` is a structure diagnostic on the tag's line, and the tag is dropped, so
+`@compact fields typo` leaves the fields non-compact where the Python made them compact.
+Zero occurrences in the production corpus today.
+"""
+present_in_corpus = false
+
+[[improvement]]
 level = "L2"
 paths = []
 fix = "A declaration inside a `--[[ ]]` long comment is no longer documented."

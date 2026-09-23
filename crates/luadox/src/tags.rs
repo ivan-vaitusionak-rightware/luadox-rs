@@ -6,7 +6,7 @@
 
 use std::fmt;
 
-use crate::ir::Order;
+use crate::ir::{Member, Order};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Tag {
@@ -23,7 +23,7 @@ pub enum Tag {
         desc: String,
     },
     Alias(String),
-    Compact(Vec<String>),
+    Compact(Vec<Member>),
     Fullnames,
     Deprecated(Option<String>),
     Inherits(Vec<String>),
@@ -257,9 +257,11 @@ fn build(name: &str, args: &[&str]) -> Result<Vec<Tag>, TagError> {
             desc: var_string(args, 1).unwrap_or_default(),
         },
         "compact" => Tag::Compact(if args.is_empty() {
-            vec!["fields".to_string(), "functions".to_string()]
+            Member::ALL.to_vec()
         } else {
-            args.iter().map(|s| s.to_string()).collect()
+            args.iter()
+                .map(|arg| member(arg))
+                .collect::<Result<_, _>>()?
         }),
         "deprecated" => Tag::Deprecated(var_string(args, 0)),
         "inherits" => Tag::Inherits(args.iter().map(|s| s.to_string()).collect()),
@@ -293,6 +295,20 @@ fn build(name: &str, args: &[&str]) -> Result<Vec<Tag>, TagError> {
         other => Tag::Unrecognized(other.to_string()),
     };
     Ok(vec![tag])
+}
+
+/// The Python keeps whatever word follows `@compact`, so a typo is a collection that is
+/// silently not compact; here the word is a member kind or it is reported.
+fn member(arg: &str) -> Result<Member, TagError> {
+    Member::ALL
+        .into_iter()
+        .find(|m| m.as_str() == arg)
+        .ok_or_else(|| TagError {
+            tag: "compact".to_string(),
+            detail: format!(
+                "\"{arg}\" is not a member kind; write fields, functions, or nothing for both"
+            ),
+        })
 }
 
 /// `@order first`, `@order last`, `@order before <ref>` or `@order after <ref>`. The
@@ -390,11 +406,26 @@ mod tests {
     fn compact_defaults_to_both_element_kinds() {
         assert_eq!(
             one("--- @compact"),
-            Some(Tag::Compact(vec!["fields".into(), "functions".into()]))
+            Some(Tag::Compact(vec![Member::Fields, Member::Functions]))
         );
         assert_eq!(
             one("--- @compact fields"),
-            Some(Tag::Compact(vec!["fields".into()]))
+            Some(Tag::Compact(vec![Member::Fields]))
+        );
+        assert_eq!(
+            one("--- @compact functions fields"),
+            Some(Tag::Compact(vec![Member::Functions, Member::Fields]))
+        );
+    }
+
+    #[test]
+    fn a_compact_member_that_is_not_a_kind_is_rejected() {
+        let Err(err) = parse("--- @compact fields field", true) else {
+            panic!("an unknown member kind must be rejected");
+        };
+        assert_eq!(
+            err.to_string(),
+            "@compact is invalid: \"field\" is not a member kind; write fields, functions, or nothing for both"
         );
     }
 

@@ -76,7 +76,7 @@ fn classmod(parser: &mut Parser, topref: ItemId) -> Json {
                 .item(colref)
                 .compact
                 .iter()
-                .map(|s| Json::Str(s.clone()))
+                .map(|m| Json::Str(m.as_str().to_string()))
                 .collect(),
         );
         let is_enum = Json::Bool(parser.item(colref).flags.is_enum);

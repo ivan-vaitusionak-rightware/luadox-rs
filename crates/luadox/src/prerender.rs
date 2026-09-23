@@ -6,7 +6,7 @@
 
 use crate::content::{self, Parsed};
 use crate::diag::Category;
-use crate::ir::{Content, Fragment, ItemId, Kind};
+use crate::ir::{Content, Fragment, ItemId, Kind, Member};
 use crate::markdown::RowContent;
 use crate::parse::Parser;
 
@@ -111,7 +111,12 @@ fn classmod(parser: &mut Parser, topref: ItemId) {
                 item.content = parsed.content;
             }
             apply_deprecated(parser, id);
-            fit_to_row(parser, id, &parser.item(colref).compact.clone(), "fields");
+            fit_to_row(
+                parser,
+                id,
+                &parser.item(colref).compact.clone(),
+                Member::Fields,
+            );
             parser.item_mut(colref).fields.push(id);
         }
 
@@ -142,7 +147,7 @@ fn classmod(parser: &mut Parser, topref: ItemId) {
                 parser,
                 id,
                 &parser.item(colref).compact.clone(),
-                "functions",
+                Member::Functions,
             );
             parser.item_mut(colref).functions.push(id);
         }
@@ -188,8 +193,8 @@ fn manual(parser: &mut Parser, topref: ItemId) {
 /// invariant can be broken. Its `Err` is the report; the fix belongs to whoever wrote the
 /// tag -- drop `@compact` for that collection, or keep its members' documentation to
 /// prose.
-fn fit_to_row(parser: &mut Parser, id: ItemId, compact: &[String], kind: &str) {
-    if !compact.iter().any(|c| c == kind) {
+fn fit_to_row(parser: &mut Parser, id: ItemId, compact: &[Member], member: Member) {
+    if !compact.contains(&member) {
         return;
     }
     match RowContent::try_from(&parser.item(id).content) {

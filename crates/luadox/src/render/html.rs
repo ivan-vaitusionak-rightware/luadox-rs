@@ -21,7 +21,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use crate::assets;
-use crate::ir::{Content, Fragment, ItemId, Kind};
+use crate::ir::{Content, Fragment, ItemId, Kind, Member};
 use crate::markdown;
 use crate::parse::Parser;
 use crate::util;
@@ -849,8 +849,8 @@ impl Renderer<'_> {
             fields_has_type: false,
             functions_title: "Functions",
             functions_meta: 0,
-            fields_compact: item.compact.iter().any(|c| c == "fields"),
-            functions_compact: item.compact.iter().any(|c| c == "functions"),
+            fields_compact: item.compact.contains(&Member::Fields),
+            functions_compact: item.compact.contains(&Member::Functions),
         };
         for id in &item.fields {
             let field = self.parser.item(*id);

@@ -85,7 +85,7 @@ pub struct Flags {
     /// bare tag.
     pub deprecated: Option<String>,
     pub inherits: Vec<String>,
-    pub compact: Option<Vec<String>>,
+    pub compact: Option<Vec<Member>>,
     pub fullnames: bool,
     pub meta: Option<String>,
     pub types: Option<Vec<String>>,
@@ -93,6 +93,25 @@ pub struct Flags {
     pub is_enum: bool,
     /// Heading level, for a section of a manual page.
     pub level: Option<i32>,
+}
+
+/// The kinds of member a collection has, which is what `@compact` names: the members
+/// rendered as one-line rows without a detail box.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Member {
+    Fields,
+    Functions,
+}
+
+impl Member {
+    pub const ALL: [Self; 2] = [Self::Fields, Self::Functions];
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Fields => "fields",
+            Self::Functions => "functions",
+        }
+    }
 }
 
 /// Where `@order` puts an element among its siblings. The anchor is another sibling's
@@ -264,7 +283,7 @@ pub struct Item {
     pub meta: Option<String>,
     pub params: Vec<Param>,
     pub returns: Vec<Returned>,
-    pub compact: Vec<String>,
+    pub compact: Vec<Member>,
     /// For a top-level element: its collections, in render order.
     pub collections: Vec<ItemId>,
     /// This element's documentation reduced to what a one-line context can present,
