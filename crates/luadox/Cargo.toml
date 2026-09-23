@@ -11,7 +11,6 @@ blake2.workspace = true
 comrak.workspace = true
 glob.workspace = true
 serde.workspace = true
-serde_json.workspace = true
 
 [lints]
 workspace = true

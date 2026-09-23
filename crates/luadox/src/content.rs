@@ -220,7 +220,7 @@ impl Parser {
 
         // A body is always pushed after the body that owns it, so moving them in
         // descending order fills children before their parents.
-        attach.sort_by(|a, b| b.2.cmp(&a.2));
+        attach.sort_by_key(|a| std::cmp::Reverse(a.2));
         for (parent, index, child) in attach {
             let taken = bodies
                 .get_mut(child)

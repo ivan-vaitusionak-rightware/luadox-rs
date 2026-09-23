@@ -1288,10 +1288,7 @@ impl Parser {
     pub fn hierarchy(&self, id: ItemId) -> Vec<ItemId> {
         let mut chain = vec![id];
         let mut seen: HashSet<ItemId> = HashSet::from([id]);
-        loop {
-            let Some(first) = chain.first().copied() else {
-                break;
-            };
+        while let Some(first) = chain.first().copied() {
             let Some(parent) = self.item(first).flags.inherits.first() else {
                 break;
             };

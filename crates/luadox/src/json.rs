@@ -14,8 +14,8 @@ pub enum Json {
     Bool(bool),
     Int(i64),
     Str(String),
-    Arr(Vec<Json>),
-    Obj(Vec<(String, Json)>),
+    Arr(Vec<Self>),
+    Obj(Vec<(String, Self)>),
 }
 
 impl Json {
