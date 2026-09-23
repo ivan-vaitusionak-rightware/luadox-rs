@@ -7,6 +7,7 @@
 //! field itself. Here the same rule is an explicit pass, with the context named at the
 //! call site instead of hidden in a closure.
 
+use std::borrow::Cow;
 use std::path::Path;
 
 use crate::diag::Category;
@@ -472,7 +473,7 @@ impl Parser {
         let resolved = if already {
             raw
         } else {
-            self.resolve_text(&raw)
+            Cow::Owned(self.resolve_text(&raw))
         };
         let (first, rest) = util::first_sentence(&resolved);
         let (first, rest) = (first.to_string(), rest.to_string());

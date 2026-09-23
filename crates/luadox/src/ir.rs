@@ -8,6 +8,7 @@
 //! flag it wanted.
 
 use crate::tags::Tag;
+use std::borrow::Cow;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ItemId(pub u32);
@@ -174,10 +175,10 @@ impl Markdown {
     }
 
     /// The text as written, before cross references are resolved.
-    pub fn raw(&self) -> String {
+    pub fn raw(&self) -> Cow<'_, str> {
         match &self.value {
-            Some(v) => v.clone(),
-            None => self.lines.join("\n"),
+            Some(v) => Cow::Borrowed(v),
+            None => Cow::Owned(self.lines.join("\n")),
         }
     }
 
@@ -190,7 +191,7 @@ impl Markdown {
         self.value = Some(value);
     }
 
-    pub fn get(&self) -> String {
+    pub fn get(&self) -> Cow<'_, str> {
         self.raw()
     }
 }
