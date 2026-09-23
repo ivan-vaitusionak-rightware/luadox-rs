@@ -1,5 +1,7 @@
 //! Small text utilities the port needs to reproduce exactly.
 
+use std::fmt::Write;
+
 use blake2::digest::consts::U20;
 use blake2::{Blake2b, Digest};
 
@@ -158,8 +160,17 @@ pub fn shlex_split(line: &str) -> Vec<String> {
 /// The ids appear in `doc.json` and in every `luadox:` link target, so this must stay
 /// byte-for-byte what `hashlib.blake2b(s, digest_size=20).hexdigest()` produces.
 pub fn ref_id(topref_type: &str, topsym: &str, name: &str) -> String {
-    let digest = Blake2b::<U20>::digest(format!("{topref_type}#{topsym}#{name}"));
-    digest.iter().map(|byte| format!("{byte:02x}")).collect()
+    let mut hasher = Blake2b::<U20>::new();
+    hasher.update(topref_type.as_bytes());
+    hasher.update(b"#");
+    hasher.update(topsym.as_bytes());
+    hasher.update(b"#");
+    hasher.update(name.as_bytes());
+    let mut hex = String::with_capacity(40);
+    for byte in hasher.finalize() {
+        let _ = write!(hex, "{byte:02x}");
+    }
+    hex
 }
 
 #[cfg(test)]
