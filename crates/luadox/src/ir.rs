@@ -35,14 +35,14 @@ pub enum Kind {
 impl Kind {
     pub fn as_str(self) -> &'static str {
         match self {
-            Kind::Class => "class",
-            Kind::Field => "field",
-            Kind::Function => "function",
-            Kind::Manual => "manual",
-            Kind::Module => "module",
-            Kind::Pseudo => "",
-            Kind::Section => "section",
-            Kind::Table => "table",
+            Self::Class => "class",
+            Self::Field => "field",
+            Self::Function => "function",
+            Self::Manual => "manual",
+            Self::Module => "module",
+            Self::Pseudo => "",
+            Self::Section => "section",
+            Self::Table => "table",
         }
     }
 
@@ -51,7 +51,7 @@ impl Kind {
     pub fn is_top(self) -> bool {
         matches!(
             self,
-            Kind::Class | Kind::Module | Kind::Manual | Kind::Pseudo
+            Self::Class | Self::Module | Self::Manual | Self::Pseudo
         )
     }
 
@@ -60,7 +60,7 @@ impl Kind {
     pub fn is_collection(self) -> bool {
         matches!(
             self,
-            Kind::Class | Kind::Module | Kind::Manual | Kind::Pseudo | Kind::Section | Kind::Table
+            Self::Class | Self::Module | Self::Manual | Self::Pseudo | Self::Section | Self::Table
         )
     }
 
@@ -68,7 +68,7 @@ impl Kind {
     pub fn is_scope(self) -> bool {
         matches!(
             self,
-            Kind::Class | Kind::Module | Kind::Manual | Kind::Table
+            Self::Class | Self::Module | Self::Manual | Self::Table
         )
     }
 }
@@ -122,16 +122,16 @@ pub struct Markdown {
 }
 
 impl Markdown {
-    pub fn new(resolve: bool) -> Markdown {
-        Markdown {
+    pub fn new(resolve: bool) -> Self {
+        Self {
             lines: Vec::new(),
             value: None,
             resolve,
         }
     }
 
-    pub fn resolved(value: String) -> Markdown {
-        Markdown {
+    pub fn resolved(value: String) -> Self {
+        Self {
             lines: Vec::new(),
             value: Some(value),
             resolve: false,
@@ -276,8 +276,8 @@ pub struct Item {
 }
 
 impl Item {
-    pub fn new(kind: Kind, file: &str, line: Option<u32>, symbol: &str) -> Item {
-        Item {
+    pub fn new(kind: Kind, file: &str, line: Option<u32>, symbol: &str) -> Self {
+        Self {
             kind,
             file: file.to_string(),
             line,

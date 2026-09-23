@@ -59,12 +59,12 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(config: Config) -> Parser {
+    pub fn new(config: Config) -> Self {
         let allow = config
             .get("project", "allow_incomplete")
             .unwrap_or("")
             .to_string();
-        Parser {
+        Self {
             items: Vec::new(),
             refs: HashMap::new(),
             by_id: HashMap::new(),

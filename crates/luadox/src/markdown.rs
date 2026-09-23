@@ -47,22 +47,22 @@ impl BlockKind {
     /// The html element this renders as, for a message that names what went wrong.
     pub fn element(&self) -> String {
         match self {
-            BlockKind::Paragraph => "p".to_string(),
-            BlockKind::Code => "pre".to_string(),
-            BlockKind::Heading(level) => format!("h{level}"),
-            BlockKind::List { ordered: true } => "ol".to_string(),
-            BlockKind::List { ordered: false } => "ul".to_string(),
-            BlockKind::Quote => "blockquote".to_string(),
-            BlockKind::Table => "table".to_string(),
-            BlockKind::Rule => "hr".to_string(),
-            BlockKind::Html(tag) => tag.clone(),
+            Self::Paragraph => "p".to_string(),
+            Self::Code => "pre".to_string(),
+            Self::Heading(level) => format!("h{level}"),
+            Self::List { ordered: true } => "ol".to_string(),
+            Self::List { ordered: false } => "ul".to_string(),
+            Self::Quote => "blockquote".to_string(),
+            Self::Table => "table".to_string(),
+            Self::Rule => "hr".to_string(),
+            Self::Html(tag) => tag.clone(),
         }
     }
 
     /// Only a paragraph can be laid out on one line. Everything else needs vertical
     /// space a table cell does not give it.
     pub fn fits_a_row(&self) -> bool {
-        *self == BlockKind::Paragraph
+        *self == Self::Paragraph
     }
 }
 
@@ -98,7 +98,7 @@ impl Block {
 impl TryFrom<Block> for Inline {
     type Error = TooBigForARow;
 
-    fn try_from(block: Block) -> Result<Inline, TooBigForARow> {
+    fn try_from(block: Block) -> Result<Self, TooBigForARow> {
         block.into_inline()
     }
 }
@@ -166,7 +166,7 @@ impl std::error::Error for TooBigForARow {}
 impl TryFrom<&Content> for RowContent {
     type Error = TooBigForARow;
 
-    fn try_from(content: &Content) -> Result<RowContent, TooBigForARow> {
+    fn try_from(content: &Content) -> Result<Self, TooBigForARow> {
         let mut parts = Vec::new();
         let mut rejected: Vec<BlockKind> = Vec::new();
         for block in blocks_of(content) {
@@ -176,7 +176,7 @@ impl TryFrom<&Content> for RowContent {
             }
         }
         if rejected.is_empty() {
-            Ok(RowContent(parts))
+            Ok(Self(parts))
         } else {
             Err(TooBigForARow { kinds: rejected })
         }

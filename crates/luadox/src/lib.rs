@@ -42,18 +42,18 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::Config(msg) => write!(f, "{msg}"),
-            Error::NoInput => write!(
+            Self::Config(msg) => write!(f, "{msg}"),
+            Self::NoInput => write!(
                 f,
                 "no input files or directories specified on command line or config file"
             ),
-            Error::UnknownRenderer(name) => {
+            Self::UnknownRenderer(name) => {
                 write!(
                     f,
                     "unknown renderer \"{name}\", valid types are: html, json, luals"
                 )
             }
-            Error::Io(msg) => write!(f, "{msg}"),
+            Self::Io(msg) => write!(f, "{msg}"),
         }
     }
 }

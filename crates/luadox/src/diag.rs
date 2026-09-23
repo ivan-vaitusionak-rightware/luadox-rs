@@ -20,34 +20,34 @@ pub enum Category {
 }
 
 impl Category {
-    pub const ALL: [Category; 9] = [
-        Category::CompactBlockContent,
-        Category::Conflicts,
-        Category::References,
-        Category::Snippets,
-        Category::Structure,
-        Category::Types,
-        Category::UndocumentedEnumMembers,
-        Category::UndocumentedSectionMembers,
-        Category::Untyped,
+    pub const ALL: [Self; 9] = [
+        Self::CompactBlockContent,
+        Self::Conflicts,
+        Self::References,
+        Self::Snippets,
+        Self::Structure,
+        Self::Types,
+        Self::UndocumentedEnumMembers,
+        Self::UndocumentedSectionMembers,
+        Self::Untyped,
     ];
 
     pub fn as_str(self) -> &'static str {
         match self {
-            Category::CompactBlockContent => "compact-block-content",
-            Category::Conflicts => "conflicts",
-            Category::References => "references",
-            Category::Snippets => "snippets",
-            Category::Structure => "structure",
-            Category::Types => "types",
-            Category::UndocumentedEnumMembers => "undocumented-enum-members",
-            Category::UndocumentedSectionMembers => "undocumented-section-members",
-            Category::Untyped => "untyped",
+            Self::CompactBlockContent => "compact-block-content",
+            Self::Conflicts => "conflicts",
+            Self::References => "references",
+            Self::Snippets => "snippets",
+            Self::Structure => "structure",
+            Self::Types => "types",
+            Self::UndocumentedEnumMembers => "undocumented-enum-members",
+            Self::UndocumentedSectionMembers => "undocumented-section-members",
+            Self::Untyped => "untyped",
         }
     }
 
-    pub fn parse(name: &str) -> Option<Category> {
-        Category::ALL.into_iter().find(|c| c.as_str() == name)
+    pub fn parse(name: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|c| c.as_str() == name)
     }
 }
 
@@ -76,7 +76,7 @@ pub struct Diagnostics {
 
 impl Diagnostics {
     /// Parses `allow_incomplete`, which is a comma- or whitespace-separated list.
-    pub fn from_allow_incomplete(value: &str) -> Diagnostics {
+    pub fn from_allow_incomplete(value: &str) -> Self {
         let mut allowed = BTreeSet::new();
         let mut unknown = Vec::new();
         for name in value
@@ -90,7 +90,7 @@ impl Diagnostics {
                 None => unknown.push(name.to_string()),
             }
         }
-        Diagnostics {
+        Self {
             allowed,
             entries: Vec::new(),
             unknown_allowed: unknown,

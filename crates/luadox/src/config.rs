@@ -42,8 +42,8 @@ struct Section {
 }
 
 impl Config {
-    pub fn parse(text: &str) -> Result<Config, ConfigError> {
-        let mut config = Config::default();
+    pub fn parse(text: &str) -> Result<Self, ConfigError> {
+        let mut config = Self::default();
         // Accumulated value lines for the option currently open, if any.
         let mut open: Option<(String, Vec<String>)> = None;
         // Indent of the line that opened the current option.  A deeper-indented line
@@ -268,7 +268,10 @@ mod tests {
             "index = ../luadox/manual/index.md\n",
         );
         let config = Config::parse(text).unwrap_or_default();
-        assert_eq!(config.get("project", "name"), Some("Example Engine Lua API"));
+        assert_eq!(
+            config.get("project", "name"),
+            Some("Example Engine Lua API")
+        );
         assert_eq!(
             config.get("project", "files"),
             Some(concat!(

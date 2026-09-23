@@ -19,20 +19,20 @@ pub enum Json {
 }
 
 impl Json {
-    pub fn obj() -> Json {
-        Json::Obj(Vec::new())
+    pub fn obj() -> Self {
+        Self::Obj(Vec::new())
     }
 
     /// Appends a key, keeping insertion order.
-    pub fn set(&mut self, key: &str, value: Json) {
-        if let Json::Obj(fields) = self {
+    pub fn set(&mut self, key: &str, value: Self) {
+        if let Self::Obj(fields) = self {
             fields.push((key.to_string(), value));
         }
     }
 
     /// Appends a key only when the value is not empty, which is how the Python's
     /// `{k: v for k, v in kwargs.items() if v}` and its `if content:` guards behave.
-    pub fn set_if(&mut self, key: &str, value: Json) {
+    pub fn set_if(&mut self, key: &str, value: Self) {
         if !value.is_falsy() {
             self.set(key, value);
         }
@@ -40,11 +40,11 @@ impl Json {
 
     pub fn is_falsy(&self) -> bool {
         match self {
-            Json::Bool(b) => !b,
-            Json::Int(n) => *n == 0,
-            Json::Str(s) => s.is_empty(),
-            Json::Arr(v) => v.is_empty(),
-            Json::Obj(v) => v.is_empty(),
+            Self::Bool(b) => !b,
+            Self::Int(n) => *n == 0,
+            Self::Str(s) => s.is_empty(),
+            Self::Arr(v) => v.is_empty(),
+            Self::Obj(v) => v.is_empty(),
         }
     }
 
@@ -56,12 +56,12 @@ impl Json {
 
     fn write_into(&self, out: &mut String, depth: usize) {
         match self {
-            Json::Bool(b) => out.push_str(if *b { "true" } else { "false" }),
-            Json::Int(n) => {
+            Self::Bool(b) => out.push_str(if *b { "true" } else { "false" }),
+            Self::Int(n) => {
                 let _ = write!(out, "{n}");
             }
-            Json::Str(s) => write_string(out, s),
-            Json::Arr(items) => {
+            Self::Str(s) => write_string(out, s),
+            Self::Arr(items) => {
                 if items.is_empty() {
                     out.push_str("[]");
                     return;
@@ -78,7 +78,7 @@ impl Json {
                 indent(out, depth);
                 out.push(']');
             }
-            Json::Obj(fields) => {
+            Self::Obj(fields) => {
                 if fields.is_empty() {
                     out.push_str("{}");
                     return;
@@ -102,14 +102,14 @@ impl Json {
 }
 
 impl From<&str> for Json {
-    fn from(s: &str) -> Json {
-        Json::Str(s.to_string())
+    fn from(s: &str) -> Self {
+        Self::Str(s.to_string())
     }
 }
 
 impl From<String> for Json {
-    fn from(s: String) -> Json {
-        Json::Str(s)
+    fn from(s: String) -> Self {
+        Self::Str(s)
     }
 }
 

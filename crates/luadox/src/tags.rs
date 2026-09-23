@@ -72,34 +72,34 @@ impl Tag {
     /// as an admonition's level.
     pub fn type_name(&self) -> &'static str {
         match self {
-            Tag::Module(_) => "module",
-            Tag::Class(_) => "class",
-            Tag::Section(_) => "section",
-            Tag::Table(_) => "table",
-            Tag::Enum(_) => "enum",
-            Tag::Within(_) => "within",
-            Tag::Field { .. } => "field",
-            Tag::Alias(_) => "alias",
-            Tag::Compact(_) => "compact",
-            Tag::Fullnames => "fullnames",
-            Tag::Deprecated(_) => "deprecated",
-            Tag::Inherits(_) => "inherits",
-            Tag::Meta(_) => "meta",
-            Tag::Since(_) => "since",
-            Tag::Scope(_) => "scope",
-            Tag::Rename(_) => "rename",
-            Tag::Display(_) => "display",
-            Tag::Type(_) => "type",
-            Tag::Order { .. } => "order",
-            Tag::Code { .. } => "code",
-            Tag::Usage { .. } => "usage",
-            Tag::Example { .. } => "example",
-            Tag::Note(_) => "note",
-            Tag::Warning(_) => "warning",
-            Tag::See(_) => "see",
-            Tag::Param { .. } => "param",
-            Tag::Return { .. } => "return",
-            Tag::Unrecognized(_) => "unrecognized",
+            Self::Module(_) => "module",
+            Self::Class(_) => "class",
+            Self::Section(_) => "section",
+            Self::Table(_) => "table",
+            Self::Enum(_) => "enum",
+            Self::Within(_) => "within",
+            Self::Field { .. } => "field",
+            Self::Alias(_) => "alias",
+            Self::Compact(_) => "compact",
+            Self::Fullnames => "fullnames",
+            Self::Deprecated(_) => "deprecated",
+            Self::Inherits(_) => "inherits",
+            Self::Meta(_) => "meta",
+            Self::Since(_) => "since",
+            Self::Scope(_) => "scope",
+            Self::Rename(_) => "rename",
+            Self::Display(_) => "display",
+            Self::Type(_) => "type",
+            Self::Order { .. } => "order",
+            Self::Code { .. } => "code",
+            Self::Usage { .. } => "usage",
+            Self::Example { .. } => "example",
+            Self::Note(_) => "note",
+            Self::Warning(_) => "warning",
+            Self::See(_) => "see",
+            Self::Param { .. } => "param",
+            Self::Return { .. } => "return",
+            Self::Unrecognized(_) => "unrecognized",
         }
     }
 
@@ -107,7 +107,7 @@ impl Tag {
     /// the tag type.
     pub fn reported_name(&self) -> &str {
         match self {
-            Tag::Unrecognized(name) => name,
+            Self::Unrecognized(name) => name,
             other => other.type_name(),
         }
     }
@@ -115,15 +115,17 @@ impl Tag {
     pub fn is_collection(&self) -> bool {
         matches!(
             self,
-            Tag::Module(_) | Tag::Class(_) | Tag::Section(_) | Tag::Table(_) | Tag::Enum(_)
+            Self::Module(_) | Self::Class(_) | Self::Section(_) | Self::Table(_) | Self::Enum(_)
         )
     }
 
     pub fn collection_name(&self) -> Option<&str> {
         match self {
-            Tag::Module(n) | Tag::Class(n) | Tag::Section(n) | Tag::Table(n) | Tag::Enum(n) => {
-                Some(n)
-            }
+            Self::Module(n)
+            | Self::Class(n)
+            | Self::Section(n)
+            | Self::Table(n)
+            | Self::Enum(n) => Some(n),
             _ => None,
         }
     }
@@ -131,25 +133,25 @@ impl Tag {
     /// `@usage` and `@example` print a heading above their code block; `@code` does not.
     pub fn code_heading(&self) -> Option<&'static str> {
         match self {
-            Tag::Usage { .. } => Some("Usage"),
-            Tag::Example { .. } => Some("Example"),
+            Self::Usage { .. } => Some("Usage"),
+            Self::Example { .. } => Some("Example"),
             _ => None,
         }
     }
 
     pub fn as_code(&self) -> Option<(Option<&str>, Option<&str>)> {
         match self {
-            Tag::Code { lang, snippet }
-            | Tag::Usage { lang, snippet }
-            | Tag::Example { lang, snippet } => Some((lang.as_deref(), snippet.as_deref())),
+            Self::Code { lang, snippet }
+            | Self::Usage { lang, snippet }
+            | Self::Example { lang, snippet } => Some((lang.as_deref(), snippet.as_deref())),
             _ => None,
         }
     }
 
     pub fn as_admonition(&self) -> Option<(&'static str, Option<&str>)> {
         match self {
-            Tag::Note(title) => Some(("note", title.as_deref())),
-            Tag::Warning(title) => Some(("warning", title.as_deref())),
+            Self::Note(title) => Some(("note", title.as_deref())),
+            Self::Warning(title) => Some(("warning", title.as_deref())),
             _ => None,
         }
     }
@@ -158,11 +160,11 @@ impl Tag {
     pub fn takes_content(&self) -> bool {
         matches!(
             self,
-            Tag::Note(_)
-                | Tag::Warning(_)
-                | Tag::Deprecated(_)
-                | Tag::Param { .. }
-                | Tag::Return { .. }
+            Self::Note(_)
+                | Self::Warning(_)
+                | Self::Deprecated(_)
+                | Self::Param { .. }
+                | Self::Return { .. }
         )
     }
 }
