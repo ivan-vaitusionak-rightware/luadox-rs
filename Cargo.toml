@@ -34,3 +34,7 @@ indexing_slicing = "deny"
 unwrap_used = "deny"
 expect_used = "deny"
 use_self = "deny"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
