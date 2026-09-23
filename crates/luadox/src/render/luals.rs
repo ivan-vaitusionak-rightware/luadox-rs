@@ -347,16 +347,8 @@ impl Renderer<'_> {
                 Fragment::Markdown(md) => {
                     lines.extend(strip_links(&md.get()).split('\n').map(str::to_string));
                 }
-                Fragment::Admonition {
-                    level,
-                    title,
-                    content,
-                } => {
-                    let title = if title.is_empty() {
-                        title_case(level)
-                    } else {
-                        strip_links(title)
-                    };
+                Fragment::Admonition { title, content, .. } => {
+                    let title = strip_links(title);
                     lines.push(format!("**{title}**"));
                     lines.extend(self.content_to_lines(content));
                 }
@@ -671,14 +663,6 @@ fn is_plain_type_name(part: &str) -> bool {
         .next()
         .is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
         && chars.all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '.')
-}
-
-fn title_case(s: &str) -> String {
-    let mut chars = s.chars();
-    match chars.next() {
-        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-        None => String::new(),
-    }
 }
 
 #[cfg(test)]

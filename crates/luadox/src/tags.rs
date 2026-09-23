@@ -6,7 +6,7 @@
 
 use std::fmt;
 
-use crate::ir::{Member, Order};
+use crate::ir::{AdmonitionLevel, Member, Order};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Tag {
@@ -147,10 +147,10 @@ impl Tag {
         }
     }
 
-    pub fn as_admonition(&self) -> Option<(&'static str, Option<&str>)> {
+    pub fn as_admonition(&self) -> Option<(AdmonitionLevel, Option<&str>)> {
         match self {
-            Self::Note(title) => Some(("note", title.as_deref())),
-            Self::Warning(title) => Some(("warning", title.as_deref())),
+            Self::Note(title) => Some((AdmonitionLevel::Note, title.as_deref())),
+            Self::Warning(title) => Some((AdmonitionLevel::Warning, title.as_deref())),
             _ => None,
         }
     }

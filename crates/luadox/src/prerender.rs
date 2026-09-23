@@ -6,7 +6,7 @@
 
 use crate::content::{self, Parsed};
 use crate::diag::Category;
-use crate::ir::{Content, Fragment, ItemId, Kind, Member};
+use crate::ir::{AdmonitionLevel, Content, Fragment, ItemId, Kind, Member};
 use crate::markdown::RowContent;
 use crate::parse::Parser;
 
@@ -227,7 +227,7 @@ fn apply_deprecated(parser: &mut Parser, id: ItemId) {
     parser.item_mut(id).content.insert(
         0,
         Fragment::Admonition {
-            level: "deprecated".to_string(),
+            level: AdmonitionLevel::Deprecated,
             title: "Deprecated".to_string(),
             content: body,
         },

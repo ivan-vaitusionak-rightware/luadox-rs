@@ -620,7 +620,7 @@ mod tests {
         inner.append("```lua\nx()\n```");
         let body = Content(vec![Fragment::Markdown(inner)]);
         let c = Content(vec![Fragment::Admonition {
-            level: "note".to_string(),
+            level: crate::ir::AdmonitionLevel::Note,
             title: "Note".to_string(),
             content: body,
         }]);

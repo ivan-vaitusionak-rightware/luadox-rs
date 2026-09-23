@@ -302,7 +302,7 @@ fn content_json(content: &Content) -> Json {
             } => {
                 let mut entry = Json::obj();
                 entry.set("type", "admonition".into());
-                entry.set("level", level.clone().into());
+                entry.set("level", level.as_str().into());
                 entry.set("title", title.clone().into());
                 entry.set("content", content_json(content));
                 out.push(entry);

@@ -195,11 +195,30 @@ impl Markdown {
     }
 }
 
+/// The kinds of admonition a block can carry: the html renderer's CSS class, and the
+/// json renderer's `level`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AdmonitionLevel {
+    Note,
+    Warning,
+    Deprecated,
+}
+
+impl AdmonitionLevel {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Note => "note",
+            Self::Warning => "warning",
+            Self::Deprecated => "deprecated",
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Fragment {
     Markdown(Markdown),
     Admonition {
-        level: String,
+        level: AdmonitionLevel,
         title: String,
         content: Content,
     },

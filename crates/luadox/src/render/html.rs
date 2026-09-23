@@ -342,6 +342,7 @@ impl Renderer<'_> {
                     } else {
                         format!("<div class=\"body\">{inner}\n</div>")
                     };
+                    let level = level.as_str();
                     out.push(format!(
                         "<div class=\"admonition {level}\"><div class=\"title\">{title}</div>{body}</div>"
                     ));

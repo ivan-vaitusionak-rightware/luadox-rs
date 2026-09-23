@@ -10,7 +10,7 @@
 use std::path::Path;
 
 use crate::diag::Category;
-use crate::ir::{Content, Fragment, ItemId, Markdown, Param, RawLine, Returned};
+use crate::ir::{AdmonitionLevel, Content, Fragment, ItemId, Markdown, Param, RawLine, Returned};
 use crate::parse::Parser;
 use crate::tags::{self, Tag};
 use crate::util;
@@ -142,11 +142,11 @@ impl Parser {
             if let Some((level, title)) = tag.as_admonition() {
                 let title = title
                     .map(str::to_string)
-                    .unwrap_or_else(|| title_case(level));
+                    .unwrap_or_else(|| title_case(level.as_str()));
                 let title = self.resolve_text(&title);
                 if let Some(content) = bodies.get_mut(parent) {
                     content.push(Fragment::Admonition {
-                        level: level.to_string(),
+                        level,
                         title,
                         content: Content::default(),
                     });
@@ -165,7 +165,7 @@ impl Parser {
                     }
                     if let Some(content) = bodies.get_mut(parent) {
                         content.push(Fragment::Admonition {
-                            level: "deprecated".to_string(),
+                            level: AdmonitionLevel::Deprecated,
                             title: "Deprecated".to_string(),
                             content: Content::default(),
                         });
