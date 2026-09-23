@@ -209,8 +209,10 @@ fn fit_to_row(parser: &mut Parser, id: ItemId, compact: &[Member], member: Membe
 }
 
 fn parse_block(parser: &mut Parser, id: ItemId) -> Parsed {
-    let raw = parser.item(id).raw_content.clone();
-    parser.parse_raw_content(&raw)
+    let raw = std::mem::take(&mut parser.item_mut(id).raw_content);
+    let parsed = parser.parse_raw_content(&raw);
+    parser.item_mut(id).raw_content = raw;
+    parsed
 }
 
 /// Renders a `@deprecated` flag as a leading admonition, so every renderer shows it
