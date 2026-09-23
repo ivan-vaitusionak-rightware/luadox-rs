@@ -325,8 +325,12 @@ impl Renderer<'_> {
     }
 
     fn content_html(&self, content: &Content) -> String {
+        self.fragments_html(&content.0)
+    }
+
+    fn fragments_html(&self, fragments: &[Fragment]) -> String {
         let mut out: Vec<String> = Vec::new();
-        for fragment in &content.0 {
+        for fragment in fragments {
             match fragment {
                 Fragment::Markdown(md) => out.push(self.markdown(&md.get())),
                 Fragment::Admonition {
@@ -365,10 +369,14 @@ impl Renderer<'_> {
         out.join("\n")
     }
 
-    #[allow(clippy::only_used_in_recursion)]
     fn content_text(&self, content: &Content) -> String {
+        self.fragments_text(&content.0)
+    }
+
+    #[allow(clippy::only_used_in_recursion)]
+    fn fragments_text(&self, fragments: &[Fragment]) -> String {
         let mut out: Vec<String> = Vec::new();
-        for fragment in &content.0 {
+        for fragment in fragments {
             match fragment {
                 Fragment::Admonition { title, content, .. } => {
                     out.push(markdown::to_text(title));
@@ -723,8 +731,8 @@ impl Renderer<'_> {
         out.push("<div class=\"manual\">".to_string());
         if !self.parser.item(topref).content.is_empty() {
             self.parser.resolve_item_content(topref);
-            let content = self.parser.item(topref).content.clone();
-            out.push(self.content_html(&content));
+            let content = &self.parser.item(topref).content;
+            out.push(self.content_html(content));
         }
         for sec in self.parser.item(topref).collections.clone() {
             // The context stays on the manual page: a manual section's markdown resolves
@@ -737,8 +745,8 @@ impl Renderer<'_> {
             out.push(format!("<h{level} id=\"{symbol}\">{heading}"));
             out.push(self.permalink(&symbol));
             out.push(format!("</h{level}>"));
-            let content = self.parser.item(sec).content.clone();
-            out.push(self.content_html(&content));
+            let content = &self.parser.item(sec).content;
+            out.push(self.content_html(content));
         }
         out.push("</div>".to_string());
     }
@@ -775,8 +783,8 @@ impl Renderer<'_> {
 
             self.parser.resolve_item_content(col);
             if !self.parser.item(col).content.is_empty() {
-                let content = self.parser.item(col).content.clone();
-                out.push(self.content_html(&content));
+                let content = &self.parser.item(col).content;
+                out.push(self.content_html(content));
             }
 
             let columns = self.columns(col);
@@ -1021,18 +1029,17 @@ impl Renderer<'_> {
     /// whose marker already carries that signal.
     fn synopsis_doc(&mut self, id: ItemId, compact: bool) -> String {
         self.parser.resolve_item_content(id);
-        let content = self.parser.item(id).content.clone();
+        let content = &self.parser.item(id).content;
         if !compact {
-            let first = self.parser.peek_first_sentence(&content, true);
+            let first = self.parser.peek_first_sentence(content, true);
             return self.markdown(&first);
         }
         let deprecated = self.parser.item(id).flags.deprecated.is_some();
         let leading_admonition = matches!(content.0.first(), Some(Fragment::Admonition { .. }));
         if deprecated && leading_admonition {
-            let rest = Content(content.0.get(1..).unwrap_or(&[]).to_vec());
-            return self.content_html(&rest);
+            return self.fragments_html(content.0.get(1..).unwrap_or(&[]));
         }
-        self.content_html(&content)
+        self.content_html(content)
     }
 
     fn enum_value(&self, col: ItemId, id: ItemId) -> String {
@@ -1090,8 +1097,8 @@ impl Renderer<'_> {
             out.push("</dt>".to_string());
             out.push("<dd>".to_string());
             self.parser.resolve_item_content(id);
-            let content = self.parser.item(id).content.clone();
-            out.push(self.content_html(&content));
+            let content = &self.parser.item(id).content;
+            out.push(self.content_html(content));
             out.push("</dd>".to_string());
         }
         out.push("</dl>".to_string());
@@ -1130,8 +1137,8 @@ impl Renderer<'_> {
             out.push("</dt>".to_string());
             out.push("<dd>".to_string());
             self.parser.resolve_item_content(id);
-            let content = self.parser.item(id).content.clone();
-            out.push(self.content_html(&content));
+            let content = &self.parser.item(id).content;
+            out.push(self.content_html(content));
 
             let params = self.parser.item(id).params.clone();
             // Only when at least one parameter carries a type or a description.
@@ -1222,8 +1229,8 @@ impl Renderer<'_> {
     fn search_entry(&mut self, id: ItemId, kind: Kind) -> String {
         self.parser.resolve_item_content(id);
         let href = self.href(id);
-        let content = self.parser.item(id).content.clone();
-        let mut text = self.content_text(&content);
+        let content = &self.parser.item(id).content;
+        let mut text = self.content_text(content);
         let mut title = self.parser.item(id).display.clone();
 
         let on_manual = self.parser.item(self.parser.topref(id)).kind == Kind::Manual;
@@ -1235,16 +1242,16 @@ impl Renderer<'_> {
                 .iter()
                 .position(|f| !matches!(f, Fragment::Admonition { .. }))
                 .unwrap_or(content.0.len());
-            let lead = Content(content.0.get(..at).unwrap_or(&[]).to_vec());
-            let body = Content(content.0.get(at..).unwrap_or(&[]).to_vec());
+            let lead = content.0.get(..at).unwrap_or(&[]);
+            let body = content.0.get(at..).unwrap_or(&[]);
             let (first, remaining) = {
-                let flattened = self.content_text(&body);
+                let flattened = self.fragments_text(body);
                 let (first, rest) = util::first_sentence(&flattened);
                 (first.to_string(), rest.to_string())
             };
             if first.chars().count() < 80 {
                 title = first;
-                text = format!("{} {remaining}", self.content_text(&lead))
+                text = format!("{} {remaining}", self.fragments_text(lead))
                     .trim()
                     .to_string();
             }
