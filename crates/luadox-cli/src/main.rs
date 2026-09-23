@@ -3,68 +3,97 @@
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use luadox::Options;
+use clap::Parser;
+use luadox::{Options, Renderer};
 
-const USAGE: &str = "\
-usage: luadox [options] [FILE ...]
+#[derive(Parser)]
+#[command(name = "luadox", bin_name = "luadox")]
+struct Args {
+    /// luadox configuration file
+    #[arg(short, long, value_name = "FILE")]
+    config: Option<PathBuf>,
 
-  -c, --config FILE            luadox configuration file
-  -r, --renderer TYPE          how to render the parsed content (json, luals)
-  -o, --out PATH               where to write the rendered output
-  -n, --name NAME              project name
-      --snippet-path PATH      where @example <file> snippets are read from
-      --allow-incomplete CATS  diagnostic categories that may leave the documentation
-                               incomplete without failing the run
-  -m, --manual ID=FILE         add a manual page
-      --diagnostics-json FILE  write every diagnostic to FILE as JSON
-      --diagnostics-root DIR   base directory those paths are relative to
-      --nofollow               do not follow require()d files
-  -h, --help                   this message
-";
+    /// how to render the parsed content (json, luals)
+    #[arg(short, long, value_name = "TYPE")]
+    renderer: Option<RendererName>,
 
-fn main() -> ExitCode {
-    let mut options = Options {
-        nofollow: true,
-        ..Options::default()
-    };
-    let mut args = std::env::args().skip(1);
-    while let Some(arg) = args.next() {
-        let mut value = || args.next().ok_or_else(|| format!("{arg} needs a value"));
-        let result = match arg.as_str() {
-            "-h" | "--help" => {
-                print!("{USAGE}");
-                return ExitCode::SUCCESS;
-            }
-            "-c" | "--config" => value().map(|v| options.config = Some(PathBuf::from(v))),
-            "-r" | "--renderer" => value().and_then(|v| {
-                v.parse()
-                    .map(|r| options.renderer = Some(r))
-                    .map_err(|e| e.to_string())
-            }),
-            "-o" | "--out" => value().map(|v| options.out = Some(v)),
-            "-n" | "--name" => value().map(|v| options.name = Some(v)),
-            "--snippet-path" => value().map(|v| options.snippet_path = Some(v)),
-            "--allow-incomplete" => value().map(|v| options.allow_incomplete = Some(v)),
-            "-m" | "--manual" => value().map(|v| options.manual.push(v)),
-            "--diagnostics-json" => {
-                value().map(|v| options.diagnostics_json = Some(PathBuf::from(v)))
-            }
-            "--diagnostics-root" => {
-                value().map(|v| options.diagnostics_root = Some(PathBuf::from(v)))
-            }
-            "--nofollow" => Ok(()),
-            other if other.starts_with('-') => Err(format!("unknown option {other}")),
-            other => {
-                options.files.push(other.to_string());
-                Ok(())
-            }
-        };
-        if let Err(message) = result {
-            eprintln!("error: {message}\n\n{USAGE}");
-            return ExitCode::from(2);
+    /// where to write the rendered output
+    #[arg(short, long, value_name = "PATH")]
+    out: Option<String>,
+
+    /// project name
+    #[arg(short, long, value_name = "NAME")]
+    name: Option<String>,
+
+    /// where @example <file> snippets are read from
+    #[arg(long, value_name = "PATH")]
+    snippet_path: Option<String>,
+
+    /// diagnostic categories that may leave the documentation incomplete without failing
+    /// the run
+    #[arg(long, value_name = "CATS")]
+    allow_incomplete: Option<String>,
+
+    /// add a manual page
+    #[arg(short, long, value_name = "ID=FILE")]
+    manual: Vec<String>,
+
+    /// write every diagnostic to FILE as JSON
+    #[arg(long, value_name = "FILE")]
+    diagnostics_json: Option<PathBuf>,
+
+    /// base directory those paths are relative to
+    #[arg(long, value_name = "DIR")]
+    diagnostics_root: Option<PathBuf>,
+
+    /// do not follow require()d files
+    #[arg(long)]
+    nofollow: bool,
+
+    #[arg(value_name = "FILE")]
+    files: Vec<String>,
+}
+
+/// The library's `Renderer`, spelled the way clap wants a value enum declared.
+#[derive(Clone, Copy, clap::ValueEnum)]
+enum RendererName {
+    Html,
+    Json,
+    Luals,
+}
+
+impl From<RendererName> for Renderer {
+    fn from(name: RendererName) -> Self {
+        match name {
+            RendererName::Html => Self::Html,
+            RendererName::Json => Self::Json,
+            RendererName::Luals => Self::Luals,
         }
     }
+}
 
+impl From<Args> for Options {
+    fn from(args: Args) -> Self {
+        Self {
+            config: args.config,
+            files: args.files,
+            renderer: args.renderer.map(Renderer::from),
+            out: args.out,
+            name: args.name,
+            snippet_path: args.snippet_path,
+            allow_incomplete: args.allow_incomplete,
+            manual: args.manual,
+            diagnostics_json: args.diagnostics_json,
+            diagnostics_root: args.diagnostics_root,
+            // Following require()d files is not implemented, so `--nofollow` is always in
+            // effect whether or not it was given.
+            nofollow: true,
+        }
+    }
+}
+
+fn main() -> ExitCode {
+    let options = Options::from(Args::parse());
     match luadox::run(&options) {
         Ok(outcome) => {
             for line in &outcome.summary {
