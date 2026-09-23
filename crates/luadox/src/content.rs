@@ -57,24 +57,32 @@ impl Parser {
         // changed, and reset whenever it changes again.
         let mut dedent: Option<usize> = None;
 
-        let sentinel = RawLine {
-            line: u32::MAX,
-            text: String::new(),
-            tags: None,
-        };
-        for raw in lines.iter().chain(std::iter::once(&sentinel)) {
-            let is_sentinel = raw.line == u32::MAX;
-            self.ctx.line = if is_sentinel { None } else { Some(raw.line) };
+        // The sentinel is one empty line past the end, which closes every open tag.
+        for raw in lines.iter().map(Some).chain(std::iter::once(None)) {
+            let is_sentinel = raw.is_none();
+            self.ctx.line = raw.map(RawLine::line);
 
-            let (text, tag) = match &raw.tags {
-                // A manual page's lines carry tags without a comment prefix.
-                None => {
-                    let parsed = tags::parse(&raw.text, false).unwrap_or_default();
-                    (raw.text.clone(), parsed.into_iter().next())
+            let (text, tag) = match raw {
+                None => (String::new(), None),
+                Some(RawLine::Manual { line, text }) => {
+                    let parsed = match tags::parse(text, false) {
+                        Ok(tags) => tags,
+                        Err(err) => {
+                            let file = self.ctx.file.clone();
+                            self.diagnostics.add(
+                                Category::Structure,
+                                err.to_string(),
+                                file.as_deref(),
+                                Some(*line),
+                            );
+                            Vec::new()
+                        }
+                    };
+                    (text.clone(), parsed.into_iter().next())
                 }
-                Some(found) => (
-                    raw.text.trim_start_matches('-').trim_end().to_string(),
-                    found.first().cloned(),
+                Some(RawLine::Source { text, tags, .. }) => (
+                    text.trim_start_matches('-').trim_end().to_string(),
+                    tags.first().cloned(),
                 ),
             };
             let indent = util::indent_level(&text);
@@ -208,12 +216,12 @@ impl Parser {
                 }
                 other => {
                     let name = other.reported_name().to_string();
-                    let file = self.ctx.file.clone();
+                    let (file, line) = (self.ctx.file.clone(), self.ctx.line);
                     self.diagnostics.add(
                         Category::Structure,
                         format!("unknown tag @{name} or missing arguments"),
                         file.as_deref(),
-                        Some(raw.line),
+                        line,
                     );
                 }
             }
@@ -548,4 +556,37 @@ pub fn params_for(parser: &mut Parser, id: ItemId, parsed: &Parsed, args: &[Stri
         }
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::Config;
+
+    /// The Python swallows a tag error on a manual page; the same line in a Lua source is
+    /// a structure diagnostic, and now both are.
+    #[test]
+    fn a_malformed_tag_on_a_manual_page_is_reported_with_its_file_and_line() {
+        let mut parser = Parser::new(Config::default());
+        parser.parse_manual(
+            "index",
+            "manual.md",
+            "# Title\n\nSome text.\n\n@order bogus\n",
+        );
+        parser.bind_aliases();
+        parser.assign_ids();
+        crate::prerender::process(&mut parser);
+
+        let Some(entry) = parser
+            .diagnostics
+            .entries()
+            .iter()
+            .find(|e| e.message.starts_with("@order is invalid"))
+        else {
+            panic!("a malformed manual-page tag must be reported");
+        };
+        assert_eq!(entry.category, Category::Structure);
+        assert_eq!(entry.file.as_deref(), Some("manual.md"));
+        assert_eq!(entry.line, Some(5));
+    }
 }

@@ -768,7 +768,7 @@ impl Parser {
             .item(id)
             .raw_content
             .iter()
-            .any(|l| !l.text.trim_start_matches('-').trim().is_empty());
+            .any(|l| !l.text().trim_start_matches('-').trim().is_empty());
         if said_something {
             let (_, file, line) = self.locate(id);
             self.diagnostics.add(
@@ -864,10 +864,10 @@ impl Parser {
                     let mut item = Item::new(Kind::Field, path, Some(n), &name);
                     item.scopes = scopes.clone();
                     item.collection = Some(*collection);
-                    item.raw_content.push(RawLine {
+                    item.raw_content.push(RawLine::Source {
                         line: n,
                         text: desc,
-                        tags: Some(Vec::new()),
+                        tags: Vec::new(),
                     });
                     let field = self.push(item);
                     let modref = scopes.first().copied();
@@ -945,10 +945,10 @@ impl Parser {
 
         let _ = current;
         if handled == 0 {
-            self.item_mut(id).raw_content.push(RawLine {
+            self.item_mut(id).raw_content.push(RawLine::Source {
                 line: n,
                 text: line.to_string(),
-                tags: Some(unprocessed),
+                tags: unprocessed,
             });
         }
     }
@@ -997,10 +997,9 @@ impl Parser {
                     continue;
                 }
             }
-            self.item_mut(current).raw_content.push(RawLine {
+            self.item_mut(current).raw_content.push(RawLine::Manual {
                 line: n,
                 text: line.to_string(),
-                tags: None,
             });
         }
     }

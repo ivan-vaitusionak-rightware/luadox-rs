@@ -129,6 +129,22 @@ present_in_corpus = false
 [[improvement]]
 level = "L1"
 json_path_contains = "(this entry explains no output difference)"
+fix = "A new diagnostic: a malformed tag on a manual page is reported."
+why = """
+A manual page's lines carry tags without a comment prefix, and the Python parses them
+with the same `TAGMAP` coercion as a source comment -- but the manual path swallows the
+`TypeError` a malformed tag raises, so `@order bogus` or `@compact field` on a manual page
+is silently dropped where the same line in a Lua source is a structure diagnostic. The
+raw line is now an enum, `RawLine::Source` or `RawLine::Manual`, and the manual arm
+routes its tag errors through the same structure diagnostic, with the page's file and
+line. It moves no rendered output: the tag was dropped before and is dropped now. Zero
+occurrences in the production corpus today.
+"""
+present_in_corpus = false
+
+[[improvement]]
+level = "L1"
+json_path_contains = "(this entry explains no output difference)"
 fix = "The LuaLS renderer no longer reports an untyped parameter a second time."
 why = """
 The prerender stage reports every parameter that the source declares and no `@tparam`

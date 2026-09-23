@@ -126,14 +126,33 @@ pub enum Order {
     After(String),
 }
 
-/// One line of an unparsed documentation block: where it came from, its text, and the
-/// tags found on it that the scanner did not consume. `tags: None` marks a manual page,
-/// whose lines carry tags without a comment prefix.
+/// One line of an unparsed documentation block: where it came from and its text.
 #[derive(Debug, Clone)]
-pub struct RawLine {
-    pub line: u32,
-    pub text: String,
-    pub tags: Option<Vec<Tag>>,
+pub enum RawLine {
+    /// A `--` comment line of a Lua source, with the tags found on it that the scanner
+    /// did not consume.
+    Source {
+        line: u32,
+        text: String,
+        tags: Vec<Tag>,
+    },
+    /// A line of a manual page, whose tags carry no comment prefix and are found when the
+    /// block is assembled.
+    Manual { line: u32, text: String },
+}
+
+impl RawLine {
+    pub fn line(&self) -> u32 {
+        match self {
+            Self::Source { line, .. } | Self::Manual { line, .. } => *line,
+        }
+    }
+
+    pub fn text(&self) -> &str {
+        match self {
+            Self::Source { text, .. } | Self::Manual { text, .. } => text,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
