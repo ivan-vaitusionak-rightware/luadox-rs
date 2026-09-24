@@ -281,16 +281,14 @@ impl Renderer<'_> {
     /// name* from the redirected symbol.
     fn href(&self, id: ItemId) -> String {
         let item = self.parser.item(id);
-        let topsym = self
-            .parser
-            .within_topsym
-            .get(&id)
-            .cloned()
-            .unwrap_or_else(|| item.topsym.clone());
-        let Some(topref) = self.parser.refs.get(&topsym).copied() else {
-            // The Python re-raises a KeyError here and the run dies. A documentation tool
-            // should emit a dead link and keep going.
-            return format!("{topsym}.html");
+        let topref = match self.parser.within_page.get(&id) {
+            Some(page) => *page,
+            None => match self.parser.refs.get(&item.topsym) {
+                Some(topref) => *topref,
+                // The Python re-raises a KeyError here and the run dies. A documentation
+                // tool should emit a dead link and keep going.
+                None => return format!("{}.html", item.topsym),
+            },
         };
 
         let own = self.parser.topref(id);
@@ -312,7 +310,7 @@ impl Renderer<'_> {
         } else {
             String::new()
         };
-        format!("{prefix}{topsym}.html{fragment}")
+        format!("{prefix}{}.html{fragment}", self.parser.item(topref).name)
     }
 
     fn permalink(&self, id: &str) -> String {

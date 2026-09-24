@@ -118,8 +118,8 @@ pub struct Parser {
     /// scope for a name long before that scope is itself registered.
     named: HashSet<ItemId>,
     topsymed: HashSet<ItemId>,
-    /// Elements whose `@within` target was traced to a page, once per element.
-    pub within_topsym: HashMap<ItemId, String>,
+    /// The page an element's `@within` target was traced to, once per element.
+    pub within_page: HashMap<ItemId, ItemId>,
     pub diagnostics: Diagnostics,
     pub settings: Settings,
     pub ctx: Context,
@@ -143,7 +143,7 @@ impl Parser {
             registered: HashSet::new(),
             named: HashSet::new(),
             topsymed: HashSet::new(),
-            within_topsym: HashMap::new(),
+            within_page: HashMap::new(),
             diagnostics: Diagnostics::allowing(settings.allow_incomplete.clone()),
             settings,
             ctx: Context::default(),
@@ -1311,7 +1311,7 @@ impl Parser {
         let Some(within) = self.item(id).within.clone() else {
             return;
         };
-        if self.within_topsym.contains_key(&id) {
+        if self.within_page.contains_key(&id) {
             return;
         }
         let topsym = self.item(id).topsym.clone();
@@ -1320,7 +1320,9 @@ impl Parser {
             .iter()
             .any(|c| self.item(*c).symbol == within);
         if here {
-            self.within_topsym.insert(id, topsym);
+            if let Some(page) = self.refs.get(&topsym).copied() {
+                self.within_page.insert(id, page);
+            }
             return;
         }
         let mut candidates: Vec<String> = Vec::new();
@@ -1341,8 +1343,11 @@ impl Parser {
                 Some(&file),
                 line,
             );
-        } else if let Some(owner) = candidates.pop() {
-            self.within_topsym.insert(id, owner);
+        } else if let Some(page) = candidates
+            .pop()
+            .and_then(|owner| self.refs.get(&owner).copied())
+        {
+            self.within_page.insert(id, page);
         }
     }
 
