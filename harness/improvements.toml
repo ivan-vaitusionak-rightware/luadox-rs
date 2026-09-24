@@ -210,3 +210,17 @@ or more spaces starting with `-`, and 6 following a blank line, and all of them 
 paragraph continuations where `indented` decides nothing. markdown_parity.py is the guard
 that keeps that true, and it fails on any difference on a page this file does not name.
 """
+
+[[improvement]]
+level = "L1"
+json_path_contains = ".fields"
+fix = "A comparison on the line after a block is not a field."
+why = """
+`_parse_field` matches `\b([\S\.]+) *=` against the code line below a block, and the
+first `=` of `==` satisfies it. A block that documents an `if x == nil then` line -- a
+guard with a comment above it -- therefore becomes a field named `x` whose value is
+`= nil then`. The rtk corpus (jtackaberry/rtk, 36 files) has four such fields, one of
+them `rtk.Widget.FULL`, which then gets its own Attributes table on the class page. The
+Rust reads assignments from the Lua syntax tree, where a comparison is not one.
+"""
+present_in_corpus = false
