@@ -18,7 +18,7 @@ publish = false
 [workspace.dependencies]
 # Pinned exactly: a parser that moves changes the parse without anybody changing the
 # tool.  See README, "The parser decision".
-full_moon = "=2.2.0"
+full_moon = { version = "=2.2.0", features = ["lua54", "luajit"] }
 blake2 = "0.10"
 glob = "0.3"
 serde = { version = "1", features = ["derive"] }

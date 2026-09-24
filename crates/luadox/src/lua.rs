@@ -114,7 +114,7 @@ fn is_directive(line: &str) -> bool {
 
 pub fn parse(path: &str, source: &str) -> SourceFile {
     let (source, blanked_directives) = blank_preprocessor_directives(source);
-    let result = full_moon::parse_fallible(&source, full_moon::LuaVersion::lua51());
+    let result = full_moon::parse_fallible(&source, full_moon::LuaVersion::new());
     let errors = result
         .errors()
         .iter()
