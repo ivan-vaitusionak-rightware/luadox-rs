@@ -42,6 +42,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -94,9 +95,11 @@ def write_configs() -> None:
         + '\nfollow = false\nencoding = utf8\n', encoding='utf-8')
 
 
-def run(argv: list[str], cwd: Path, env: dict | None = None) -> tuple[int, str]:
+def run(argv: list[str], cwd: Path, env: dict | None = None) -> tuple[int, str, float]:
+    """Exit code, stderr and wall time of one render."""
+    started = time.perf_counter()
     proc = subprocess.run(argv, cwd=str(cwd), env=env, capture_output=True)
-    return proc.returncode, proc.stderr.decode('utf-8', 'replace')
+    return proc.returncode, proc.stderr.decode('utf-8', 'replace'), time.perf_counter() - started
 
 
 def normalise(root: Path) -> None:
@@ -135,10 +138,13 @@ def compare(name: str) -> bool:
                 out.mkdir(parents=True)
         target = (lambda out: out) if renderer == 'html' else (lambda out: out / f'doc.{renderer}')
         common = ['-c', conf, '-r', renderer, '--nofollow', *extra]
-        rc_oracle, log = run([sys.executable, '-c', 'from luadox.main import main; main()', *common,
-                              '--sidebar-template', str(SIDEBAR), '-o', str(target(oracle_out))],
-                             cwd, env)
-        rc_rust, _ = run([str(BINARY), *common, '-o', str(target(rust_out))], cwd)
+        rc_oracle, log, t_oracle = run(
+            [sys.executable, '-c', 'from luadox.main import main; main()', *common,
+             '--sidebar-template', str(SIDEBAR), '-o', str(target(oracle_out))], cwd, env)
+        rc_rust, _, t_rust = run([str(BINARY), *common, '-o', str(target(rust_out))], cwd)
+        # Wall time of one cold run each, oracle then Rust; the oracle's includes the
+        # interpreter start-up, which is the same for every project.
+        timing = f'{t_oracle:.2f} s vs {t_rust:.3f} s'
         if not oracle_out.exists() or not any(oracle_out.rglob('*')):
             last = log.strip().splitlines()[-1] if log.strip() else ''
             print(f'  {renderer:<5} oracle wrote nothing (exit {rc_oracle}): {last[:110]}')
@@ -151,9 +157,10 @@ def compare(name: str) -> bool:
         if bad:
             clean = False
             shown = ', '.join(bad[:5]) + (' ...' if len(bad) > 5 else '')
-            print(f'  {renderer:<5} exit {rc_oracle}/{rc_rust}, {files} files, {len(bad)} differ: {shown}')
+            print(f'  {renderer:<5} exit {rc_oracle}/{rc_rust}, {files} files, {timing}, '
+                  f'{len(bad)} differ: {shown}')
         else:
-            print(f'  {renderer:<5} exit {rc_oracle}/{rc_rust}, {files} files, identical')
+            print(f'  {renderer:<5} exit {rc_oracle}/{rc_rust}, {files} files, {timing}, identical')
     return clean
 
 
