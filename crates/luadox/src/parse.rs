@@ -26,6 +26,65 @@ pub struct Context {
     pub item: Option<ItemId>,
 }
 
+/// A documentation block while it is being scanned: the comment lines seen so far and
+/// what their tags said, before anything says which element it documents.
+///
+/// It is not in the arena. A block that turns out to document nothing is reported and
+/// dropped, so no element exists that was never registered, and it becomes an `Item` at
+/// exactly one point -- `Parser::enter` -- once a declaration names it.
+struct Block {
+    /// The line the block opened on, where a disconnected block is reported.
+    line: u32,
+    raw_content: Vec<RawLine>,
+    flags: Flags,
+    within: Option<String>,
+    /// `@alias` names, bound to the element the block declares.
+    aliases: Vec<String>,
+}
+
+impl Block {
+    fn new(line: u32) -> Self {
+        Self {
+            line,
+            raw_content: Vec::new(),
+            flags: Flags::default(),
+            within: None,
+            aliases: Vec::new(),
+        }
+    }
+
+    /// Whether the block said anything a reader would miss if it were dropped.
+    fn said_something(&self) -> bool {
+        self.raw_content
+            .iter()
+            .any(|l| !l.text().trim_start_matches('-').trim().is_empty())
+    }
+
+    /// The element this block documents, now that a declaration names it.
+    fn declare(self, kind: Kind, symbol: &str, file: &str, line: u32) -> Item {
+        let mut item = Item::new(kind, file, Some(line), symbol);
+        item.raw_content = self.raw_content;
+        item.flags = self.flags;
+        item.within = self.within;
+        item
+    }
+}
+
+/// The block a comment line belongs to. A collection tag declares the block on the spot,
+/// because from that line on it is the scope or collection that its own `@field`s and
+/// every later block refer to; it is registered when the block ends.
+enum Current {
+    Block(Box<Block>),
+    Declared(ItemId),
+}
+
+/// The parts of a block a tag writes to, borrowed from wherever the block lives.
+struct Scanned<'a> {
+    flags: &'a mut Flags,
+    within: &'a mut Option<String>,
+    raw_content: &'a mut Vec<RawLine>,
+}
+
 pub struct Parser {
     pub items: Vec<Item>,
     /// Fully qualified name -> element, including `@alias` names.
@@ -41,7 +100,11 @@ pub struct Parser {
     collection_index: HashMap<String, usize>,
     /// Every registered element by kind, in registration order.
     by_kind: HashMap<Kind, Vec<ItemId>>,
-    added: HashSet<ItemId>,
+    /// Elements `add_reference` has registered. An implicit module whose name conflicts
+    /// never owns a top-level symbol, so every element of its file that nothing else
+    /// anchors asks for it to be registered again; the second time is a report, not a
+    /// second registration.
+    registered: HashSet<ItemId>,
     /// Elements whose `name`/`display` and `topsym` have been derived. The Python caches
     /// both behind lazy properties, and the laziness is load-bearing: an element asks its
     /// scope for a name long before that scope is itself registered.
@@ -69,7 +132,7 @@ impl Parser {
             collections: Vec::new(),
             collection_index: HashMap::new(),
             by_kind: HashMap::new(),
-            added: HashSet::new(),
+            registered: HashSet::new(),
             named: HashSet::new(),
             topsymed: HashSet::new(),
             within_topsym: HashMap::new(),
@@ -119,10 +182,6 @@ impl Parser {
         self.by_kind.get(&kind).map(Vec::as_slice).unwrap_or(&[])
     }
 
-    pub fn is_added(&self, id: ItemId) -> bool {
-        self.added.contains(&id)
-    }
-
     /// The page an element belongs to, honouring neither `@within` nor `@order`.
     pub fn topref(&self, id: ItemId) -> ItemId {
         let item = self.item(id);
@@ -151,7 +210,7 @@ impl Parser {
     /// `modref` is the file's implicit module: when nothing in the element's scopes is a
     /// page yet, the module is registered first so the element has somewhere to live.
     fn add_reference(&mut self, id: ItemId, modref: Option<ItemId>) {
-        if self.added.contains(&id) {
+        if self.registered.contains(&id) {
             let (name, file, line) = self.locate(id);
             self.diagnostics.add(
                 Category::Conflicts,
@@ -228,7 +287,7 @@ impl Parser {
         }
 
         self.by_kind.entry(kind).or_default().push(id);
-        self.added.insert(id);
+        self.registered.insert(id);
 
         let name = self.item(id).name.clone();
         match self.refs.get(&name).copied() {
@@ -447,11 +506,9 @@ impl Parser {
     /// Deferred to one pass because the id names the *page* an element is on, and a page
     /// is only certainly registered once every file has been read.
     pub fn assign_ids(&mut self) {
-        for index in 0..self.items.len() {
-            let id = ItemId(index as u32);
-            if !self.added.contains(&id) {
-                continue;
-            }
+        let mut registered: Vec<ItemId> = self.by_kind.values().flatten().copied().collect();
+        registered.sort_unstable();
+        for id in registered {
             let topref = self.topref(id);
             let item = self.item(id);
             let hash = util::ref_id(self.item(topref).kind.as_str(), &item.topsym, &item.name);
@@ -540,7 +597,7 @@ impl Parser {
 
         let mut scopes: Vec<ItemId> = vec![modref];
         let mut collection = modref;
-        let mut current: Option<ItemId> = None;
+        let mut current: Option<Current> = None;
         let mut parse_next_code_line = true;
         let mut table_level: i32 = 0;
 
@@ -555,30 +612,22 @@ impl Parser {
             self.ctx.line = Some(n);
 
             if current.is_none() && opens_block(&line) {
-                let mut item = Item::new(Kind::Field, path, Some(n), "");
-                item.scopes = scopes.clone();
-                // Untyped until a tag or the next line of code says what it is; `symbol`
-                // stays empty, which is what marks it as not yet a declaration.
-                item.symbol = String::new();
-                let id = self.push(item);
-                current = Some(id);
-                self.ctx.item = Some(id);
+                current = Some(Current::Block(Box::new(Block::new(n))));
             }
 
             let is_comment = line.starts_with("--");
             if is_comment {
-                if let Some(id) = current {
-                    self.scan_comment_line(
-                        id,
+                if let Some(block) = current.take() {
+                    current = Some(self.scan_comment_line(
+                        block,
                         &line,
                         n,
                         path,
                         &mut scopes,
                         &mut collection,
-                        &mut current,
                         &mut parse_next_code_line,
                         table_level,
-                    );
+                    ));
                 }
                 continue;
             }
@@ -598,11 +647,8 @@ impl Parser {
             }
 
             if !parse_next_code_line {
-                if let Some(id) = current.take() {
-                    if self.is_disconnected(id) {
-                        self.add_reference(id, Some(modref));
-                    }
-                    self.ctx.item = None;
+                if let Some(block) = current.take() {
+                    self.finish(block, Some(modref), path);
                     parse_next_code_line = true;
                 }
                 continue;
@@ -612,24 +658,45 @@ impl Parser {
                 self.requires.push(module);
             }
 
-            let Some(id) = current.take() else {
+            let Some(block) = current.take() else {
                 self.synthesize_member(&file, n, &code, &scopes, collection, modref, path);
                 continue;
             };
 
-            self.attach_declaration(id, &file, n, &scopes, collection, path);
-            if self.is_disconnected(id) {
-                self.add_reference(id, Some(modref));
-            }
-            self.ctx.item = None;
+            let block = self.attach_declaration(block, &file, n, &scopes, collection, path);
+            self.finish(block, Some(modref), path);
         }
 
-        if let Some(id) = current {
-            if self.is_disconnected(id) {
-                // An explicitly declared collection that holds nothing but its own
-                // docstring still deserves its page.
-                if !self.added.contains(&id) {
-                    self.add_reference(id, None);
+        if let Some(block) = current {
+            // An explicitly declared collection that holds nothing but its own docstring
+            // still deserves its page.
+            self.finish(block, None, path);
+        }
+    }
+
+    /// Puts a block that now has a declaration into the arena, binding its `@alias` names
+    /// to the new element. This is the one way a documentation block becomes an `Item`.
+    fn enter(&mut self, mut block: Block, kind: Kind, symbol: &str, path: &str, n: u32) -> ItemId {
+        let aliases = std::mem::take(&mut block.aliases);
+        let id = self.push(block.declare(kind, symbol, path, n));
+        self.aliases
+            .extend(aliases.into_iter().map(|name| (name, id)));
+        id
+    }
+
+    /// Registers the element a finished block declared. A block that declared nothing is
+    /// dropped, and reported when it actually said something.
+    fn finish(&mut self, block: Current, modref: Option<ItemId>, path: &str) {
+        match block {
+            Current::Declared(id) => self.add_reference(id, modref),
+            Current::Block(block) => {
+                if block.said_something() {
+                    self.diagnostics.add(
+                        Category::Structure,
+                        "comment block is not connected with any section, ignoring",
+                        Some(path),
+                        Some(block.line),
+                    );
                 }
             }
         }
@@ -638,13 +705,13 @@ impl Parser {
     /// Turns the line of code below a documentation block into the element it documents.
     fn attach_declaration(
         &mut self,
-        id: ItemId,
+        block: Current,
         file: &SourceFile,
         n: u32,
         scopes: &[ItemId],
         collection: ItemId,
         path: &str,
-    ) {
+    ) -> Current {
         let scope_is_module = scopes
             .last()
             .is_some_and(|s| self.item(*s).kind == Kind::Module);
@@ -666,36 +733,43 @@ impl Parser {
             _ => function.map(|decl| (Kind::Function, decl)),
         };
         let Some((kind, decl)) = chosen else {
-            return;
+            return block;
         };
 
-        if !self.item(id).symbol.is_empty() {
-            let (name, _, _) = self.locate(id);
-            let kind_name = self.item(id).kind.as_str();
-            self.diagnostics.add(
-                Category::Structure,
-                format!(
-                    "{} defined before {} {} has terminated; separate with a blank line",
-                    kind.as_str(),
-                    kind_name,
-                    name
-                ),
-                Some(&self.item(id).file.clone()),
-                self.item(id).line,
-            );
-        }
-
+        let id = match block {
+            Current::Block(block) => self.enter(*block, kind, &decl.symbol, path, n),
+            // A collection tag already typed the block, and its declaration should have
+            // ended it; the code line re-types the element in place, as the Python does.
+            Current::Declared(id) => {
+                let (name, _, _) = self.locate(id);
+                let kind_name = self.item(id).kind.as_str();
+                self.diagnostics.add(
+                    Category::Structure,
+                    format!(
+                        "{} defined before {} {} has terminated; separate with a blank line",
+                        kind.as_str(),
+                        kind_name,
+                        name
+                    ),
+                    Some(&self.item(id).file.clone()),
+                    self.item(id).line,
+                );
+                let item = self.item_mut(id);
+                item.kind = kind;
+                item.file = path.to_string();
+                item.line = Some(n);
+                item.symbol = decl.symbol.clone();
+                id
+            }
+        };
         let item = self.item_mut(id);
-        item.kind = kind;
-        item.file = path.to_string();
-        item.line = Some(n);
         item.scopes = scopes.to_vec();
-        item.symbol = decl.symbol.clone();
         item.collection = Some(collection);
         match kind {
             Kind::Function => item.args = decl.args.clone(),
             _ => item.value = decl.value.clone(),
         }
+        Current::Declared(id)
     }
 
     /// A name assigned inside an `@enum` or an explicit `@section` is a member of it even
@@ -762,47 +836,49 @@ impl Parser {
         }
     }
 
-    /// A block that documents nothing is worth reporting only when it actually said
-    /// something.
-    fn is_disconnected(&mut self, id: ItemId) -> bool {
-        if self.added.contains(&id) {
-            return false;
+    /// The parts of the block being scanned that a tag writes to, wherever the block
+    /// lives.
+    fn scanned<'a>(&'a mut self, block: &'a mut Current) -> Scanned<'a> {
+        match block {
+            Current::Block(block) => Scanned {
+                flags: &mut block.flags,
+                within: &mut block.within,
+                raw_content: &mut block.raw_content,
+            },
+            Current::Declared(id) => {
+                let item = self.item_mut(*id);
+                Scanned {
+                    flags: &mut item.flags,
+                    within: &mut item.within,
+                    raw_content: &mut item.raw_content,
+                }
+            }
         }
-        if !self.item(id).symbol.is_empty() {
-            return true;
+    }
+
+    /// Records an `@alias` for the element the block declares, or will declare.
+    fn alias(&mut self, block: &mut Current, name: String) {
+        match block {
+            Current::Block(block) => block.aliases.push(name),
+            Current::Declared(id) => self.aliases.push((name, *id)),
         }
-        let said_something = self
-            .item(id)
-            .raw_content
-            .iter()
-            .any(|l| !l.text().trim_start_matches('-').trim().is_empty());
-        if said_something {
-            let (_, file, line) = self.locate(id);
-            self.diagnostics.add(
-                Category::Structure,
-                "comment block is not connected with any section, ignoring",
-                Some(&file),
-                line,
-            );
-        }
-        false
     }
 
     /// Handles one `---` comment line: every tag on it that changes what the block is,
-    /// and otherwise the line itself as content.
+    /// and otherwise the line itself as content. Returns the block, which a collection
+    /// tag turns into a declared element.
     #[allow(clippy::too_many_arguments)]
     fn scan_comment_line(
         &mut self,
-        id: ItemId,
+        mut block: Current,
         line: &str,
         n: u32,
         path: &str,
         scopes: &mut Vec<ItemId>,
         collection: &mut ItemId,
-        current: &mut Option<ItemId>,
         parse_next_code_line: &mut bool,
         table_level: i32,
-    ) {
+    ) -> Current {
         let parsed = match tags::parse(line, true) {
             Ok(tags) => tags,
             Err(err) => {
@@ -832,15 +908,21 @@ impl Parser {
                 {
                     scopes.pop();
                 }
+                let id = match block {
+                    Current::Block(block) => self.enter(*block, kind, name, path, n),
+                    Current::Declared(id) => {
+                        let item = self.item_mut(id);
+                        item.kind = kind;
+                        item.line = Some(n);
+                        item.symbol = name.to_string();
+                        id
+                    }
+                };
+                block = Current::Declared(id);
                 let item = self.item_mut(id);
-                item.kind = kind;
-                item.line = Some(n);
-                item.symbol = name.to_string();
                 item.depth = table_level;
+                item.scopes = scopes.clone();
                 item.collection = Some(*collection);
-                let snapshot = scopes.clone();
-                self.item_mut(id).scopes = snapshot;
-                self.item_mut(id).collection = Some(*collection);
                 *collection = id;
 
                 match kind {
@@ -866,7 +948,7 @@ impl Parser {
             }
 
             match tag {
-                Tag::Within(name) => self.item_mut(id).within = Some(name),
+                Tag::Within(name) => *self.scanned(&mut block).within = Some(name),
                 Tag::Field { name, desc } => {
                     let mut item = Item::new(Kind::Field, path, Some(n), &name);
                     item.scopes = scopes.clone();
@@ -880,26 +962,24 @@ impl Parser {
                     let modref = scopes.first().copied();
                     self.add_reference(field, modref);
                 }
-                Tag::Alias(name) => {
-                    // The Python registers the alias against the still-untyped reference,
-                    // which a later clone then replaces; here the alias is recorded and
-                    // bound to the element the block turns out to declare.
-                    self.pending_alias(id, name);
-                }
-                Tag::Compact(members) => self.item_mut(id).flags.compact = members,
-                Tag::Fullnames => self.item_mut(id).flags.fullnames = true,
+                // The Python registers the alias against the still-untyped reference,
+                // which a later clone then replaces; here the alias is recorded and bound
+                // to the element the block turns out to declare.
+                Tag::Alias(name) => self.alias(&mut block, name),
+                Tag::Compact(members) => self.scanned(&mut block).flags.compact = members,
+                Tag::Fullnames => self.scanned(&mut block).flags.fullnames = true,
                 Tag::Deprecated(desc) => {
                     // Repeated tags accumulate rather than overwrite, so no explanation
                     // is silently dropped.
-                    let existing = self.item(id).flags.deprecated.clone();
-                    let parts: Vec<String> = [existing, desc]
+                    let flags = self.scanned(&mut block).flags;
+                    let parts: Vec<String> = [flags.deprecated.take(), desc]
                         .into_iter()
                         .flatten()
                         .filter(|p| !p.is_empty())
                         .collect();
-                    self.item_mut(id).flags.deprecated = Some(parts.join("\n\n"));
+                    flags.deprecated = Some(parts.join("\n\n"));
                 }
-                Tag::Meta(value) => self.item_mut(id).flags.meta = Some(value),
+                Tag::Meta(value) => self.scanned(&mut block).flags.meta = Some(value),
                 Tag::Since(version) => {
                     if version.is_empty() {
                         self.diagnostics.add(
@@ -909,7 +989,7 @@ impl Parser {
                             Some(n),
                         );
                     } else {
-                        self.item_mut(id).flags.since = Some(version);
+                        self.scanned(&mut block).flags.since = Some(version);
                     }
                 }
                 Tag::Inherits(names) => {
@@ -919,23 +999,16 @@ impl Parser {
                         .filter(|p| !p.is_empty())
                         .map(str::to_string)
                         .collect();
-                    self.item_mut(id).flags.inherits.extend(parents);
+                    self.scanned(&mut block).flags.inherits.extend(parents);
                 }
-                Tag::Rename(name) => {
-                    self.item_mut(id).flags.rename = Some(name.clone());
-                    // Renaming the element that *is* the current scope renames the scope.
-                    if let Some(&scope) = scopes.last() {
-                        if self.item(scope).kind == self.item(id).kind
-                            && self.item(id).symbol == self.item(scope).symbol
-                        {
-                            self.item_mut(scope).flags.rename = Some(name);
-                        }
-                    }
-                }
-                Tag::Scope(name) => self.item_mut(id).flags.scope = Some(name),
-                Tag::Display(name) => self.item_mut(id).flags.display = Some(name),
-                Tag::Type(types) => self.item_mut(id).flags.types = Some(types),
-                Tag::Order(order) => self.item_mut(id).flags.order = Some(order),
+                // The Python also renames the current scope when it is the same element
+                // as the block; a block is only ever its own scope once a collection tag
+                // has declared it, so that is the same flag written twice.
+                Tag::Rename(name) => self.scanned(&mut block).flags.rename = Some(name),
+                Tag::Scope(name) => self.scanned(&mut block).flags.scope = Some(name),
+                Tag::Display(name) => self.scanned(&mut block).flags.display = Some(name),
+                Tag::Type(types) => self.scanned(&mut block).flags.types = Some(types),
+                Tag::Order(order) => self.scanned(&mut block).flags.order = Some(order),
                 Tag::Unrecognized(name) => self.diagnostics.add(
                     Category::Structure,
                     format!("unrecognized tag @{name}, ignoring"),
@@ -950,18 +1023,14 @@ impl Parser {
             }
         }
 
-        let _ = current;
         if handled == 0 {
-            self.item_mut(id).raw_content.push(RawLine::Source {
+            self.scanned(&mut block).raw_content.push(RawLine::Source {
                 line: n,
                 text: line.to_string(),
                 tags: unprocessed,
             });
         }
-    }
-
-    fn pending_alias(&mut self, id: ItemId, name: String) {
-        self.aliases.push((name, id));
+        block
     }
 
     // -- manual pages -----------------------------------------------------------
