@@ -79,22 +79,9 @@ pub fn render(parser: &mut Parser, toprefs: &[ItemId]) -> Result<Vec<Output>, St
         .filter(|id| parser.item(*id).kind == Kind::Manual)
         .collect();
 
-    let fallback = parser.config.get_or("project", "name", "Lua Project");
-    let project_title = parser
-        .config
-        .get("project", "title")
-        .map(str::to_string)
-        .unwrap_or_else(|| fallback.clone());
-    let hometext = parser
-        .config
-        .get("project", "name")
-        .map(str::to_string)
-        .unwrap_or_else(|| project_title.clone());
-    let has_manual_index = parser.config.has_section("manual")
-        && parser
-            .config
-            .get("manual", "index")
-            .is_some_and(|v| !v.is_empty());
+    let project_title = parser.settings.project_title().to_string();
+    let hometext = parser.settings.hometext().to_string();
+    let has_manual_index = parser.settings.has_manual_index();
 
     let mut r = Renderer {
         version: assets::version(),
@@ -167,32 +154,24 @@ pub fn render(parser: &mut Parser, toprefs: &[ItemId]) -> Result<Vec<Output>, St
 pub fn config_files(parser: &Parser) -> (Vec<PathBuf>, Vec<String>) {
     let mut found = Vec::new();
     let mut missing = Vec::new();
-    for option in ["css", "js", "favicon"] {
-        for name in configured(parser, option) {
-            let path = PathBuf::from(&name);
-            if path.is_file() {
-                found.push(path);
-            } else {
-                missing.push(name);
-            }
+    let settings = &parser.settings;
+    for name in [&settings.css, &settings.js, &settings.favicon]
+        .into_iter()
+        .flatten()
+    {
+        let path = PathBuf::from(name);
+        if path.is_file() {
+            found.push(path);
+        } else {
+            missing.push(name.clone());
         }
     }
     (found, missing)
 }
 
-fn configured(parser: &Parser, option: &str) -> Vec<String> {
-    parser
-        .config
-        .get("project", option)
-        .unwrap_or("")
-        .lines()
-        .flat_map(util::shlex_split)
-        .collect()
-}
-
 fn load_templates(parser: &Parser) -> Result<Templates, String> {
-    let read = |option: &str, asset: &str| -> Result<String, String> {
-        match parser.config.get("project", option) {
+    let read = |option: &str, path: Option<&str>, asset: &str| -> Result<String, String> {
+        match path {
             // A configured template is read in text mode by the Python, so its line
             // endings are normalised; reading it as a string does the same.
             Some(path) => std::fs::read_to_string(path)
@@ -201,11 +180,20 @@ fn load_templates(parser: &Parser) -> Result<Templates, String> {
             None => Ok(assets::text(asset)),
         }
     };
+    let paths = &parser.settings.templates;
     Ok(Templates {
-        head: read("head_template", "head.tmpl.html")?,
-        foot: read("foot_template", "foot.tmpl.html")?,
-        search: read("search_template", "search.tmpl.html")?,
-        sidebar: read("sidebar_template", "sidebar.tmpl.html")?,
+        head: read("head_template", paths.head.as_deref(), "head.tmpl.html")?,
+        foot: read("foot_template", paths.foot.as_deref(), "foot.tmpl.html")?,
+        search: read(
+            "search_template",
+            paths.search.as_deref(),
+            "search.tmpl.html",
+        )?,
+        sidebar: read(
+            "sidebar_template",
+            paths.sidebar.as_deref(),
+            "sidebar.tmpl.html",
+        )?,
     })
 }
 
@@ -444,26 +432,26 @@ impl Renderer<'_> {
         let html_title = format!("{page_title} - {}", self.project_title);
 
         let mut head: Vec<String> = Vec::new();
-        for css in configured(self.parser, "css") {
-            let name = basename(&css);
+        for css in &self.parser.settings.css {
+            let name = basename(css);
             head.push(format!(
                 "<link href=\"{root}{name}?{}\" rel=\"stylesheet\" />",
                 self.version
             ));
         }
-        for js in configured(self.parser, "js") {
-            let name = basename(&js);
+        for js in &self.parser.settings.js {
+            let name = basename(js);
             head.push(format!(
                 "<script src=\"{root}{name}?{}\"></script>",
                 self.version
             ));
         }
-        for favicon in configured(self.parser, "favicon") {
-            let mimetype = match mimetype_of(&favicon) {
+        for favicon in &self.parser.settings.favicon {
+            let mimetype = match mimetype_of(favicon) {
                 Some(t) => format!(" type=\"{t}\""),
                 None => String::new(),
             };
-            let name = basename(&favicon);
+            let name = basename(favicon);
             // The format string already has a space before the type, so a known type
             // produces two.
             head.push(format!(
@@ -579,28 +567,9 @@ impl Renderer<'_> {
 
     /// Every config section whose name starts with `link`, in section-name order.
     fn user_links(&self, root: &str, out: &mut Vec<String>) {
-        let mut sections: Vec<(String, Option<String>, String, String, String)> = Vec::new();
-        for (name, options) in self.parser.config.sections_with_prefix("link") {
-            let get = |key: &str| {
-                options
-                    .iter()
-                    .find(|(k, _)| k == key)
-                    .map(|(_, v)| v.clone())
-            };
-            sections.push((
-                name.to_string(),
-                get("icon"),
-                get("url").unwrap_or_default(),
-                get("tooltip").unwrap_or_default(),
-                // The Python has no fallback here and dies on a section without one; an
-                // empty label is a better answer than a traceback.
-                get("text").unwrap_or_default(),
-            ));
-        }
-        sections.sort_by(|a, b| a.0.cmp(&b.0));
-        for (_, icon, url, tooltip, text) in sections {
+        for link in &self.parser.settings.links {
             let mut class = String::new();
-            let img = match icon {
+            let img = match &link.icon {
                 Some(icon) => {
                     let icon = match icon.as_str() {
                         "download" | "github" | "gitlab" | "bitbucket" => {
@@ -614,8 +583,10 @@ impl Renderer<'_> {
                 None => String::new(),
             };
             out.push(format!(
-                "<div class=\"button{class}\"><a href=\"{}\" title=\"{tooltip}\">{img}<span>{text}</span></a></div>",
-                url.replace("{root}", root)
+                "<div class=\"button{class}\"><a href=\"{}\" title=\"{}\">{img}<span>{}</span></a></div>",
+                link.url.replace("{root}", root),
+                link.tooltip,
+                link.text
             ));
         }
     }
