@@ -527,15 +527,14 @@ impl Parser {
     ///
     /// It exists so the relative paths on the search and landing pages come out right,
     /// and it is deliberately *not* a top-level symbol: it must never appear in a sidebar
-    /// list. `--search` cannot collide with a documented name, because a Lua comment
-    /// begins with the same two characters.
+    /// list, and nothing can link to it. Its symbol is the Python's `--search`, which the
+    /// body class reduces to `other-search`.
     pub fn add_search_ref(&mut self) -> ItemId {
         let mut item = Item::new(Kind::Pseudo, "search.html", None, "--search");
         item.flags.display = Some("Search".to_string());
         let id = self.push(item);
         self.ensure_name(id);
         self.ensure_topsym(id);
-        self.refs.insert("--search".to_string(), id);
         id
     }
 
