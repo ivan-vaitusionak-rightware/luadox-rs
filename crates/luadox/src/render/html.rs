@@ -23,7 +23,7 @@ use std::path::{Path, PathBuf};
 use crate::assets;
 use crate::ir::{Content, Fragment, ItemId, Kind, Member, Page, RefId, SeeRef};
 use crate::markdown;
-use crate::parse::Parser;
+use crate::parse::{Parser, RefStyle};
 use crate::util;
 
 /// A rendered file and where it goes, relative to the output directory.
@@ -342,7 +342,7 @@ impl Renderer<'_> {
                     let md = refs
                         .iter()
                         .filter_map(SeeRef::item)
-                        .map(|found| self.parser.ref_markdown(found, None, false))
+                        .map(|found| self.parser.ref_markdown(found, None, RefStyle::Plain))
                         .collect::<Vec<_>>()
                         .join(", ");
                     // The slice is unconditional in the Python, so an empty `@see` still

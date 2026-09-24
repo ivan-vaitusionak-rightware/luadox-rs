@@ -85,6 +85,14 @@ struct Scanned<'a> {
     raw_content: &'a mut Vec<RawLine>,
 }
 
+/// How a cross reference's link text is set: as code, when the reference was written in
+/// backticks, or as plain text.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RefStyle {
+    Plain,
+    Code,
+}
+
 pub struct Parser {
     pub items: Vec<Item>,
     /// Fully qualified name -> element, including `@alias` names.
@@ -1374,8 +1382,11 @@ impl Parser {
     }
 
     /// The markdown link for an element: a `luadox:<id>` target the renderer resolves.
-    pub fn ref_markdown(&self, id: ItemId, text: Option<&str>, code: bool) -> String {
-        let tick = if code { "`" } else { "" };
+    pub fn ref_markdown(&self, id: ItemId, text: Option<&str>, style: RefStyle) -> String {
+        let tick = match style {
+            RefStyle::Code => "`",
+            RefStyle::Plain => "",
+        };
         let parens = if self.item(id).kind == Kind::Function && text.is_none() {
             "()"
         } else {

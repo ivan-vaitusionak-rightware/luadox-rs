@@ -12,7 +12,7 @@ use std::path::Path;
 
 use crate::diag::Category;
 use crate::ir::{AdmonitionLevel, Content, Fragment, ItemId, Markdown, Param, RawLine, Returned};
-use crate::parse::Parser;
+use crate::parse::{Parser, RefStyle};
 use crate::tags::{self, Tag};
 use crate::util;
 
@@ -333,7 +333,7 @@ impl Parser {
                 continue;
             }
             match self.resolve_ref(&name) {
-                Some(found) => out.push_str(&self.ref_markdown(found, Some(&name), true)),
+                Some(found) => out.push_str(&self.ref_markdown(found, Some(&name), RefStyle::Code)),
                 None => {
                     out.push('`');
                     out.push_str(&name);
@@ -352,8 +352,15 @@ impl Parser {
         let mut out = String::with_capacity(text.len());
         let mut i = 0usize;
         while let Some(&here) = chars.get(i) {
-            let code = here == '`' && matches!(chars.get(i + 1), Some('@'));
-            let at = if code { i + 1 } else { i };
+            let style = if here == '`' && matches!(chars.get(i + 1), Some('@')) {
+                RefStyle::Code
+            } else {
+                RefStyle::Plain
+            };
+            let at = match style {
+                RefStyle::Code => i + 1,
+                RefStyle::Plain => i,
+            };
             if !(matches!(chars.get(at), Some('@')) && matches!(chars.get(at + 1), Some('{'))) {
                 out.push(here);
                 i += 1;
@@ -387,11 +394,11 @@ impl Parser {
                 continue;
             }
             j += 1;
-            if code && matches!(chars.get(j), Some('`')) {
+            if style == RefStyle::Code && matches!(chars.get(j), Some('`')) {
                 j += 1;
             }
             match self.resolve_ref(&name) {
-                Some(found) => out.push_str(&self.ref_markdown(found, label.as_deref(), code)),
+                Some(found) => out.push_str(&self.ref_markdown(found, label.as_deref(), style)),
                 None => {
                     let (file, line) = (self.ctx.file.clone(), self.ctx.line);
                     self.diagnostics.add(
