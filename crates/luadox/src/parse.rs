@@ -719,24 +719,21 @@ impl Parser {
             .map(|s| self.item(*s).name.clone())
             .unwrap_or_default();
 
-        let field = file.fields.get(&n);
-        let function = file.functions.get(&n);
-
         // The Python tries a field first and a function second, and skips a field whose
         // name is the module's own -- assigning the module table to itself is a common
         // pattern, not a documented member.
-        let chosen = match field {
-            Some(decl) if !(scope_is_module && scope_name == decl.symbol) => {
-                Some((Kind::Field, decl))
-            }
-            _ => function.map(|decl| (Kind::Function, decl)),
-        };
-        let Some((kind, decl)) = chosen else {
-            return block;
+        let field = file
+            .fields
+            .get(&n)
+            .filter(|decl| !(scope_is_module && scope_name == decl.symbol));
+        let (kind, symbol, args, value) = match (field, file.functions.get(&n)) {
+            (Some(decl), _) => (Kind::Field, &decl.symbol, Vec::new(), decl.value.clone()),
+            (None, Some(decl)) => (Kind::Function, &decl.symbol, decl.args.clone(), None),
+            (None, None) => return block,
         };
 
         let id = match block {
-            Current::Block(block) => self.enter(*block, kind, &decl.symbol, path, n),
+            Current::Block(block) => self.enter(*block, kind, symbol, path, n),
             // A collection tag already typed the block, and its declaration should have
             // ended it; the code line re-types the element in place, as the Python does.
             Current::Declared(id) => {
@@ -757,17 +754,15 @@ impl Parser {
                 item.kind = kind;
                 item.file = path.to_string();
                 item.line = Some(n);
-                item.symbol = decl.symbol.clone();
+                item.symbol = symbol.clone();
                 id
             }
         };
         let item = self.item_mut(id);
         item.scopes = scopes.to_vec();
         item.collection = Some(collection);
-        match kind {
-            Kind::Function => item.args = decl.args.clone(),
-            _ => item.value = decl.value.clone(),
-        }
+        item.args = args;
+        item.value = value;
         Current::Declared(id)
     }
 

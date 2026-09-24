@@ -20,20 +20,20 @@ use full_moon::node::Node;
 use full_moon::tokenizer::{Token, TokenType};
 use full_moon::visitors::Visitor;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DeclKind {
-    Function,
-    Field,
+/// An assignment as the source writes it: the name assigned to, and the literal
+/// right-hand side when the Python's scanner would have kept one.
+#[derive(Debug, Clone)]
+pub struct FieldDecl {
+    pub symbol: String,
+    pub value: Option<String>,
 }
 
-/// One declaration as the source writes it. `symbol` keeps the colon of `Class:method`,
+/// A function as the source declares it. `symbol` keeps the colon of `Class:method`,
 /// because the colon is what tells the resolver the name is already scoped.
 #[derive(Debug, Clone)]
-pub struct Decl {
-    pub kind: DeclKind,
+pub struct FunctionDecl {
     pub symbol: String,
     pub args: Vec<String>,
-    pub value: Option<String>,
 }
 
 #[derive(Debug)]
@@ -50,8 +50,8 @@ pub struct SourceFile {
     /// Assignments by the line they start on. Kept apart from `functions` because the
     /// Python tries `_parse_field` before `_parse_function` on every code line and then,
     /// for one special case, falls through from the first to the second.
-    pub fields: BTreeMap<u32, Decl>,
-    pub functions: BTreeMap<u32, Decl>,
+    pub fields: BTreeMap<u32, FieldDecl>,
+    pub functions: BTreeMap<u32, FunctionDecl>,
     /// Syntax the parser could not fit, as (line, what). Empty for the whole production corpus
     /// once the preprocessor directives are blanked.
     pub errors: Vec<(u32, String)>,
@@ -226,8 +226,8 @@ impl Visitor for SpanCollector {
 
 struct Collector<'a> {
     source: &'a str,
-    assignments: BTreeMap<u32, Decl>,
-    functions: BTreeMap<u32, Decl>,
+    assignments: BTreeMap<u32, FieldDecl>,
+    functions: BTreeMap<u32, FunctionDecl>,
 }
 
 impl Collector<'_> {
@@ -251,24 +251,16 @@ impl Collector<'_> {
     }
 
     fn add_assignment(&mut self, line: u32, symbol: String, value: Option<&Expression>) {
-        let decl = match value {
+        let value = match value {
             // `X = function(a, b)` is a field with no value in the Python, because
             // `_parse_field` matches the assignment first and then refuses a value that
             // starts with `function`.
-            Some(Expression::Function(_)) | None => Decl {
-                kind: DeclKind::Field,
-                symbol,
-                args: Vec::new(),
-                value: None,
-            },
-            Some(expr) => Decl {
-                kind: DeclKind::Field,
-                symbol,
-                args: Vec::new(),
-                value: self.text(expr),
-            },
+            Some(Expression::Function(_)) | None => None,
+            Some(expr) => self.text(expr),
         };
-        self.assignments.entry(line).or_insert(decl);
+        self.assignments
+            .entry(line)
+            .or_insert(FieldDecl { symbol, value });
     }
 
     /// The name the Python's `_parse_field` regexes would produce.
@@ -300,11 +292,9 @@ impl Visitor for Collector<'_> {
             return;
         };
         let line = pos.line() as u32;
-        let decl = Decl {
-            kind: DeclKind::Function,
+        let decl = FunctionDecl {
             symbol: node.name().to_string().trim().to_string(),
             args: self.parameters(node.body()),
-            value: None,
         };
         self.functions.entry(line).or_insert(decl);
     }
@@ -314,11 +304,9 @@ impl Visitor for Collector<'_> {
             return;
         };
         let line = pos.line() as u32;
-        let decl = Decl {
-            kind: DeclKind::Function,
+        let decl = FunctionDecl {
             symbol: node.name().token().to_string(),
             args: self.parameters(node.body()),
-            value: None,
         };
         self.functions.entry(line).or_insert(decl);
     }
@@ -373,12 +361,8 @@ impl Visitor for Collector<'_> {
 mod tests {
     use super::*;
 
-    fn decl(source: &str, line: u32) -> Option<Decl> {
-        let file = parse("<test>", source);
-        file.fields
-            .get(&line)
-            .or_else(|| file.functions.get(&line))
-            .cloned()
+    fn field(source: &str, line: u32) -> Option<FieldDecl> {
+        parse("<test>", source).fields.get(&line).cloned()
     }
 
     /// Defect (a) in the Python: `RE_BLOCK_OPEN` matches both `for` and `do` on one line
@@ -430,7 +414,7 @@ function L:real() end
     #[test]
     fn a_double_dash_inside_a_string_does_not_truncate_the_value() {
         assert_eq!(
-            decl("S.sep = \"a--b\"\n", 1).and_then(|d| d.value),
+            field("S.sep = \"a--b\"\n", 1).and_then(|d| d.value),
             Some("\"a--b\"".to_string())
         );
     }
@@ -445,24 +429,25 @@ function L:real() end
     fn a_value_spanning_lines_survives_whole() {
         let source = "M.X = find(\n    \"a\",\n    \"b\" )\n";
         assert_eq!(
-            decl(source, 1).and_then(|d| d.value),
+            field(source, 1).and_then(|d| d.value),
             Some("find( \"a\", \"b\" )".to_string())
         );
     }
 
     #[test]
     fn an_assignment_of_a_function_is_a_field_with_no_value() {
-        let Some(d) = decl("M.f = function(a, b) end\n", 1) else {
+        let file = parse("<test>", "M.f = function(a, b) end\n");
+        let Some(d) = file.fields.get(&1) else {
             panic!("an assignment is a declaration");
         };
-        assert_eq!(d.kind, DeclKind::Field);
         assert_eq!(d.symbol, "M.f");
         assert_eq!(d.value, None);
+        assert!(!file.functions.contains_key(&1));
     }
 
     #[test]
     fn a_bracket_key_names_the_field_without_its_quotes() {
-        let Some(d) = decl("M[\"key\"] = 1\n", 1) else {
+        let Some(d) = field("M[\"key\"] = 1\n", 1) else {
             panic!("a bracket key is a declaration");
         };
         assert_eq!(d.symbol, "key");
