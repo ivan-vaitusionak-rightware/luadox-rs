@@ -36,17 +36,24 @@ pub struct FunctionDecl {
     pub args: Vec<String>,
 }
 
+/// One line of a source file, in the views the scanner reads it.
+#[derive(Debug)]
+pub struct Line {
+    /// The line, stripped, as the Python's scanner sees it.
+    pub text: String,
+    /// The same line with comments and string literals blanked out, so counting `{` and
+    /// `}` cannot be fooled by a brace inside a string -- the Python's own FIXME #2.
+    pub code: String,
+    /// Whether the line lies inside a `--[[ ]]` long comment. The Python has no notion of
+    /// one, which is how it documents a function that is commented out.
+    pub in_long_comment: bool,
+}
+
 #[derive(Debug)]
 pub struct SourceFile {
     pub path: String,
-    /// Every line, stripped, as the Python's scanner sees them. Line `n` is index `n - 1`.
-    pub lines: Vec<String>,
-    /// The same lines with comments and string literals blanked out, so counting `{` and
-    /// `}` cannot be fooled by a brace inside a string -- the Python's own FIXME #2.
-    pub code_lines: Vec<String>,
-    /// Lines that lie inside a `--[[ ]]` long comment. The Python has no notion of one,
-    /// which is how it documents a function that is commented out.
-    pub long_comment: Vec<bool>,
+    /// Line `n` is index `n - 1`.
+    pub lines: Vec<Line>,
     /// Assignments by the line they start on. Kept apart from `functions` because the
     /// Python tries `_parse_field` before `_parse_function` on every code line and then,
     /// for one special case, falls through from the first to the second.
@@ -59,33 +66,8 @@ pub struct SourceFile {
 }
 
 impl SourceFile {
-    pub fn line(&self, n: u32) -> &str {
-        self.lines
-            .get(n.saturating_sub(1) as usize)
-            .map(String::as_str)
-            .unwrap_or("")
-    }
-
-    pub fn code_line(&self, n: u32) -> &str {
-        self.code_lines
-            .get(n.saturating_sub(1) as usize)
-            .map(String::as_str)
-            .unwrap_or("")
-    }
-
-    pub fn is_long_comment(&self, n: u32) -> bool {
-        self.long_comment
-            .get(n.saturating_sub(1) as usize)
-            .copied()
-            .unwrap_or(false)
-    }
-
-    pub fn len(&self) -> usize {
-        self.lines.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.lines.is_empty()
+    pub fn line(&self, n: u32) -> Option<&Line> {
+        self.lines.get(n.checked_sub(1)? as usize)
     }
 }
 
@@ -153,10 +135,15 @@ pub fn parse(path: &str, source: &str) -> SourceFile {
     };
     spans.visit_ast(&ast);
 
-    let lines: Vec<String> = source.lines().map(|l| l.trim().to_string()).collect();
-    let code_lines = mask(&source, &spans.blank);
-    let long_comment = (1..=lines.len() as u32)
-        .map(|n| spans.long_comment.contains(&n))
+    let lines = source
+        .lines()
+        .zip(mask(&source, &spans.blank))
+        .zip(1u32..)
+        .map(|((text, code), n)| Line {
+            text: text.trim().to_string(),
+            code,
+            in_long_comment: spans.long_comment.contains(&n),
+        })
         .collect();
 
     let mut collector = Collector {
@@ -169,8 +156,6 @@ pub fn parse(path: &str, source: &str) -> SourceFile {
     SourceFile {
         path: path.to_string(),
         lines,
-        code_lines,
-        long_comment,
         fields: collector.assignments,
         functions: collector.functions,
         errors,
@@ -401,8 +386,9 @@ function L:ghost() end
 function L:real() end
 ";
         let file = parse("<test>", source);
-        assert!(file.is_long_comment(2) && file.is_long_comment(3));
-        assert!(!file.is_long_comment(5));
+        let in_long_comment = |n: u32| file.line(n).is_some_and(|l| l.in_long_comment);
+        assert!(in_long_comment(2) && in_long_comment(3));
+        assert!(!in_long_comment(5));
         assert_eq!(
             file.functions.get(&5).map(|d| d.symbol.clone()),
             Some("L:real".into())
@@ -422,7 +408,7 @@ function L:real() end
     #[test]
     fn braces_inside_a_string_do_not_count_as_a_table() {
         let file = parse("<test>", "local s = \"{{{\"\n");
-        assert_eq!(file.code_line(1).matches('{').count(), 0);
+        assert_eq!(file.line(1).map(|l| l.code.as_str()), Some("local s ="));
     }
 
     #[test]

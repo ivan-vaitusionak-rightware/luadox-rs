@@ -601,16 +601,16 @@ impl Parser {
         let mut table_level: i32 = 0;
 
         self.ctx.file = Some(path.to_string());
-        for n in 1..=file.len() as u32 {
+        for (n, source_line) in (1u32..).zip(&file.lines) {
             // A `--[[ ]]` block is a comment, all of it. The Python has no notion of one,
             // which is how it documents a function that is commented out.
-            if file.is_long_comment(n) {
+            if source_line.in_long_comment {
                 continue;
             }
-            let line = file.line(n).to_string();
+            let line = source_line.text.as_str();
             self.ctx.line = Some(n);
 
-            if current.is_none() && opens_block(&line) {
+            if current.is_none() && opens_block(line) {
                 current = Some(Current::Block(Box::new(Block::new(n))));
             }
 
@@ -619,7 +619,7 @@ impl Parser {
                 if let Some(block) = current.take() {
                     current = Some(self.scan_comment_line(
                         block,
-                        &line,
+                        line,
                         n,
                         path,
                         &mut scopes,
@@ -631,7 +631,7 @@ impl Parser {
                 continue;
             }
 
-            let code = file.code_line(n).to_string();
+            let code = source_line.code.as_str();
             if !code.is_empty() {
                 table_level += code.matches('{').count() as i32;
                 table_level -= code.matches('}').count() as i32;
@@ -653,12 +653,12 @@ impl Parser {
                 continue;
             }
 
-            if let Some(module) = require_target(&code) {
+            if let Some(module) = require_target(code) {
                 self.requires.push(module);
             }
 
             let Some(block) = current.take() else {
-                self.synthesize_member(&file, n, &code, &scopes, collection, modref, path);
+                self.synthesize_member(&file, n, code, &scopes, collection, modref, path);
                 continue;
             };
 
