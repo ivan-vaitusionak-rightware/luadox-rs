@@ -224,3 +224,30 @@ them `rtk.Widget.FULL`, which then gets its own Attributes table on the class pa
 Rust reads assignments from the Lua syntax tree, where a comparison is not one.
 """
 present_in_corpus = false
+
+[[improvement]]
+level = "L1"
+json_path_contains = ".fields"
+fix = "A tab before the `=` still makes an assignment."
+why = """
+`_parse_field` matches `\b([\S\.]+) *=`: only spaces may separate the name from the
+`=`, so `M.p<TAB>=<TAB>5` is not a field and the block above it is reported as connected
+to nothing (upstream issue #8, open since 2024). The Rust reads the assignment from the
+syntax tree, where whitespace is whitespace.
+"""
+present_in_corpus = false
+
+[[improvement]]
+level = "L1"
+json_path_contains = "(this entry explains no output difference)"
+fix = "A malformed tag on a source line is reported and the run continues."
+why = """
+A `@tparam` or `@since` with no argument raises in the Python's tag parser, which
+`parse_source` catches, logs as `error parsing around <file>:<line>` and exits 1 with
+nothing written -- the whole documentation is lost over one line. The Rust records the
+same message as a `structure` diagnostic against that line, drops the tag and renders
+everything else; the exit code is still 1. The same holds for the `KeyError` the Python
+raises in `Reference.topref` for an element whose page lost its registration, which is
+what stops the guns4d project in harness/foreign_corpora.py.
+"""
+present_in_corpus = false
