@@ -11,12 +11,34 @@ use crate::tags::Tag;
 use std::borrow::Cow;
 use std::fmt;
 
+/// An element of the arena. Only `Items::push` makes one, so it always indexes an
+/// element.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ItemId(pub u32);
+pub struct ItemId(u32);
 
-impl ItemId {
-    pub fn index(self) -> usize {
-        self.0 as usize
+/// The arena every element lives in.
+#[derive(Debug, Default)]
+pub struct Items(Vec<Item>);
+
+impl Items {
+    pub fn push(&mut self, item: Item) -> ItemId {
+        let id = ItemId(self.0.len() as u32);
+        self.0.push(item);
+        id
+    }
+
+    pub fn get(&self, id: ItemId) -> &Item {
+        match self.0.get(id.0 as usize) {
+            Some(item) => item,
+            None => unreachable!("every ItemId comes from Items::push"),
+        }
+    }
+
+    pub fn get_mut(&mut self, id: ItemId) -> &mut Item {
+        match self.0.get_mut(id.0 as usize) {
+            Some(item) => item,
+            None => unreachable!("every ItemId comes from Items::push"),
+        }
     }
 }
 

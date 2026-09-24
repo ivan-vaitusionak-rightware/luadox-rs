@@ -10,7 +10,7 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use crate::diag::{Category, Diagnostics};
-use crate::ir::{Flags, Item, ItemId, Kind, Order, RawLine, RefId, SeeRef};
+use crate::ir::{Flags, Item, ItemId, Items, Kind, Order, RawLine, RefId, SeeRef};
 use crate::lua::{self, SourceFile};
 use crate::settings::Settings;
 use crate::tags::{self, Tag};
@@ -94,7 +94,7 @@ pub enum RefStyle {
 }
 
 pub struct Parser {
-    pub items: Vec<Item>,
+    items: Items,
     /// Fully qualified name -> element, including `@alias` names.
     pub refs: HashMap<String, ItemId>,
     /// Opaque id -> element, for a `@see` list and the LuaLS mixin phrase.
@@ -131,7 +131,7 @@ pub struct Parser {
 impl Parser {
     pub fn new(settings: Settings) -> Self {
         Self {
-            items: Vec::new(),
+            items: Items::default(),
             refs: HashMap::new(),
             by_id: HashMap::new(),
             topsyms: Vec::new(),
@@ -153,22 +153,15 @@ impl Parser {
     // -- arena ------------------------------------------------------------------
 
     fn push(&mut self, item: Item) -> ItemId {
-        let id = ItemId(self.items.len() as u32);
-        self.items.push(item);
-        id
+        self.items.push(item)
     }
 
     pub fn item(&self, id: ItemId) -> &Item {
-        // Every ItemId comes from `push`, so the index is always in range; an empty
-        // placeholder beats panicking in a documentation tool.
-        self.items.get(id.index()).unwrap_or(&EMPTY)
+        self.items.get(id)
     }
 
     pub fn item_mut(&mut self, id: ItemId) -> &mut Item {
-        match self.items.get_mut(id.index()) {
-            Some(item) => item,
-            None => unreachable!("every ItemId comes from push()"),
-        }
+        self.items.get_mut(id)
     }
 
     /// Points the context at an element, the way the Python's `ctx.update(ref=...)`
@@ -1394,54 +1387,6 @@ impl Parser {
         }
     }
 }
-
-static EMPTY: Item = Item {
-    kind: Kind::Field,
-    file: String::new(),
-    line: None,
-    symbol: String::new(),
-    original_symbol: None,
-    implicit: false,
-    depth: 0,
-    heading_level: None,
-    scopes: Vec::new(),
-    within: None,
-    collection: None,
-    raw_content: Vec::new(),
-    flags: Flags {
-        display: None,
-        rename: None,
-        scope: None,
-        since: None,
-        deprecated: None,
-        inherits: Vec::new(),
-        compact: Vec::new(),
-        fullnames: false,
-        meta: None,
-        types: None,
-        order: None,
-        is_enum: false,
-    },
-    args: Vec::new(),
-    value: None,
-    name: String::new(),
-    display: String::new(),
-    topsym: String::new(),
-    id: RefId::UNASSIGNED,
-    content: crate::ir::Content(Vec::new()),
-    heading: String::new(),
-    title: String::new(),
-    types: Vec::new(),
-    meta: None,
-    params: Vec::new(),
-    returns: Vec::new(),
-    collections: Vec::new(),
-    row: None,
-    fields: Vec::new(),
-    functions: Vec::new(),
-    empty: false,
-};
-
 /// A documentation block opens with three dashes, and may use two or three thereafter.
 fn opens_block(line: &str) -> bool {
     let Some(rest) = line.strip_prefix("---") else {
