@@ -128,9 +128,7 @@ pub struct Flags {
     pub rename: Option<String>,
     pub scope: Option<String>,
     pub since: Option<String>,
-    /// Present when `@deprecated` was given; the string is the explanation, empty for a
-    /// bare tag.
-    pub deprecated: Option<String>,
+    pub deprecated: Option<Deprecated>,
     pub inherits: Vec<String>,
     /// The member kinds `@compact` named; empty when the tag was not given.
     pub compact: Vec<Member>,
@@ -139,6 +137,28 @@ pub struct Flags {
     pub types: Option<Vec<String>>,
     pub order: Option<Order>,
     pub is_enum: bool,
+}
+
+/// What `@deprecated` said. Repeated tags accumulate, so no explanation is silently
+/// dropped; the explanation is `None` only when every tag was bare.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Deprecated {
+    pub explanation: Option<String>,
+}
+
+impl Deprecated {
+    pub fn explain(&mut self, text: Option<String>) {
+        let Some(text) = text.filter(|text| !text.is_empty()) else {
+            return;
+        };
+        match &mut self.explanation {
+            Some(explanation) => {
+                explanation.push_str("\n\n");
+                explanation.push_str(&text);
+            }
+            None => self.explanation = Some(text),
+        }
+    }
 }
 
 /// The kinds of member a collection has, which is what `@compact` names: the members

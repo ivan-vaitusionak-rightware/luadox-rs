@@ -10,7 +10,7 @@
 //! asks, with whatever element the renderer had most recently focused. A field's `@{Foo}`
 //! therefore resolves relative to the collection it is rendered under, not to the field.
 
-use crate::ir::{Content, Fragment, ItemId, Kind, SeeRef};
+use crate::ir::{Content, Deprecated, Fragment, ItemId, Kind, SeeRef};
 use crate::json::Json;
 use crate::parse::Parser;
 
@@ -138,16 +138,8 @@ fn self_section(parser: &mut Parser, colref: ItemId, extra: Vec<(&str, Json)>) -
         section.set("symbol", item.symbol.clone().into());
         section.set("heading", item.heading.clone().into());
     }
-    if let Some(explanation) = parser.item(colref).flags.deprecated.clone() {
-        // Presence signals deprecation; the value is the explanation, or true when bare.
-        section.set(
-            "deprecated",
-            if explanation.is_empty() {
-                Json::Bool(true)
-            } else {
-                Json::Str(explanation)
-            },
-        );
+    if let Some(deprecated) = &parser.item(colref).flags.deprecated {
+        section.set("deprecated", deprecated_json(deprecated));
     }
     if let Some(since) = parser.item(colref).flags.since.clone() {
         section.set_if("since", Json::Str(since));
@@ -180,15 +172,8 @@ fn field(parser: &mut Parser, id: ItemId) -> Json {
     if let Some(value) = parser.item(id).value.clone() {
         out.set("value", Json::Str(value));
     }
-    if let Some(explanation) = parser.item(id).flags.deprecated.clone() {
-        out.set(
-            "deprecated",
-            if explanation.is_empty() {
-                Json::Bool(true)
-            } else {
-                Json::Str(explanation)
-            },
-        );
+    if let Some(deprecated) = &parser.item(id).flags.deprecated {
+        out.set("deprecated", deprecated_json(deprecated));
     }
     if let Some(since) = parser.item(id).flags.since.clone() {
         out.set_if("since", Json::Str(since));
@@ -242,6 +227,15 @@ fn function(parser: &mut Parser, id: ItemId) -> Json {
         out.set("returns", Json::Arr(rendered));
     }
     out
+}
+
+/// Presence signals deprecation; the value is the explanation, or `true` when the tag was
+/// bare.
+fn deprecated_json(deprecated: &Deprecated) -> Json {
+    match &deprecated.explanation {
+        Some(explanation) => Json::Str(explanation.clone()),
+        None => Json::Bool(true),
+    }
 }
 
 fn named_refs(parser: &Parser, ids: &[ItemId]) -> Json {

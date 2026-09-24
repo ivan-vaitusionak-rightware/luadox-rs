@@ -217,11 +217,11 @@ fn parse_block(parser: &mut Parser, id: ItemId) -> Parsed {
 /// without knowing about the flag. The flag stays for renderers with a native
 /// representation of deprecation.
 fn apply_deprecated(parser: &mut Parser, id: ItemId) {
-    let Some(explanation) = parser.item(id).flags.deprecated.clone() else {
+    let Some(deprecated) = parser.item(id).flags.deprecated.clone() else {
         return;
     };
     let mut body = Content::default();
-    if !explanation.is_empty() {
+    if let Some(explanation) = deprecated.explanation {
         body.md().append(explanation);
     }
     parser.item_mut(id).content.insert(

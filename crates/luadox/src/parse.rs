@@ -962,17 +962,12 @@ impl Parser {
                 Tag::Alias(name) => self.alias(&mut block, name),
                 Tag::Compact(members) => self.scanned(&mut block).flags.compact = members,
                 Tag::Fullnames => self.scanned(&mut block).flags.fullnames = true,
-                Tag::Deprecated(desc) => {
-                    // Repeated tags accumulate rather than overwrite, so no explanation
-                    // is silently dropped.
-                    let flags = self.scanned(&mut block).flags;
-                    let parts: Vec<String> = [flags.deprecated.take(), desc]
-                        .into_iter()
-                        .flatten()
-                        .filter(|p| !p.is_empty())
-                        .collect();
-                    flags.deprecated = Some(parts.join("\n\n"));
-                }
+                Tag::Deprecated(desc) => self
+                    .scanned(&mut block)
+                    .flags
+                    .deprecated
+                    .get_or_insert_default()
+                    .explain(desc),
                 Tag::Meta(value) => self.scanned(&mut block).flags.meta = Some(value),
                 Tag::Since(version) => {
                     if version.is_empty() {
