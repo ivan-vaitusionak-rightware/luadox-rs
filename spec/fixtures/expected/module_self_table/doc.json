@@ -1,0 +1,73 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [],
+  "modules": [
+    {
+      "id": "4aa62ecef34f4279dec85f42bafd15addec841e4",
+      "type": "module",
+      "name": "rtk_like",
+      "sections": [
+        {
+          "id": "4aa62ecef34f4279dec85f42bafd15addec841e4",
+          "type": "module",
+          "symbol": "rtk_like",
+          "heading": "rtk_like",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "A module that assigns its own table right after the block declaring it, which is\nnot a documented field of itself."
+            }
+          ],
+          "fields": [
+            {
+              "id": "7a668247afeb76ac91fc359a7f6c912ac5ee04df",
+              "name": "rtk_like.count",
+              "display": "rtk_like.count",
+              "types": [
+                {
+                  "name": "int"
+                }
+              ],
+              "value": "1",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A real field of the module."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "773e9fabe41fd2e9d28a29d24c730f6d1b3ea836",
+          "type": "table",
+          "symbol": "rtk_like.themes",
+          "heading": "A table under the module, whose page is the module's",
+          "fields": [
+            {
+              "id": "0d07b846f6144143dc462ae38506311427a369a3",
+              "name": "rtk_like.themes.button",
+              "display": "rtk_like.themes.button",
+              "types": [
+                {
+                  "name": "string"
+                }
+              ],
+              "value": "'#555555'",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "The default theme's button colour."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "manuals": []
+}

@@ -704,6 +704,9 @@ impl Parser {
         let scope_is_module = scopes
             .last()
             .is_some_and(|s| self.item(*s).kind == Kind::Module);
+        if let Some(scope) = scopes.last() {
+            self.ensure_name(*scope);
+        }
         let scope_name = scopes
             .last()
             .map(|s| self.item(*s).name.clone())
