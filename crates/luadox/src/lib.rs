@@ -334,8 +334,17 @@ fn write_html(
     }
 
     let pages = render::html::render(parser, toprefs).map_err(Error::Config)?;
-    let written = pages.len();
-    for page in pages {
+    write_pages(&pages, out)?;
+    Ok(pages.len() + 1)
+}
+
+/// Writes the rendered pages from up to four threads. Closing a freshly written file is
+/// where antivirus filter drivers and remote filesystems make the caller wait, and the
+/// pages are independent, so overlapping the writes hides that wait. It is the same wait
+/// whatever the core count, so four writers cover it on any machine. Every chunk runs to
+/// completion before the first error is returned.
+fn write_pages(pages: &[render::html::Output], out: &Path) -> Result<(), Error> {
+    let write_page = |page: &render::html::Output| -> Result<(), Error> {
         let target = out.join(&page.path);
         if let Some(dir) = target.parent() {
             std::fs::create_dir_all(dir)
@@ -344,9 +353,28 @@ fn write_html(
         // LF unconditionally, as spec/html.md section 11 recommends: the Python writes
         // through text mode, so its bytes are a property of the host.
         std::fs::write(&target, &page.bytes)
-            .map_err(|e| Error::Io(format!("{}: {e}", target.display())))?;
-    }
-    Ok(written + 1)
+            .map_err(|e| Error::Io(format!("{}: {e}", target.display())))
+    };
+    let threads = std::thread::available_parallelism()
+        .map_or(1, |n| n.get())
+        .min(4)
+        .min(pages.len())
+        .max(1);
+    let chunk = pages.len().div_ceil(threads).max(1);
+    let results: Vec<Result<(), Error>> = std::thread::scope(|scope| {
+        let handles: Vec<_> = pages
+            .chunks(chunk)
+            .map(|part| scope.spawn(move || part.iter().try_for_each(&write_page)))
+            .collect();
+        handles
+            .into_iter()
+            .map(|h| {
+                h.join()
+                    .unwrap_or_else(|_| Err(Error::Io("writer thread panicked".into())))
+            })
+            .collect()
+    });
+    results.into_iter().collect()
 }
 
 /// Writes every diagnostic as JSON, so a run can be compared against another
