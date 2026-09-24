@@ -1,0 +1,58 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [],
+  "modules": [
+    {
+      "id": "31cc61f0953eda95e7424f6bee91633df7db9407",
+      "type": "module",
+      "name": "markdown_table",
+      "sections": [
+        {
+          "id": "31cc61f0953eda95e7424f6bee91633df7db9407",
+          "type": "module",
+          "symbol": "markdown_table",
+          "heading": "markdown_table",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "A module documented with pipe tables."
+            }
+          ],
+          "functions": [
+            {
+              "id": "f87ac77fb2629275f6373917ff73a5da4396dd96",
+              "name": "markdown_table.serve",
+              "display": "markdown_table.serve",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Serves one request.\n\n| Parameter | Required | Description                     |\n|-----------|----------|---------------------------------|\n| action    | yes      | Must be set to `config`         |\n| verbose   | no       | Log every step                  |\n\nAlignment markers are part of the syntax too:\n\n| Left | Center | Right |\n|:-----|:------:|------:|\n| a    | b      | c     |"
+                }
+              ],
+              "params": [
+                {
+                  "name": "params",
+                  "types": [
+                    {
+                      "name": "tab"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "the request parameters"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "manuals": []
+}

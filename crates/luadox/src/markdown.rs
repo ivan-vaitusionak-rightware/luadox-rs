@@ -365,6 +365,8 @@ fn render_options() -> comrak::Options<'static> {
     // `autogen/enums/FocusScopeTypeEnums.lua` writes `<b>` in a doc comment, and the
     // oracle passes it through.
     options.render.r#unsafe = true;
+    // The Python parses with `commonmark_extensions.tables.ParserWithTables`.
+    options.extension.table = true;
     options
 }
 
@@ -392,6 +394,15 @@ pub fn to_html(md: &str, href_for: &dyn Fn(&str) -> Option<String>) -> String {
     let mut out = String::new();
     if comrak::format_html(root, &options, &mut out).is_err() {
         return String::new();
+    }
+    // The Python's table renderer opens every table it parses as `<table class="user">`,
+    // and because it writes `</table>` with its own newline, the `cr()` of the block that
+    // follows adds a blank line that comrak does not.
+    let mut out = out
+        .replace("<table>", "<table class=\"user\">")
+        .replace("</table>\n", "</table>\n\n");
+    if out.ends_with("</table>\n\n") {
+        out.pop();
     }
     out
 }
