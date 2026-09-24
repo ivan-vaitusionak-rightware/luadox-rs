@@ -1002,7 +1002,7 @@ impl Renderer<'_> {
         self.parser.resolve_item_content(id);
         let content = &self.parser.item(id).content;
         if !compact {
-            let first = self.parser.peek_first_sentence(content, true);
+            let first = self.parser.peek_first_sentence(content);
             return self.markdown(&first);
         }
         let deprecated = self.parser.item(id).flags.deprecated.is_some();
