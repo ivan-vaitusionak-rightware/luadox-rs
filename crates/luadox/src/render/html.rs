@@ -17,7 +17,7 @@
 //! void` is `void` on a page and `nil` in `luadox.lua` -- so a shared "format a type"
 //! helper between the two renderers is a bug.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt::{self, Write as _};
 use std::path::{Path, PathBuf};
 
@@ -82,6 +82,19 @@ struct Renderer<'a> {
     has_manual_index: bool,
     hometext: String,
     project_title: String,
+    /// The sidebar's page links, rendered once per root prefix. Every page lists every
+    /// class, module and manual, and a link differs between pages only in the prefix
+    /// and in whether it points at the page it is on.
+    sidebar_links: HashMap<String, SidebarLinks>,
+}
+
+/// One list of sidebar links: the line for an element, and the same line marked selected.
+type LinkLines = Vec<(ItemId, String, String)>;
+
+struct SidebarLinks {
+    manuals: LinkLines,
+    classes: LinkLines,
+    modules: LinkLines,
 }
 
 pub fn render(parser: &mut Parser, toprefs: &[ItemId]) -> Result<Vec<Output>, Error> {
@@ -122,6 +135,7 @@ pub fn render(parser: &mut Parser, toprefs: &[ItemId]) -> Result<Vec<Output>, Er
         has_manual_index,
         hometext,
         project_title,
+        sidebar_links: HashMap::new(),
         parser,
     };
 
@@ -645,69 +659,83 @@ impl Renderer<'_> {
             out.push("</div>");
         }
 
-        let manuals = self.parser.of_kind(Kind::Manual).to_vec();
-        if !manuals.is_empty() {
+        let links = match self.sidebar_links.remove(root) {
+            Some(links) => links,
+            None => self.render_sidebar_links(),
+        };
+        // The list headings are emitted even when a list is empty of *visible* entries,
+        // as long as elements of the kind exist -- which is what the Python does.
+        if !self.parser.of_kind(Kind::Manual).is_empty() {
             out.push("<div class=\"manual\">");
             out.push("<div class=\"heading\">Manual</div>");
             out.push("<ul>");
-            for id in manuals {
-                if self.parser.item(id).scope().is_some() {
-                    continue;
-                }
-                let selected = self.selected(id, &name);
-                out.line(format_args!(
-                    "<li{selected}><a href=\"{}\">{}</a></li>",
-                    self.href(id),
-                    self.parser.item(id).heading
-                ));
-            }
+            self.sidebar_list(&links.manuals, &name, out);
             out.push("</ul>");
             out.push("</div>");
         }
-
         if !self.classes.is_empty() {
             out.push("<div class=\"classes\">");
             out.push("<div class=\"heading\">Classes</div>");
             out.push("<ul>");
-            for id in self.classes.clone() {
-                let selected = self.selected(id, &name);
-                out.line(format_args!(
-                    "<li{selected}><a href=\"{}\">{}</a></li>",
-                    self.href(id),
-                    self.parser.item(id).display
-                ));
-            }
+            self.sidebar_list(&links.classes, &name, out);
             out.push("</ul>");
             out.push("</div>");
         }
-
         if !self.modules.is_empty() {
             out.push("<div class=\"modules\">");
             out.push("<div class=\"heading\">Modules</div>");
             out.push("<ul>");
-            for id in self.modules.clone() {
-                let item = self.parser.item(id);
-                if item.empty && item.implicit {
-                    continue;
-                }
-                let selected = self.selected(id, &name);
-                out.line(format_args!(
-                    "<li{selected}><a href=\"{}\">{}</a></li>",
-                    self.href(id),
-                    self.parser.item(id).name
-                ));
-            }
+            self.sidebar_list(&links.modules, &name, out);
             out.push("</ul>");
             out.push("</div>");
         }
+        self.sidebar_links.insert(root.to_string(), links);
         out.push("</div>");
     }
 
-    fn selected(&self, id: ItemId, current: &str) -> &'static str {
-        if self.parser.item(id).name == current {
-            " class=\"selected\""
-        } else {
-            ""
+    /// Emits a list of links, the one pointing at the current page marked selected.
+    fn sidebar_list(&self, links: &LinkLines, current: &str, out: &mut Lines) {
+        for (id, line, selected) in links {
+            if self.parser.item(*id).name == current {
+                out.push(selected);
+            } else {
+                out.push(line);
+            }
+        }
+    }
+
+    /// The sidebar links for the root prefix of the page currently focused.
+    fn render_sidebar_links(&self) -> SidebarLinks {
+        let line = |id: ItemId, label: &str| {
+            let href = self.href(id);
+            (
+                id,
+                format!("<li><a href=\"{href}\">{label}</a></li>"),
+                format!("<li class=\"selected\"><a href=\"{href}\">{label}</a></li>"),
+            )
+        };
+        SidebarLinks {
+            manuals: self
+                .parser
+                .of_kind(Kind::Manual)
+                .iter()
+                .filter(|id| self.parser.item(**id).scope().is_none())
+                .map(|id| line(*id, &self.parser.item(*id).heading))
+                .collect(),
+            classes: self
+                .classes
+                .iter()
+                .map(|id| line(*id, &self.parser.item(*id).display))
+                .collect(),
+            modules: self
+                .modules
+                .iter()
+                .filter(|id| {
+                    let item = self.parser.item(**id);
+                    !(item.empty && item.implicit)
+                })
+                .map(|id| line(*id, &self.parser.item(*id).name))
+                .collect(),
         }
     }
 
