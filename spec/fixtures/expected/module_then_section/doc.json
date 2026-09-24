@@ -1,0 +1,78 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [],
+  "modules": [
+    {
+      "id": "4c2e53c79cd06c09980ea1b315dfa924dd6d1d7d",
+      "type": "module",
+      "name": "module_then_section",
+      "sections": [
+        {
+          "id": "4c2e53c79cd06c09980ea1b315dfa924dd6d1d7d",
+          "type": "module",
+          "symbol": "module_then_section",
+          "heading": "module_then_section"
+        },
+        {
+          "id": "dd6d5f7e087681d45356926e41cb271c10be35e9",
+          "type": "section",
+          "symbol": "Paths",
+          "heading": "Paths",
+          "fields": [
+            {
+              "id": "8378ba040c7323bed5520529f73f7dd257b3e54b",
+              "name": "module_then_section.base_path",
+              "display": "module_then_section.base_path",
+              "types": [
+                {
+                  "name": "string"
+                }
+              ],
+              "value": "\"/tmp/settings\"",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Base directory for generated files."
+                }
+              ]
+            },
+            {
+              "id": "81800eb1bde502e17f62860d02d35967a1c774af",
+              "name": "module_then_section.max_entries",
+              "display": "module_then_section.max_entries",
+              "types": [
+                {
+                  "name": "int"
+                }
+              ],
+              "value": "500",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "How many entries to keep."
+                }
+              ]
+            }
+          ],
+          "functions": [
+            {
+              "id": "00fcc3ddd80f51b8b2160c42c44e90d0dd12f3df",
+              "name": "module_then_section.reload",
+              "display": "module_then_section.reload",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Reloads the settings from disk."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "manuals": []
+}

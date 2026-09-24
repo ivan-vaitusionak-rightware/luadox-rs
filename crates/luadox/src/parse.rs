@@ -894,12 +894,17 @@ impl Parser {
                 }
                 let id = match block {
                     Current::Block(block) => self.enter(*block, kind, name, path, n),
-                    Current::Declared(id) => {
-                        let item = self.item_mut(id);
+                    // A block that already declared an element declares another, cloned
+                    // from the first the way the Python's `clone_from` does: `@module M`
+                    // followed by `@section S` keeps M as the scope and puts the block's
+                    // content on S. The first element stays unregistered unless a scope
+                    // chain reaches it, which is what the Python does too.
+                    Current::Declared(declared) => {
+                        let mut item = self.item(declared).clone();
                         item.kind = kind;
                         item.line = Some(n);
                         item.symbol = name.to_string();
-                        id
+                        self.push(item)
                     }
                 };
                 block = Current::Declared(id);
