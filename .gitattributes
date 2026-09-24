@@ -1,0 +1,6 @@
+# Every text file is LF in the working tree, whatever the host's core.autocrlf says: the assets
+# under crates/luadox/assets are embedded with include_bytes! and hashed into the html cache-buster,
+# so a CRLF checkout would change both the shipped CSS and every page that links it.
+* text=auto eol=lf
+*.png binary
+*.ico binary
