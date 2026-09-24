@@ -266,6 +266,25 @@ impl AdmonitionLevel {
     }
 }
 
+/// What one `@see` entry resolved to. An element whose name was already taken lost its
+/// registration and cannot be reached by id, so the id is carried raw: the json renderer
+/// still writes it, the LuaLS renderer prints it in place of a name, and the html renderer
+/// drops it -- which is what the Python does, for the same reason.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SeeRef {
+    Item(ItemId),
+    Unreachable(RefId),
+}
+
+impl SeeRef {
+    pub fn item(&self) -> Option<ItemId> {
+        match self {
+            Self::Item(id) => Some(*id),
+            Self::Unreachable(_) => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Fragment {
     Markdown(Markdown),
@@ -274,7 +293,7 @@ pub enum Fragment {
         title: String,
         content: Content,
     },
-    SeeAlso(Vec<RefId>),
+    SeeAlso(Vec<SeeRef>),
 }
 
 #[derive(Debug, Clone, Default)]

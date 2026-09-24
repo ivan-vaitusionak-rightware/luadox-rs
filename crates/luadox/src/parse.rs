@@ -11,7 +11,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::config::Config;
 use crate::diag::{Category, Diagnostics};
-use crate::ir::{Flags, Item, ItemId, Kind, Order, RawLine, RefId};
+use crate::ir::{Flags, Item, ItemId, Kind, Order, RawLine, RefId, SeeRef};
 use crate::lua::{self, SourceFile};
 use crate::tags::{self, Tag};
 use crate::util;
@@ -506,9 +506,20 @@ impl Parser {
         }
     }
 
-    /// The element an opaque id names, for a `@see` list or a mixin phrase.
+    /// The element an opaque id names, for a `luadox:` link target or a mixin phrase.
     pub fn item_by_id(&self, id: &RefId) -> Option<ItemId> {
         self.by_id.get(id).copied()
+    }
+
+    /// What a `@see` entry that resolved to `found` reaches by id. Two elements can share
+    /// an id, and the first registered owns it, so this may be another element than
+    /// `found` -- or none, when `found` lost its name to a conflict.
+    pub fn see_ref(&self, found: ItemId) -> SeeRef {
+        let id = self.item(found).id.clone();
+        match self.by_id.get(&id) {
+            Some(reached) => SeeRef::Item(*reached),
+            None => SeeRef::Unreachable(id),
+        }
     }
 
     // -- scanning ---------------------------------------------------------------

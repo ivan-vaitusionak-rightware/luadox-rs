@@ -21,7 +21,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use crate::assets;
-use crate::ir::{Content, Fragment, ItemId, Kind, Member, RefId};
+use crate::ir::{Content, Fragment, ItemId, Kind, Member, RefId, SeeRef};
 use crate::markdown;
 use crate::parse::Parser;
 use crate::util;
@@ -356,7 +356,7 @@ impl Renderer<'_> {
                 Fragment::SeeAlso(refs) => {
                     let md = refs
                         .iter()
-                        .filter_map(|id| self.parser.item_by_id(id))
+                        .filter_map(SeeRef::item)
                         .map(|found| self.parser.ref_markdown(found, None, false))
                         .collect::<Vec<_>>()
                         .join(", ");

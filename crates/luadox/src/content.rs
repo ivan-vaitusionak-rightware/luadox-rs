@@ -204,14 +204,14 @@ impl Parser {
                     returns.push((types.clone(), body));
                 }
                 Tag::See(names) => {
-                    let mut ids = Vec::new();
+                    let mut refs = Vec::new();
                     for name in names.clone() {
                         if let Some(found) = self.resolve_ref(&name) {
-                            ids.push(self.item(found).id.clone());
+                            refs.push(self.see_ref(found));
                         }
                     }
                     if let Some(content) = bodies.get_mut(parent) {
-                        content.push(Fragment::SeeAlso(ids));
+                        content.push(Fragment::SeeAlso(refs));
                     }
                 }
                 other => {

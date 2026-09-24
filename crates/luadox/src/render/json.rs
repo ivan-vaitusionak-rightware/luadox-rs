@@ -10,7 +10,7 @@
 //! asks, with whatever element the renderer had most recently focused. A field's `@{Foo}`
 //! therefore resolves relative to the collection it is rendered under, not to the field.
 
-use crate::ir::{Content, Fragment, ItemId, Kind};
+use crate::ir::{Content, Fragment, ItemId, Kind, SeeRef};
 use crate::json::Json;
 use crate::parse::Parser;
 
@@ -214,7 +214,7 @@ fn function(parser: &mut Parser, id: ItemId) -> Json {
             }
             let mut content = param.content;
             parser.resolve_content(&mut content);
-            let content = content_json(&content);
+            let content = content_json(parser, &content);
             if !content.is_falsy() {
                 entry.set("content", content);
             }
@@ -233,7 +233,7 @@ fn function(parser: &mut Parser, id: ItemId) -> Json {
             }
             let mut content = ret.content;
             parser.resolve_content(&mut content);
-            let content = content_json(&content);
+            let content = content_json(parser, &content);
             if !content.is_falsy() {
                 entry.set("content", content);
             }
@@ -279,12 +279,12 @@ fn render_types(parser: &mut Parser, types: &[String]) -> Json {
 fn render_content(parser: &mut Parser, id: ItemId) -> Json {
     let mut content = std::mem::take(&mut parser.item_mut(id).content);
     parser.resolve_content(&mut content);
-    let out = content_json(&content);
+    let out = content_json(parser, &content);
     parser.item_mut(id).content = content;
     out
 }
 
-fn content_json(content: &Content) -> Json {
+fn content_json(parser: &Parser, content: &Content) -> Json {
     let mut out = Vec::new();
     for fragment in &content.0 {
         match fragment {
@@ -307,7 +307,7 @@ fn content_json(content: &Content) -> Json {
                 entry.set("type", "admonition".into());
                 entry.set("level", level.as_str().into());
                 entry.set("title", title.clone().into());
-                entry.set("content", content_json(content));
+                entry.set("content", content_json(parser, content));
                 out.push(entry);
             }
             Fragment::SeeAlso(refs) => {
@@ -317,9 +317,13 @@ fn content_json(content: &Content) -> Json {
                     "refs",
                     Json::Arr(
                         refs.iter()
-                            .map(|refid| {
+                            .map(|see| {
+                                let refid = match see {
+                                    SeeRef::Item(found) => parser.item(*found).id.as_str(),
+                                    SeeRef::Unreachable(id) => id.as_str(),
+                                };
                                 let mut one = Json::obj();
-                                one.set("refid", refid.as_str().into());
+                                one.set("refid", refid.into());
                                 one
                             })
                             .collect(),

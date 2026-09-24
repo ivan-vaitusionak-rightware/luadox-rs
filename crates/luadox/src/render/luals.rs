@@ -16,7 +16,7 @@
 
 use std::collections::{BTreeSet, HashSet};
 
-use crate::ir::{Content, Fragment, ItemId, Kind, RefId};
+use crate::ir::{Content, Fragment, ItemId, Kind, RefId, SeeRef};
 use crate::parse::Parser;
 use crate::util;
 
@@ -355,9 +355,9 @@ impl Renderer<'_> {
                 Fragment::SeeAlso(refs) => {
                     let names: Vec<String> = refs
                         .iter()
-                        .map(|refid| match self.parser.item_by_id(refid) {
-                            Some(found) => self.parser.item(found).name.clone(),
-                            None => refid.to_string(),
+                        .map(|see| match see {
+                            SeeRef::Item(found) => self.parser.item(*found).name.clone(),
+                            SeeRef::Unreachable(id) => id.to_string(),
                         })
                         .collect();
                     if !names.is_empty() {
