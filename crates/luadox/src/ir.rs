@@ -386,9 +386,10 @@ pub struct Item {
     /// The symbol before `@rename` replaced it.
     pub original_symbol: Option<String>,
     pub implicit: bool,
-    /// Nesting depth of the table braces this element sits in, which is what closes a
-    /// `@table` scope; -1 for an implicit module or a manual page, which no brace opened.
-    pub depth: i32,
+    /// Nesting depth of the table braces the block that declared this element sat in,
+    /// which is what closes a `@table` scope. `None` for an implicit module or a manual
+    /// page, which no block declared.
+    pub brace_depth: Option<i32>,
     /// The markdown heading level of a section of a manual page. `None` for a section a
     /// Lua source declared, which has no heading of its own.
     pub heading_level: Option<u8>,
@@ -439,7 +440,7 @@ impl Item {
             symbol: symbol.to_string(),
             original_symbol: None,
             implicit: false,
-            depth: 0,
+            brace_depth: None,
             heading_level: None,
             scopes: Vec::new(),
             within: None,

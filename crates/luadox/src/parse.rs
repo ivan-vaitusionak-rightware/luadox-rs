@@ -578,7 +578,6 @@ impl Parser {
         let modname = module_name_for(path);
         let mut modref_item = Item::new(Kind::Module, path, Some(1), &modname);
         modref_item.implicit = true;
-        modref_item.depth = -1;
         let modref = self.push(modref_item);
 
         let mut scopes: Vec<ItemId> = vec![modref];
@@ -623,7 +622,11 @@ impl Parser {
                 table_level += code.matches('{').count() as i32;
                 table_level -= code.matches('}').count() as i32;
                 while scopes.last().is_some_and(|s| {
-                    self.item(*s).kind == Kind::Table && table_level <= self.item(*s).depth
+                    self.item(*s).kind == Kind::Table
+                        && self
+                            .item(*s)
+                            .brace_depth
+                            .is_some_and(|depth| table_level <= depth)
                 }) {
                     scopes.pop();
                     if let Some(top) = scopes.last() {
@@ -901,7 +904,7 @@ impl Parser {
                 };
                 block = Current::Declared(id);
                 let item = self.item_mut(id);
-                item.depth = table_level;
+                item.brace_depth = Some(table_level);
                 item.scopes = scopes.clone();
                 item.collection = Some(*collection);
                 *collection = id;
@@ -1014,8 +1017,7 @@ impl Parser {
     /// Reads a markdown file as a manual page, turning its headings into elements that a
     /// cross reference can target.
     pub fn parse_manual(&mut self, name: &str, path: &str, content: &str) {
-        let mut top = Item::new(Kind::Manual, path, Some(1), name);
-        top.depth = -1;
+        let top = Item::new(Kind::Manual, path, Some(1), name);
         let top = self.push(top);
         self.add_reference(top, None);
 
