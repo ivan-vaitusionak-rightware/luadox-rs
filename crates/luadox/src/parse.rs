@@ -7,7 +7,7 @@
 //! there a declaration on this line, and what does it say" is now answered by `lua`, from
 //! a parse tree, instead of by a regular expression over the raw text.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use crate::diag::{Category, Diagnostics};
 use crate::ir::{Flags, Item, ItemId, Kind, Order, RawLine, RefId, SeeRef};
@@ -104,8 +104,7 @@ pub struct Parser {
     topsym_index: HashMap<String, ItemId>,
     /// Top-level symbol -> its collections, in declaration order. A class or module is
     /// its own first collection, which is what makes enumerating a page uniform.
-    pub collections: Vec<(String, Vec<ItemId>)>,
-    collection_index: HashMap<String, usize>,
+    pub collections: BTreeMap<String, Vec<ItemId>>,
     /// Every registered element by kind, in registration order.
     by_kind: HashMap<Kind, Vec<ItemId>>,
     /// Elements `add_reference` has registered. An implicit module whose name conflicts
@@ -137,8 +136,7 @@ impl Parser {
             by_id: HashMap::new(),
             topsyms: Vec::new(),
             topsym_index: HashMap::new(),
-            collections: Vec::new(),
-            collection_index: HashMap::new(),
+            collections: BTreeMap::new(),
             by_kind: HashMap::new(),
             registered: HashSet::new(),
             named: HashSet::new(),
@@ -204,10 +202,9 @@ impl Parser {
     }
 
     fn collections_of(&self, topsym: &str) -> &[ItemId] {
-        self.collection_index
+        self.collections
             .get(topsym)
-            .and_then(|i| self.collections.get(*i))
-            .map(|(_, v)| v.as_slice())
+            .map(Vec::as_slice)
             .unwrap_or(&[])
     }
 
@@ -274,23 +271,12 @@ impl Parser {
         if kind.is_collection() && kind != Kind::Manual {
             let topsym = self.item(id).topsym.clone();
             let symbol = self.item(id).symbol.clone();
-            let slot = match self.collection_index.get(&topsym) {
-                Some(i) => *i,
-                None => {
-                    self.collections.push((topsym.clone(), Vec::new()));
-                    let i = self.collections.len() - 1;
-                    self.collection_index.insert(topsym, i);
-                    i
-                }
-            };
             let exists = self
-                .collections
-                .get(slot)
-                .is_some_and(|(_, v)| v.iter().any(|c| self.item(*c).symbol == symbol));
+                .collections_of(&topsym)
+                .iter()
+                .any(|c| self.item(*c).symbol == symbol);
             if !exists {
-                if let Some((_, v)) = self.collections.get_mut(slot) {
-                    v.push(id);
-                }
+                self.collections.entry(topsym).or_default().push(id);
             }
         }
 
@@ -1193,7 +1179,7 @@ impl Parser {
         // `@section` names need not be globally unique, so first find which pages have a
         // collection of this name.
         let mut found: Vec<String> = Vec::new();
-        for (_, refs) in &self.collections {
+        for refs in self.collections.values() {
             for r in refs {
                 if self.item(*r).name == colname {
                     let topsym = self.item(*r).topsym.clone();
