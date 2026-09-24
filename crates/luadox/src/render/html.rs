@@ -922,7 +922,11 @@ impl Renderer<'_> {
                 for _ in 0..nmeta {
                     out.push("<td class=\"meta\"></td>".to_string());
                 }
-                let html = self.synopsis_doc(id, columns.fields_compact);
+                let html = if columns.fields_compact {
+                    self.synopsis_whole(id)
+                } else {
+                    self.synopsis_first_sentence(id)
+                };
                 if !html.is_empty() {
                     out.push(format!("<td class=\"doc\">{html}</td>"));
                 }
@@ -986,7 +990,11 @@ impl Renderer<'_> {
                 for _ in 0..nmeta {
                     out.push("<td class=\"meta\"></td>".to_string());
                 }
-                let html = self.synopsis_doc(id, columns.functions_compact);
+                let html = if columns.functions_compact {
+                    self.synopsis_whole(id)
+                } else {
+                    self.synopsis_first_sentence(id)
+                };
                 out.push(format!("<td class=\"doc\">{html}</td>"));
                 out.push("</tr>".to_string());
             }
@@ -995,16 +1003,21 @@ impl Renderer<'_> {
         out.push("</div>".to_string());
     }
 
-    /// A synopsis cell: the first sentence, or -- in a compact row, which has no detail
-    /// box to hold the rest -- the whole documentation minus a leading Deprecated box,
-    /// whose marker already carries that signal.
-    fn synopsis_doc(&mut self, id: ItemId, compact: bool) -> String {
+    /// A synopsis cell of a row that has a detail box below it: the first sentence.
+    fn synopsis_first_sentence(&mut self, id: ItemId) -> String {
+        self.parser.resolve_item_content(id);
+        let first = self
+            .parser
+            .peek_first_sentence(&self.parser.item(id).content);
+        self.markdown(&first)
+    }
+
+    /// A synopsis cell of a compact row, which has no detail box to hold the rest: the
+    /// whole documentation minus a leading Deprecated box, whose marker already carries
+    /// that signal.
+    fn synopsis_whole(&mut self, id: ItemId) -> String {
         self.parser.resolve_item_content(id);
         let content = &self.parser.item(id).content;
-        if !compact {
-            let first = self.parser.peek_first_sentence(content);
-            return self.markdown(&first);
-        }
         let deprecated = self.parser.item(id).flags.deprecated.is_some();
         let leading_admonition = matches!(content.0.first(), Some(Fragment::Admonition { .. }));
         if deprecated && leading_admonition {
