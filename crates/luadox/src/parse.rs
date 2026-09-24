@@ -873,7 +873,7 @@ impl Parser {
         parse_next_code_line: &mut bool,
         table_level: i32,
     ) -> Current {
-        let parsed = match tags::parse(line, true) {
+        let parsed = match tags::parse_comment(line) {
             Ok(tags) => tags,
             Err(err) => {
                 self.diagnostics

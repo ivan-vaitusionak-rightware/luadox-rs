@@ -182,23 +182,21 @@ impl fmt::Display for TagError {
 
 impl std::error::Error for TagError {}
 
-/// Finds a `@tag` at the head of a line.
-///
-/// `require_comment` mirrors the Python's two patterns: source lines must open with
-/// dashes, manual pages need not. Both require at least two characters after the `@` and
-/// reject `@{`, which is a cross reference rather than a tag.
-pub fn parse(line: &str, require_comment: bool) -> Result<Vec<Tag>, TagError> {
-    let rest = if require_comment {
-        let dashes = line.trim_start_matches('-');
-        if dashes.len() + 2 > line.len() {
-            // Fewer than the two dashes `--+` demands.
-            return Ok(Vec::new());
-        }
-        dashes
-    } else {
-        line
-    };
-    let rest = rest.trim_start_matches(' ');
+/// Finds a `@tag` at the head of a Lua comment line, which must open with at least two
+/// dashes.
+pub fn parse_comment(line: &str) -> Result<Vec<Tag>, TagError> {
+    let rest = line.trim_start_matches('-');
+    if rest.len() + 2 > line.len() {
+        return Ok(Vec::new());
+    }
+    parse_plain(rest)
+}
+
+/// Finds a `@tag` at the head of a line of a manual page, which carries no comment
+/// prefix. A tag needs at least two characters after the `@`, and `@{` is a cross
+/// reference rather than a tag.
+pub fn parse_plain(line: &str) -> Result<Vec<Tag>, TagError> {
+    let rest = line.trim_start_matches(' ');
     let Some(rest) = rest.strip_prefix('@') else {
         return Ok(Vec::new());
     };
@@ -379,7 +377,7 @@ mod tests {
     use super::*;
 
     fn one(line: &str) -> Option<Tag> {
-        parse(line, true).ok()?.into_iter().next()
+        parse_comment(line).ok()?.into_iter().next()
     }
 
     #[test]
@@ -420,7 +418,7 @@ mod tests {
 
     #[test]
     fn a_compact_member_that_is_not_a_kind_is_rejected() {
-        let Err(err) = parse("--- @compact fields field", true) else {
+        let Err(err) = parse_comment("--- @compact fields field") else {
             panic!("an unknown member kind must be rejected");
         };
         assert_eq!(
@@ -445,21 +443,21 @@ mod tests {
 
     #[test]
     fn a_malformed_order_names_what_the_placement_requires() {
-        let Err(err) = parse("--- @order first Foo", true) else {
+        let Err(err) = parse_comment("--- @order first Foo") else {
             panic!("an absolute placement with an anchor must be rejected");
         };
         assert_eq!(
             err.to_string(),
             "@order is invalid: first takes no anchor reference"
         );
-        let Err(err) = parse("--- @order before", true) else {
+        let Err(err) = parse_comment("--- @order before") else {
             panic!("a relative placement without an anchor must be rejected");
         };
         assert_eq!(
             err.to_string(),
             "@order is invalid: before requires an anchor reference"
         );
-        let Err(err) = parse("--- @order bogus Foo", true) else {
+        let Err(err) = parse_comment("--- @order bogus Foo") else {
             panic!("an unknown placement must be rejected");
         };
         assert!(err.detail.contains("\"bogus\" is not a placement"), "{err}");
@@ -468,7 +466,7 @@ mod tests {
     #[test]
     fn the_luacats_class_form_yields_an_implicit_inherits() {
         assert_eq!(
-            parse("--- @class Widget: Node", true).unwrap_or_default(),
+            parse_comment("--- @class Widget: Node").unwrap_or_default(),
             vec![
                 Tag::Class("Widget".into()),
                 Tag::Inherits(vec!["Node".into()])
@@ -478,7 +476,7 @@ mod tests {
 
     #[test]
     fn a_class_with_a_stray_argument_says_what_to_write_instead() {
-        let Err(err) = parse("--- @class Widget Node", true) else {
+        let Err(err) = parse_comment("--- @class Widget Node") else {
             panic!("a stray argument after the class name must be rejected");
         };
         assert!(err.detail.contains("@class Widget: Node"), "{err}");

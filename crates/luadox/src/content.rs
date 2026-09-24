@@ -65,7 +65,7 @@ impl Parser {
             let (text, tag) = match raw {
                 None => (String::new(), None),
                 Some(RawLine::Manual { line, text }) => {
-                    let parsed = match tags::parse(text, false) {
+                    let parsed = match tags::parse_plain(text) {
                         Ok(tags) => tags,
                         Err(err) => {
                             let file = self.ctx.file.clone();
