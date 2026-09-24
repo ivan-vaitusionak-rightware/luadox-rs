@@ -1,0 +1,144 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [],
+  "modules": [
+    {
+      "id": "c9f1105c30659f6781f6b953cbd99f5fd992f576",
+      "type": "module",
+      "name": "comments_edge",
+      "sections": [
+        {
+          "id": "c9f1105c30659f6781f6b953cbd99f5fd992f576",
+          "type": "module",
+          "symbol": "comments_edge",
+          "heading": "comments_edge",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "A module with awkward comment shapes. Declarations inside `--[[ ]]` long comments\nare a recorded deviation and are left out here."
+            }
+          ],
+          "fields": [
+            {
+              "id": "973a11b6cba2b00afa9f4e60f8329bed76a20dde",
+              "name": "comments_edge.dashes",
+              "display": "comments_edge.dashes",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "1",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Four dashes below this line.\nstill the same block?"
+                }
+              ]
+            },
+            {
+              "id": "2e4fadda88fcd68305ba8a325ac54263062edd2c",
+              "name": "comments_edge.empty_first_line",
+              "display": "comments_edge.empty_first_line",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "2"
+            },
+            {
+              "id": "8ee0a62856d7c1532df8566784e04e915b72b6c4",
+              "name": "comments_edge.one",
+              "display": "comments_edge.one",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "3",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Block one."
+                }
+              ]
+            },
+            {
+              "id": "134dadae352c41c5352ad23c3453a7e65e7833c9",
+              "name": "comments_edge.two",
+              "display": "comments_edge.two",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "4",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Block two right after, no blank line."
+                }
+              ]
+            },
+            {
+              "id": "ae738d812f0a056bf9beed5af3785e5fcb510c0c",
+              "name": "comments_edge.tabbed",
+              "display": "comments_edge.tabbed",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "6",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Tab-indented block."
+                }
+              ]
+            },
+            {
+              "id": "296516cb7acca704c24134742ea537e9b9296271",
+              "name": "comments_edge.inline_marker",
+              "display": "comments_edge.inline_marker",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "7",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Doc with a --[[ long ]] comment marker inline in text."
+                }
+              ]
+            },
+            {
+              "id": "4a22bc34d32ef2edc0ffd7b82bdfb1f7a58f5f31",
+              "name": "comments_edge.unclosed",
+              "display": "comments_edge.unclosed",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "8",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Doc ending with a fence that never closes.\n```"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "manuals": []
+}

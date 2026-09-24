@@ -1,0 +1,47 @@
+{
+  "allowed": [],
+  "diagnostics": [
+    {
+      "category": "conflicts",
+      "file": "naming_edge.lua",
+      "line": 107,
+      "message": "function \"naming_edge.refs\" conflicts with function name at <fixtures>/src/naming_edge.lua:83"
+    },
+    {
+      "category": "references",
+      "file": "naming_edge.lua",
+      "line": 15,
+      "message": "reference \"naming_edge.alt.aliased\" could not be resolved"
+    },
+    {
+      "category": "references",
+      "file": "naming_edge.lua",
+      "line": 15,
+      "message": "reference \"ne.aliased\" could not be resolved"
+    },
+    {
+      "category": "references",
+      "file": "naming_edge.lua",
+      "line": 91,
+      "message": "unknown @order anchor reference nothing_here"
+    },
+    {
+      "category": "references",
+      "file": "naming_edge_manual.md",
+      "line": 1,
+      "message": "reference \"nowhere\" could not be resolved"
+    },
+    {
+      "category": "structure",
+      "file": "naming_edge.lua",
+      "line": 58,
+      "message": "@enum member naming_edge.Color.BLUE is not assigned an integer value"
+    },
+    {
+      "category": "undocumented-enum-members",
+      "file": "naming_edge.lua",
+      "line": 59,
+      "message": "@enum member naming_edge.Color.UNDOCUMENTED has no doc comment"
+    }
+  ]
+}

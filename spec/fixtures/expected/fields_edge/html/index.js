@@ -1,0 +1,15 @@
+var docs = [
+{path:"module/fields_edge.html", type:"module", title:"fields_edge", text:"Every assignment shape the two implementations agree on. The shapes they disagree on by design -- a value spanning lines, -- inside a string, a comparison, a tab before the = -- are in harness/improvements.toml, not here."},
+{path:"module/fields_edge.html#fields_edge.key", type:"field", title:"fields_edge.key", text:"Bracket string key."},
+{path:"module/fields_edge.html#fields_edge.single", type:"field", title:"fields_edge.single", text:"Bracket single-quoted key."},
+{path:"module/fields_edge.html#fields_edge.1", type:"field", title:"fields_edge.1", text:"Bracket integer key."},
+{path:"module/fields_edge.html#fields_edge.b", type:"field", title:"fields_edge.b", text:"Two targets, two values."},
+{path:"module/fields_edge.html#fields_edge.f", type:"field", title:"fields_edge.f", text:"Function value has no literal."},
+{path:"module/fields_edge.html#fields_edge.g", type:"field", title:"fields_edge.g", text:"Assigned from another field."},
+{path:"module/fields_edge.html#fields_edge.k", type:"field", title:"fields_edge.k", text:"A nested function in a table constructor."},
+{path:"module/fields_edge.html#fields_edge.m", type:"field", title:"fields_edge.m", text:"Semicolon separators."},
+{path:"module/fields_edge.html#fields_edge.end", type:"field", title:"fields_edge.end", text:"A field named like a keyword."},
+{path:"module/fields_edge.html#fields_edge.h", type:"function", title:"fields_edge.h", text:"Varargs."},
+{path:"module/fields_edge.html#fields_edge.i", type:"function", title:"fields_edge:i", text:"Colon method with an unknown tag variant."},
+{path:"module/fields_edge.html#fields_edge.j", type:"function", title:"fields_edge.j", text:"A local function."},
+];

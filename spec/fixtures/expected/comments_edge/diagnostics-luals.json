@@ -1,0 +1,17 @@
+{
+  "allowed": [],
+  "diagnostics": [
+    {
+      "category": "structure",
+      "file": "comments_edge.lua",
+      "line": 22,
+      "message": "comment block is not connected with any section, ignoring"
+    },
+    {
+      "category": "structure",
+      "file": "comments_edge.lua",
+      "line": 25,
+      "message": "comment block is not connected with any section, ignoring"
+    }
+  ]
+}

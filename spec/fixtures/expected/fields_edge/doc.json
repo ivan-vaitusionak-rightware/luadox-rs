@@ -1,0 +1,227 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [],
+  "modules": [
+    {
+      "id": "69cab2738b36558459094ec2795c49e4d2531a2d",
+      "type": "module",
+      "name": "fields_edge",
+      "sections": [
+        {
+          "id": "69cab2738b36558459094ec2795c49e4d2531a2d",
+          "type": "module",
+          "symbol": "fields_edge",
+          "heading": "fields_edge",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Every assignment shape the two implementations agree on. The shapes they disagree\non by design -- a value spanning lines, `--` inside a string, a comparison, a tab\nbefore the `=` -- are in harness/improvements.toml, not here."
+            }
+          ],
+          "fields": [
+            {
+              "id": "24ae3ee2dcb5fe4a9bbc7ac7ca7cd12516fa9a07",
+              "name": "fields_edge.key",
+              "display": "fields_edge.key",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "1",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Bracket string key."
+                }
+              ]
+            },
+            {
+              "id": "b10ae98f080ccad4a00f1542a167396cf182e96d",
+              "name": "fields_edge.single",
+              "display": "fields_edge.single",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "2",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Bracket single-quoted key."
+                }
+              ]
+            },
+            {
+              "id": "cb93c6e4aef8ad353d8e45d0689f3cbf60a78609",
+              "name": "fields_edge.1",
+              "display": "fields_edge.1",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "3",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Bracket integer key."
+                }
+              ]
+            },
+            {
+              "id": "c64d6e7a4977c427fb9750b09c8dbbfadacd2cb0",
+              "name": "fields_edge.b",
+              "display": "fields_edge.b",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "1, 2",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Two targets, two values."
+                }
+              ]
+            },
+            {
+              "id": "73fd72f9a8dc20d33e0221b35c9a80fab99bbca1",
+              "name": "fields_edge.f",
+              "display": "fields_edge.f",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Function value has no literal."
+                }
+              ]
+            },
+            {
+              "id": "0def49ac84420d41b0f9e72dd5e0ecd1519e42d1",
+              "name": "fields_edge.g",
+              "display": "fields_edge.g",
+              "types": [
+                {
+                  "name": "function"
+                }
+              ],
+              "value": "fields_edge.f",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Assigned from another field."
+                }
+              ]
+            },
+            {
+              "id": "328afade1865c6fb9e49edc66dbf0cc1e9763cba",
+              "name": "fields_edge.k",
+              "display": "fields_edge.k",
+              "value": "{ l = function() end }",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A nested function in a table constructor."
+                }
+              ]
+            },
+            {
+              "id": "1586520c1fcf363bd491ea39c740a44fd0ff40cb",
+              "name": "fields_edge.m",
+              "display": "fields_edge.m",
+              "value": "{ 1; 2; 3 }",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Semicolon separators."
+                }
+              ]
+            },
+            {
+              "id": "935b30ea914ab0ce12160913bdd6c966aba5bf27",
+              "name": "fields_edge.end",
+              "display": "fields_edge.end",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "4",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A field named like a keyword."
+                }
+              ]
+            }
+          ],
+          "functions": [
+            {
+              "id": "d98fe2f2550278bd38c10379667de56459ea459d",
+              "name": "fields_edge.h",
+              "display": "fields_edge.h",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Varargs."
+                }
+              ],
+              "params": [
+                {
+                  "name": "..."
+                }
+              ]
+            },
+            {
+              "id": "974b794706f5713a124c09fb0fc8a03be60ec9ae",
+              "name": "fields_edge.i",
+              "display": "fields_edge:i",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Colon method with an unknown tag variant."
+                }
+              ],
+              "params": [
+                {
+                  "name": "a",
+                  "types": [
+                    {
+                      "name": "number"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "first"
+                    }
+                  ]
+                },
+                {
+                  "name": "b"
+                }
+              ]
+            },
+            {
+              "id": "8764ce9cc956c111afa7220e2f3934dab41a245d",
+              "name": "fields_edge.j",
+              "display": "fields_edge.j",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A local function."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "manuals": []
+}

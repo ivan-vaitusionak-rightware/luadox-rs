@@ -1,0 +1,520 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "727efb97f2f4f3010cc46f4e0291c495ea9048cf",
+      "type": "class",
+      "name": "naming_edge.Base",
+      "sections": [
+        {
+          "id": "727efb97f2f4f3010cc46f4e0291c495ea9048cf",
+          "type": "class",
+          "symbol": "naming_edge.Base",
+          "heading": "naming_edge.Base",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Base."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "6e9b556cc1536f503cd516ece37aa167ba9b7504",
+      "type": "class",
+      "name": "naming_edge.Full",
+      "sections": [
+        {
+          "id": "6e9b556cc1536f503cd516ece37aa167ba9b7504",
+          "type": "class",
+          "symbol": "naming_edge.Full",
+          "heading": "naming_edge.Full",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Fullnames."
+            }
+          ],
+          "fields": [
+            {
+              "id": "ab3a8a37aa27882d9b9e720a9cd0e9563c4aaa11",
+              "name": "naming_edge.Full.member",
+              "display": "naming_edge.Full.member",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "1",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Member of Full."
+                }
+              ]
+            },
+            {
+              "id": "9cbad38daccaf5e4cb0e467bd2c210a2f7e21379",
+              "name": "naming_edge.Widget.count",
+              "display": "naming_edge.Widget.count",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "0",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Static under a class."
+                }
+              ]
+            }
+          ],
+          "functions": [
+            {
+              "id": "ed24e728a2a36aaeae013c7e5af1d47dcfe69c52",
+              "name": "naming_edge.refs",
+              "display": "naming_edge.refs",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A duplicate."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "6be31eedba1b19b826e39dfe25e16b5bc051de86",
+      "type": "class",
+      "name": "naming_edge.Mixin",
+      "sections": [
+        {
+          "id": "6be31eedba1b19b826e39dfe25e16b5bc051de86",
+          "type": "class",
+          "symbol": "naming_edge.Mixin",
+          "heading": "naming_edge.Mixin",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Mixin."
+            }
+          ],
+          "functions": [
+            {
+              "id": "636818cd806e86e7242713224a8a35d902e0231b",
+              "name": "naming_edge.z_first",
+              "display": "naming_edge.z_first",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Ordering."
+                }
+              ]
+            },
+            {
+              "id": "3e30667b230e2add18d5af589cdb06fea70e57ed",
+              "name": "Widget.shown",
+              "display": "Widget.shown",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Renamed."
+                }
+              ]
+            },
+            {
+              "id": "842124745e7ffefe2248e02acfeee9db32633549",
+              "name": "naming_edge.Widget.hide",
+              "display": "widget.hide()",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Displayed differently."
+                }
+              ]
+            },
+            {
+              "id": "bd3adcb497312ad532be4b06921e01fe23357c0a",
+              "name": "helper",
+              "display": "helper",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Scoped to the root."
+                }
+              ]
+            },
+            {
+              "id": "54d7319c5bd1adb3278ded21bfa945782e21b303",
+              "name": "naming_edge.Base.moved",
+              "display": "naming_edge.Base.moved",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Scoped elsewhere."
+                }
+              ]
+            },
+            {
+              "id": "be82f27139efe29ae3c35760641e28f5344ff1e2",
+              "name": "naming_edge.aliased",
+              "display": "naming_edge.aliased",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Alias."
+                }
+              ]
+            },
+            {
+              "id": "ecf349198736e09db50fb71cb59885e9774139e3",
+              "name": "naming_edge.refs",
+              "display": "naming_edge.refs",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "References through the alias: ne.aliased, naming_edge.alt.aliased."
+                }
+              ]
+            },
+            {
+              "id": "f1b6b9c547908dcb8defc1ce4b9b150a85690119",
+              "name": "naming_edge.a_last",
+              "display": "naming_edge.a_last",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Ordered after a missing anchor."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "2c8e8a8700b2d5fed08c81808ea326ad9a420494",
+          "type": "section",
+          "symbol": "Utilities",
+          "heading": "A section",
+          "compact": [
+            "functions"
+          ],
+          "fields": [
+            {
+              "id": "626fbbd66b6a751baf66087ff5fa674084bfe028",
+              "name": "naming_edge.sec_field",
+              "display": "naming_edge.sec_field",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "1",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Also in the section, a field."
+                }
+              ]
+            }
+          ],
+          "functions": [
+            {
+              "id": "6c1d65fb9a57941fd3a8dbbc115896e259af735d",
+              "name": "naming_edge.Widget.util",
+              "display": "naming_edge.Widget.util",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Within a section on another page."
+                }
+              ]
+            },
+            {
+              "id": "459a7ac0c42a21ebb453ac834bcdfeb1e29f7fdf",
+              "name": "naming_edge.sec_fn",
+              "display": "naming_edge.sec_fn",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "In the section."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f90960ff05182226a97e4cfa10f1ff2ef22e8b10",
+          "type": "table",
+          "symbol": "naming_edge.Color",
+          "heading": "An enum",
+          "compact": [
+            "fields"
+          ],
+          "enum": true,
+          "fields": [
+            {
+              "id": "ab5fb2376738a8da920298f2a4d3718333c3cc1c",
+              "name": "naming_edge.Color.RED",
+              "display": "naming_edge.Color.RED",
+              "value": "1",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Red."
+                }
+              ]
+            },
+            {
+              "id": "db348f938d1e8f5ff0e0e862e48d749c46a2b31c",
+              "name": "naming_edge.Color.GREEN",
+              "display": "naming_edge.Color.GREEN",
+              "value": "2",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Green."
+                }
+              ]
+            },
+            {
+              "id": "9552915839d0e7f5bae86edb6a5a93ff32e27e43",
+              "name": "naming_edge.Color.BLUE",
+              "display": "naming_edge.Color.BLUE",
+              "value": "\"blue\"",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Not an integer."
+                }
+              ]
+            },
+            {
+              "id": "5a1a3c2aaef9f96c99c752e9538550adc556c888",
+              "name": "naming_edge.Color.UNDOCUMENTED",
+              "display": "naming_edge.Color.UNDOCUMENTED",
+              "value": "4"
+            }
+          ]
+        },
+        {
+          "id": "2fa3b1accf87e88f59fa55f4a3f2fac11e221656",
+          "type": "table",
+          "symbol": "naming_edge.outer",
+          "heading": "A nested table",
+          "fields": [
+            {
+              "id": "8f240d37ed254a527840ad1daa93b3dff9fd447f",
+              "name": "naming_edge.outer.shallow",
+              "display": "naming_edge.outer.shallow",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "2",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "After the inner table closed."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "6f20f721809d253d8906536aec21e1e881e58769",
+          "type": "table",
+          "symbol": "naming_edge.outer.inner",
+          "heading": "Inner table",
+          "fields": [
+            {
+              "id": "57a22b73e63c28868348939106f316e63a5c6315",
+              "name": "naming_edge.outer.inner.deep",
+              "display": "naming_edge.outer.inner.deep",
+              "types": [
+                {
+                  "name": "number"
+                }
+              ],
+              "value": "1",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Deep field."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "85676dacbe7df715b094166e7f958cc20d150731",
+      "type": "class",
+      "name": "naming_edge.Widget",
+      "hierarchy": [
+        {
+          "name": "naming_edge.Base",
+          "refid": "727efb97f2f4f3010cc46f4e0291c495ea9048cf"
+        },
+        {
+          "name": "naming_edge.Widget",
+          "refid": "85676dacbe7df715b094166e7f958cc20d150731"
+        }
+      ],
+      "parents": [
+        {
+          "name": "naming_edge.Base",
+          "refid": "727efb97f2f4f3010cc46f4e0291c495ea9048cf"
+        },
+        {
+          "name": "naming_edge.Mixin",
+          "refid": "6be31eedba1b19b826e39dfe25e16b5bc051de86"
+        }
+      ],
+      "sections": [
+        {
+          "id": "85676dacbe7df715b094166e7f958cc20d150731",
+          "type": "class",
+          "symbol": "naming_edge.Widget",
+          "heading": "naming_edge.Widget",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "A class inside the module."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "modules": [
+    {
+      "id": "ea351a11c5b6ea84127c7f86d865f8ef276b02c0",
+      "type": "module",
+      "name": "naming_edge",
+      "sections": [
+        {
+          "id": "ea351a11c5b6ea84127c7f86d865f8ef276b02c0",
+          "type": "module",
+          "symbol": "naming_edge",
+          "heading": "naming_edge",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Naming and scoping modifiers, all in one module, with a manual page that refers to them."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "manuals": [
+    {
+      "id": "b7439102313913fbb2fb05e93d457bf14ebd353b",
+      "type": "manual",
+      "name": "index",
+      "sections": [
+        {
+          "id": "468fced3df82e1f3d4dd7db458c6e59a0f3b8695",
+          "type": "section",
+          "symbol": "manual_page",
+          "heading": "Manual page",
+          "level": 1,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Refers to [naming_edge.Widget](luadox:85676dacbe7df715b094166e7f958cc20d150731), [`naming_edge.sec_fn`](luadox:459a7ac0c42a21ebb453ac834bcdfeb1e29f7fdf), nowhere and [naming_edge.Color](luadox:f90960ff05182226a97e4cfa10f1ff2ef22e8b10)."
+            }
+          ]
+        },
+        {
+          "id": "d908bd3a777832e0b4ebde1cd99fd9b072676425",
+          "type": "section",
+          "symbol": "heading_with_code_and_emphasis",
+          "heading": "Heading with `code` and *emphasis*",
+          "level": 2,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Text."
+            }
+          ]
+        },
+        {
+          "id": "a30967d5fa065203ad7802a32a72d4c2da5a6552",
+          "type": "section",
+          "symbol": "heading_with_punctuation_colons_commas_ampersands",
+          "heading": "Heading with punctuation: colons, commas, & ampersands!",
+          "level": 2,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Text."
+            }
+          ]
+        },
+        {
+          "id": "0d8582d1ef11cbb29ed785011ae8290edc04f13f",
+          "type": "section",
+          "symbol": "duplicate_heading",
+          "heading": "Duplicate heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "One."
+            }
+          ]
+        },
+        {
+          "id": "4ace6141330df192c20ac980e96623c2db33fe5e",
+          "type": "section",
+          "symbol": "duplicate_heading2",
+          "heading": "Duplicate heading",
+          "level": 2,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Two."
+            }
+          ]
+        },
+        {
+          "id": "ea122a13c11ee5f40122f64a7302e832af9a1cc2",
+          "type": "section",
+          "symbol": "third_level",
+          "heading": "Third level",
+          "level": 3,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Text.\n\n#### Fourth level, not an element\n\nText."
+            }
+          ]
+        },
+        {
+          "id": "d300a8a3da69f4334db09e902a786b8c15964ac3",
+          "type": "section",
+          "symbol": "second_top_heading",
+          "heading": "Second top heading",
+          "level": 1,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "```lua\n-- @type string\nlocal x = 1\n```\n\n| a | b |\n|---|---|\n| 1 | 2 |"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

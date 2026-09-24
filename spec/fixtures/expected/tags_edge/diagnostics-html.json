@@ -1,0 +1,17 @@
+{
+  "allowed": [],
+  "diagnostics": [
+    {
+      "category": "structure",
+      "file": "tags_edge.lua",
+      "line": 13,
+      "message": "unrecognized tag @foo, ignoring"
+    },
+    {
+      "category": "structure",
+      "file": "tags_edge.lua",
+      "line": 14,
+      "message": "unrecognized tag @Type, ignoring"
+    }
+  ]
+}

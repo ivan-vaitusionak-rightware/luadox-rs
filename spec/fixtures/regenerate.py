@@ -74,6 +74,7 @@ KEEP_GLOBS = ('class/*.html', 'module/*.html', 'index.html', 'search.html', 'ind
 MANUALS = {
     'manual': [('index', 'manual.md')],
     'manual_pages': [('index', 'manual.md'), ('guide', 'manual_pages_guide.md')],
+    'naming_edge': [('index', 'naming_edge_manual.md')],
 }
 
 # Fixtures that need a second source file, which lives under src/extra/ so that it is

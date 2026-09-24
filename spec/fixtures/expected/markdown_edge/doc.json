@@ -1,0 +1,200 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [],
+  "modules": [
+    {
+      "id": "0c642daaf72193df079e8d24aea033f88cf9bf97",
+      "type": "module",
+      "name": "markdown_edge",
+      "sections": [
+        {
+          "id": "0c642daaf72193df079e8d24aea033f88cf9bf97",
+          "type": "module",
+          "symbol": "markdown_edge",
+          "heading": "markdown_edge",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Markdown shapes inside documentation. An indented code block is the recorded\nCODE_INDENT deviation and is left out here."
+            }
+          ],
+          "functions": [
+            {
+              "id": "e48b3e0244725b7fa1e889eecdc81f10de7b248d",
+              "name": "markdown_edge.fenced",
+              "display": "markdown_edge.fenced",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A fenced block that contains what looks like a tag.\n\n```lua\n-- @tparam string x not a tag\nlocal y = x\n```"
+                }
+              ],
+              "params": [
+                {
+                  "name": "x",
+                  "types": [
+                    {
+                      "name": "string"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "the real one"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "60bb85fac8ef45e200c5ce6f9b3aedbb513c9a7e",
+              "name": "markdown_edge.lists",
+              "display": "markdown_edge.lists",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Lists.\n\n* one\n* two\n  * nested\n\n1. first\n2. second\n\n- dash\n+ plus"
+                }
+              ]
+            },
+            {
+              "id": "f5b0e06150e280fb59b1ea440dcf358cbe87080d",
+              "name": "markdown_edge.inline",
+              "display": "markdown_edge.inline",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Inline shapes: *em*, _em_, **strong**, [`code`](luadox:6d0d8d6f98a777daf48db321d23cfc591a9abf4b), ~~strike~~, <b>raw</b>, &amp; &lt; &, <, >, \"quotes\", 'single', unicode: \u26d4 \u00e9 \u00fc \u6f22."
+                }
+              ]
+            },
+            {
+              "id": "0c5136cdd27faada0f142ba007b752fb0008fd31",
+              "name": "markdown_edge.links",
+              "display": "markdown_edge.links",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Links: [text](http://x.y), <http://auto.link>, ![img](img/a.png), [ref][r], [labelled](luadox:60bb85fac8ef45e200c5ce6f9b3aedbb513c9a7e), [`markdown_edge.lists`](luadox:60bb85fac8ef45e200c5ce6f9b3aedbb513c9a7e), nowhere, `nowhere.at.all`, [markdown_edge.lists()](luadox:60bb85fac8ef45e200c5ce6f9b3aedbb513c9a7e)().\n\n[r]: http://reference.link"
+                }
+              ]
+            },
+            {
+              "id": "f61b93eb77ad9039a41246555ecea236757a0038",
+              "name": "markdown_edge.headings",
+              "display": "markdown_edge.headings",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Headings inside a doc.\n\n# H1\n## H2\n### H3\n\nSetext\n======"
+                }
+              ]
+            },
+            {
+              "id": "ff966a8939458441fdf9f25888bad3f1a296f6dd",
+              "name": "markdown_edge.table",
+              "display": "markdown_edge.table",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A table with inline markdown and a pipe in code.\n\n| a | b |\n|---|---|\n| `x \\| y` | **z** |\n| [markdown_edge.lists()](luadox:60bb85fac8ef45e200c5ce6f9b3aedbb513c9a7e) | |"
+                }
+              ]
+            },
+            {
+              "id": "b724e149af80083d6fe51db7517f9927381255b9",
+              "name": "markdown_edge.quote",
+              "display": "markdown_edge.quote",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Blockquote and rule.\n\n> quoted\n> lines\n\n---\n\nafter the rule"
+                }
+              ]
+            },
+            {
+              "id": "9bf5da54179bcec558491578ed19daf09be58762",
+              "name": "markdown_edge.admonitions",
+              "display": "markdown_edge.admonitions",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Admonitions."
+                },
+                {
+                  "type": "admonition",
+                  "level": "note",
+                  "title": "a note with [`code`](luadox:6d0d8d6f98a777daf48db321d23cfc591a9abf4b)",
+                  "content": []
+                },
+                {
+                  "type": "admonition",
+                  "level": "warning",
+                  "title": "a warning",
+                  "content": []
+                },
+                {
+                  "type": "markdown",
+                  "value": "and its continuation"
+                },
+                {
+                  "type": "see",
+                  "refs": [
+                    {
+                      "refid": "60bb85fac8ef45e200c5ce6f9b3aedbb513c9a7e"
+                    }
+                  ]
+                },
+                {
+                  "type": "see",
+                  "refs": []
+                },
+                {
+                  "type": "markdown",
+                  "value": "##### Usage\n\n```lua\n```\n\nlocal m = require(\"markdown_edge\")\nm.lists()"
+                }
+              ]
+            },
+            {
+              "id": "67f24e67c0f3cfc66ff1f4d03a2295490ed714b6",
+              "name": "markdown_edge.example",
+              "display": "markdown_edge.example",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Example from a file that does not exist.\n##### Example\n\n```missing_snippet.lua\n```"
+                }
+              ]
+            },
+            {
+              "id": "6d0d8d6f98a777daf48db321d23cfc591a9abf4b",
+              "name": "markdown_edge.code",
+              "display": "markdown_edge.code",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Code tag.\n```lua\n```\n\nlocal a = 1"
+                }
+              ]
+            },
+            {
+              "id": "5474c69b4d62c003af38bd3a00a5cdfe5f32a23c",
+              "name": "markdown_edge.paragraphs",
+              "display": "markdown_edge.paragraphs",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Two paragraphs with a hard break at the end of the first\ncontinue here.\n\nSecond paragraph."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "manuals": []
+}

@@ -75,7 +75,7 @@ cargo fmt --all
 python harness/oracle_run.py --levels 0,1,2 --record   # golden run, ~7 s
 python harness/candidate_run.py                        # the Rust over the same corpus
 python harness/differ.py                               # grade it
-python spec/run.py                                     # the 22 fixtures
+python spec/run.py                                     # the 27 fixtures
 python harness/foreign_corpora.py                      # six public luadox projects
 
 python harness/dump_decls.py                           # declaration dump
@@ -158,7 +158,7 @@ Exit code 1, as the oracle's. **0.20 s** against the oracle's 3.4 s for the same
 And `python spec/run.py`, the second corpus, grading all three renderers:
 
 ```
-22/22 fixtures match
+27/27 fixtures match
 ```
 
 ### What is covered

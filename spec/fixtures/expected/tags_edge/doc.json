@@ -1,0 +1,214 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "fb780ec650994598286a0c35e6d2b932a70c1ccc",
+      "type": "class",
+      "name": "Tight",
+      "sections": [
+        {
+          "id": "fb780ec650994598286a0c35e6d2b932a70c1ccc",
+          "type": "class",
+          "symbol": "Tight",
+          "heading": "Tight",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "A class whose tags are written every way people write them."
+            }
+          ],
+          "fields": [
+            {
+              "id": "1b824ca72b358af8ca3a298bc5a76ff6d6589337",
+              "name": "Tight.union",
+              "display": "Tight.union",
+              "types": [
+                {
+                  "name": "string"
+                },
+                {
+                  "name": "number"
+                },
+                {
+                  "name": "nil"
+                }
+              ],
+              "value": "nil",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A cross reference at the start of a line is not a tag: [Tight.spaced()](luadox:16b1a9b3f10bef60142f2f898ee1d429e7ce5481).\n[Tight.unknown()](luadox:1a0b967951954f02930bb5306ae0d3387229c15d) starts this line."
+                }
+              ]
+            },
+            {
+              "id": "4c78d751d79f7393c581abb5eb203d54fc958800",
+              "name": "Tight.trailing",
+              "display": "Tight.trailing",
+              "types": [
+                {
+                  "name": "string"
+                }
+              ],
+              "value": "\"x\"",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Trailing spaces after a tag."
+                }
+              ]
+            },
+            {
+              "id": "0de67ce672798e6ea5b3702f22ce2d017a291d43",
+              "name": "Tight.meta_field",
+              "display": "Tight.meta_field",
+              "types": [
+                {
+                  "name": "string"
+                }
+              ],
+              "meta": "read-only",
+              "value": "\"m\"",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Field meta."
+                }
+              ]
+            }
+          ],
+          "functions": [
+            {
+              "id": "16b1a9b3f10bef60142f2f898ee1d429e7ce5481",
+              "name": "Tight.spaced",
+              "display": "Tight.spaced",
+              "params": [
+                {
+                  "name": "a",
+                  "types": [
+                    {
+                      "name": "string"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "no space after the dashes"
+                    }
+                  ]
+                },
+                {
+                  "name": "b",
+                  "types": [
+                    {
+                      "name": "number"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "a space"
+                    }
+                  ]
+                },
+                {
+                  "name": "c",
+                  "types": [
+                    {
+                      "name": "boolean"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "only two dashes and no space"
+                    }
+                  ]
+                }
+              ],
+              "returns": [
+                {
+                  "types": [
+                    {
+                      "name": "string"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "first"
+                    }
+                  ]
+                },
+                {
+                  "types": [
+                    {
+                      "name": "number"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "second"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "1a0b967951954f02930bb5306ae0d3387229c15d",
+              "name": "Tight.unknown",
+              "display": "Tight.unknown",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Unknown tags are reported and ignored."
+                }
+              ]
+            },
+            {
+              "id": "eead65fddc0ef97b49446c40c6bd3049c2d66a6c",
+              "name": "Tight.old",
+              "display": "Tight.old",
+              "deprecated": "use Tight.spaced\n\nreally",
+              "content": [
+                {
+                  "type": "admonition",
+                  "level": "deprecated",
+                  "title": "Deprecated",
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "use Tight.spaced\n\nreally"
+                    }
+                  ]
+                },
+                {
+                  "type": "markdown",
+                  "value": "Deprecated twice."
+                }
+              ]
+            },
+            {
+              "id": "f63f14eb1efc2497d20e09ea0553a1c0cf74797b",
+              "name": "Tight.meta_fn",
+              "display": "Tight.meta_fn",
+              "meta": "read-only",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "A @meta on a function is resolved, on a field carried through."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "manuals": []
+}

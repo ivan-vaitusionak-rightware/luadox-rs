@@ -1,0 +1,11 @@
+{
+  "allowed": [],
+  "diagnostics": [
+    {
+      "category": "references",
+      "file": "markdown_edge.lua",
+      "line": 3,
+      "message": "reference \"nowhere\" could not be resolved"
+    }
+  ]
+}
