@@ -305,14 +305,14 @@ impl Renderer<'_> {
             },
         };
 
-        let own = self.parser.topref(id);
-        let own_is_landing = self.parser.item(own).page() == Some(Page::Landing);
+        let own = self.parser.item(self.parser.topref(id));
+        let own_is_landing = own.page() == Some(Page::Landing);
 
         let mut prefix = self.root();
         if !own_is_landing {
             prefix += &format!("{}/", self.parser.item(topref).kind.as_str());
         }
-        let fragment = if own_is_landing && !item.symbol.is_empty() {
+        let fragment = if own.kind == Kind::Manual && !item.symbol.is_empty() {
             // A manual does not use fully qualified fragments.
             if item.scopes.is_empty() {
                 String::new()

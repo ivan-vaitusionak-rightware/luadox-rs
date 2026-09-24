@@ -1,0 +1,11 @@
+{
+  "allowed": [],
+  "diagnostics": [
+    {
+      "category": "references",
+      "file": "manual.md",
+      "line": 10,
+      "message": "reference \"Doc\" could not be resolved"
+    }
+  ]
+}

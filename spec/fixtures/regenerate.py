@@ -68,8 +68,13 @@ EXPECTED = HERE / 'expected'
 # renderer writes is a static asset (see the module docstring).
 KEEP_GLOBS = ('class/*.html', 'module/*.html', 'index.html', 'search.html', 'index.js')
 
-# Fixtures that also register a manual page: fixture name -> markdown file in src/.
-MANUALS = {'manual': 'manual.md'}
+# Fixtures that also register manual pages: fixture name -> [(page id, markdown file in
+# src/)].  A page other than `index` links with bare section fragments, which only a
+# second page can show.
+MANUALS = {
+    'manual': [('index', 'manual.md')],
+    'manual_pages': [('index', 'manual.md'), ('guide', 'manual_pages_guide.md')],
+}
 
 # Fixtures that need a second source file, which lives under src/extra/ so that it is
 # not itself globbed as a fixture.  A conflict between two pages can only be written
@@ -116,7 +121,8 @@ def write_config(path: Path, name: str) -> None:
         'sidebar_template = {}'.format(SIDEBAR.as_posix()),
     ]
     if name in MANUALS:
-        lines += ['', '[manual]', 'index = {}'.format((SRC / MANUALS[name]).as_posix())]
+        lines += ['', '[manual]']
+        lines += ['{} = {}'.format(page, (SRC / md).as_posix()) for page, md in MANUALS[name]]
     if name in EXTRA_CONFIG:
         lines += [''] + EXTRA_CONFIG[name]
     path.write_text('\n'.join(lines) + '\n', encoding='utf-8', newline='\n')

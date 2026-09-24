@@ -1,0 +1,159 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [],
+  "modules": [
+    {
+      "id": "37ab9f6a317d9a926727a81008f3d258b3cdc513",
+      "type": "module",
+      "name": "manual_pages",
+      "sections": [
+        {
+          "id": "37ab9f6a317d9a926727a81008f3d258b3cdc513",
+          "type": "module",
+          "symbol": "manual_pages",
+          "heading": "manual_pages",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "A module whose documentation links to a manual page other than the landing page."
+            }
+          ],
+          "functions": [
+            {
+              "id": "e0718b4bfce37eee6b5b2a780975b3a1c09598fb",
+              "name": "manual_pages.run",
+              "display": "manual_pages.run",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Runs the thing the [guide](luadox:b21478dfa8758336fde65361be56f53858f9c8cf) describes."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "manuals": [
+    {
+      "id": "b21478dfa8758336fde65361be56f53858f9c8cf",
+      "type": "manual",
+      "name": "guide",
+      "sections": [
+        {
+          "id": "49097bd3323ada26e8c14a3634c74bc221048f14",
+          "type": "section",
+          "symbol": "setting_up",
+          "heading": "Setting up",
+          "level": 1,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Install it, then read on."
+            }
+          ]
+        },
+        {
+          "id": "c8b2e6260a08956b89d90cbfde6b1fb5314de116",
+          "type": "section",
+          "symbol": "configuring",
+          "heading": "Configuring",
+          "level": 2,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Edit the configuration file."
+            }
+          ]
+        },
+        {
+          "id": "a42ab37c198a7185de1c4f6d01c74529e1c5f5f3",
+          "type": "section",
+          "symbol": "running",
+          "heading": "Running",
+          "level": 1,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Run it with the defaults."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "b7439102313913fbb2fb05e93d457bf14ebd353b",
+      "type": "manual",
+      "name": "index",
+      "sections": [
+        {
+          "id": "2c7ee1ea5f4a600c0c54cb19b6c24337ec8b5fe6",
+          "type": "section",
+          "symbol": "manual_title",
+          "heading": "Manual Title",
+          "level": 1,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Body of the first section."
+            },
+            {
+              "type": "admonition",
+              "level": "note",
+              "title": "A tag with no comment prefix",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Manual pages accept tags at the start of a line."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "b50f99a3cea7436a77a2eb40048839391c6f3b58",
+          "type": "section",
+          "symbol": "a_sub-section",
+          "heading": "A Sub-Section",
+          "level": 2,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Text in the sub-section, linking to Doc and to `Doc.read`.\n\n```\n# This hash inside a fence is not a heading.\n```"
+            }
+          ]
+        },
+        {
+          "id": "ea122a13c11ee5f40122f64a7302e832af9a1cc2",
+          "type": "section",
+          "symbol": "third_level",
+          "heading": "Third Level",
+          "level": 3,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "Text at level three.\n\n#### Fourth Level\n\nA level-four heading creates no section reference."
+            }
+          ]
+        },
+        {
+          "id": "c213cb3d006e12a7834020769580e7efc1cbc7f7",
+          "type": "section",
+          "symbol": "a_sub-section2",
+          "heading": "A Sub-Section",
+          "level": 2,
+          "content": [
+            {
+              "type": "markdown",
+              "value": "A second heading with the same text, so the symbol is suffixed."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
