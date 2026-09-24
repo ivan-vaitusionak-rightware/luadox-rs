@@ -11,7 +11,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::config::Config;
 use crate::diag::{Category, Diagnostics};
-use crate::ir::{Flags, Item, ItemId, Kind, Order, RawLine};
+use crate::ir::{Flags, Item, ItemId, Kind, Order, RawLine, RefId};
 use crate::lua::{self, SourceFile};
 use crate::tags::{self, Tag};
 use crate::util;
@@ -31,7 +31,7 @@ pub struct Parser {
     /// Fully qualified name -> element, including `@alias` names.
     pub refs: HashMap<String, ItemId>,
     /// Opaque id -> element, for a `@see` list and the LuaLS mixin phrase.
-    by_id: HashMap<String, ItemId>,
+    by_id: HashMap<RefId, ItemId>,
     /// Top-level elements, in the order they were registered.
     pub topsyms: Vec<ItemId>,
     topsym_index: HashMap<String, ItemId>,
@@ -507,7 +507,7 @@ impl Parser {
     }
 
     /// The element an opaque id names, for a `@see` list or a mixin phrase.
-    pub fn item_by_id(&self, id: &str) -> Option<ItemId> {
+    pub fn item_by_id(&self, id: &RefId) -> Option<ItemId> {
         self.by_id.get(id).copied()
     }
 
@@ -1360,7 +1360,7 @@ static EMPTY: Item = Item {
     name: String::new(),
     display: String::new(),
     topsym: String::new(),
-    id: String::new(),
+    id: RefId::UNASSIGNED,
     content: crate::ir::Content(Vec::new()),
     heading: String::new(),
     title: String::new(),

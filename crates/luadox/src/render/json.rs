@@ -45,7 +45,7 @@ pub fn render(parser: &mut Parser, toprefs: &[ItemId]) -> Json {
 fn top(parser: &Parser, id: ItemId, extra: Vec<(&str, Json)>) -> Json {
     let item = parser.item(id);
     let mut out = Json::obj();
-    out.set("id", item.id.clone().into());
+    out.set("id", item.id.as_str().into());
     out.set("type", item.kind.as_str().into());
     out.set("name", item.name.clone().into());
     for (key, value) in extra {
@@ -133,7 +133,7 @@ fn self_section(parser: &mut Parser, colref: ItemId, extra: Vec<(&str, Json)>) -
     let mut section = Json::obj();
     {
         let item = parser.item(colref);
-        section.set("id", item.id.clone().into());
+        section.set("id", item.id.as_str().into());
         section.set("type", item.kind.as_str().into());
         section.set("symbol", item.symbol.clone().into());
         section.set("heading", item.heading.clone().into());
@@ -166,7 +166,7 @@ fn field(parser: &mut Parser, id: ItemId) -> Json {
     let mut out = Json::obj();
     {
         let item = parser.item(id);
-        out.set("id", item.id.clone().into());
+        out.set("id", item.id.as_str().into());
         out.set("name", item.name.clone().into());
         out.set("display", item.display.clone().into());
     }
@@ -251,7 +251,7 @@ fn named_refs(parser: &Parser, ids: &[ItemId]) -> Json {
                 let item = parser.item(*id);
                 let mut out = Json::obj();
                 out.set("name", item.name.clone().into());
-                out.set("refid", item.id.clone().into());
+                out.set("refid", item.id.as_str().into());
                 out
             })
             .collect(),
@@ -267,7 +267,7 @@ fn render_types(parser: &mut Parser, types: &[String]) -> Json {
                 let mut out = Json::obj();
                 out.set("name", name.clone().into());
                 if let Some(found) = parser.resolve_ref(name) {
-                    out.set("refid", parser.item(found).id.clone().into());
+                    out.set("refid", parser.item(found).id.as_str().into());
                 }
                 out
             })
@@ -319,7 +319,7 @@ fn content_json(content: &Content) -> Json {
                         refs.iter()
                             .map(|refid| {
                                 let mut one = Json::obj();
-                                one.set("refid", refid.clone().into());
+                                one.set("refid", refid.as_str().into());
                                 one
                             })
                             .collect(),

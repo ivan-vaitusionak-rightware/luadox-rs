@@ -16,7 +16,7 @@
 
 use std::collections::{BTreeSet, HashSet};
 
-use crate::ir::{Content, Fragment, ItemId, Kind};
+use crate::ir::{Content, Fragment, ItemId, Kind, RefId};
 use crate::parse::Parser;
 use crate::util;
 
@@ -357,7 +357,7 @@ impl Renderer<'_> {
                         .iter()
                         .map(|refid| match self.parser.item_by_id(refid) {
                             Some(found) => self.parser.item(found).name.clone(),
-                            None => refid.clone(),
+                            None => refid.to_string(),
                         })
                         .collect();
                     if !names.is_empty() {
@@ -635,7 +635,7 @@ fn starts_with_at(chars: &[char], at: usize, needle: &str) -> bool {
 }
 
 /// Every `luadox:<hex>` id mentioned on a line.
-fn luadox_ids(line: &str) -> Vec<String> {
+fn luadox_ids(line: &str) -> Vec<RefId> {
     let mut out = Vec::new();
     let mut rest = line;
     while let Some(at) = rest.find("luadox:") {
@@ -647,7 +647,7 @@ fn luadox_ids(line: &str) -> Vec<String> {
             .unwrap_or(tail.len());
         if end > 0 {
             if let Some(id) = tail.get(..end) {
-                out.push(id.to_string());
+                out.push(RefId::from(id));
             }
         }
         rest = tail.get(end..).unwrap_or("");
@@ -719,7 +719,7 @@ mod tests {
     fn luadox_ids_finds_every_id_on_a_line() {
         assert_eq!(
             luadox_ids("from [A](luadox:aa11) and [B](luadox:bb22)."),
-            vec!["aa11".to_string(), "bb22".to_string()]
+            vec![RefId::from("aa11"), RefId::from("bb22")]
         );
     }
 }

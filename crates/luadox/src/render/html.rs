@@ -21,7 +21,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use crate::assets;
-use crate::ir::{Content, Fragment, ItemId, Kind, Member};
+use crate::ir::{Content, Fragment, ItemId, Kind, Member, RefId};
 use crate::markdown;
 use crate::parse::Parser;
 use crate::util;
@@ -320,7 +320,9 @@ impl Renderer<'_> {
     fn markdown(&self, md: &str) -> String {
         let parser = &self.parser;
         markdown::to_html(md, &|id: &str| {
-            parser.item_by_id(id).map(|found| self.href(found))
+            parser
+                .item_by_id(&RefId::from(id))
+                .map(|found| self.href(found))
         })
     }
 

@@ -5,6 +5,8 @@ use std::fmt::Write;
 use blake2::digest::consts::U20;
 use blake2::{Blake2b, Digest};
 
+use crate::ir::RefId;
+
 /// Common abbreviations whose period does not end a sentence.
 const ABBREV: [(char, &[&str]); 3] = [
     ('e', &["e.g.", "eg.", "etc.", "et al."]),
@@ -159,7 +161,7 @@ pub fn shlex_split(line: &str) -> Vec<String> {
 ///
 /// The ids appear in `doc.json` and in every `luadox:` link target, so this must stay
 /// byte-for-byte what `hashlib.blake2b(s, digest_size=20).hexdigest()` produces.
-pub fn ref_id(topref_type: &str, topsym: &str, name: &str) -> String {
+pub fn ref_id(topref_type: &str, topsym: &str, name: &str) -> RefId {
     let mut hasher = Blake2b::<U20>::new();
     hasher.update(topref_type.as_bytes());
     hasher.update(b"#");
@@ -170,7 +172,7 @@ pub fn ref_id(topref_type: &str, topsym: &str, name: &str) -> String {
     for byte in hasher.finalize() {
         let _ = write!(hex, "{byte:02x}");
     }
-    hex
+    RefId::from(hex)
 }
 
 #[cfg(test)]
@@ -211,7 +213,7 @@ mod tests {
         // What the Python computes for a class whose top symbol is its own name:
         // hashlib.blake2b(b"class#Widget#Widget", digest_size=20).hexdigest().
         assert_eq!(
-            ref_id("class", "Widget", "Widget"),
+            ref_id("class", "Widget", "Widget").as_str(),
             "b325db938a25407e452fbf426e16590ec91f88ec"
         );
     }

@@ -9,6 +9,7 @@
 
 use crate::tags::Tag;
 use std::borrow::Cow;
+use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ItemId(pub u32);
@@ -16,6 +17,39 @@ pub struct ItemId(pub u32);
 impl ItemId {
     pub fn index(self) -> usize {
         self.0 as usize
+    }
+}
+
+/// An element's opaque id: the BLAKE2b-160 digest `util::ref_id` computes, hex encoded.
+/// It is what `doc.json` writes for an element and what every `luadox:<id>` link target
+/// carries; the link protocol is the one place it is read back from a string.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct RefId(String);
+
+impl RefId {
+    /// The id of an element `assign_ids` has not reached.
+    pub const UNASSIGNED: Self = Self(String::new());
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for RefId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl From<String> for RefId {
+    fn from(hex: String) -> Self {
+        Self(hex)
+    }
+}
+
+impl From<&str> for RefId {
+    fn from(hex: &str) -> Self {
+        Self(hex.to_string())
     }
 }
 
@@ -240,7 +274,7 @@ pub enum Fragment {
         title: String,
         content: Content,
     },
-    SeeAlso(Vec<String>),
+    SeeAlso(Vec<RefId>),
 }
 
 #[derive(Debug, Clone, Default)]
@@ -315,7 +349,7 @@ pub struct Item {
     pub name: String,
     pub display: String,
     pub topsym: String,
-    pub id: String,
+    pub id: RefId,
 
     // Filled in by the prerender stage.
     pub content: Content,
@@ -360,7 +394,7 @@ impl Item {
             name: String::new(),
             display: String::new(),
             topsym: String::new(),
-            id: String::new(),
+            id: RefId::UNASSIGNED,
             content: Content::default(),
             heading: String::new(),
             title: String::new(),
