@@ -261,10 +261,7 @@ impl Parser {
     }
 
     fn read_snippet(&mut self, bodies: &mut [Content], parent: usize, snippet: &str) {
-        let dir = self
-            .config
-            .get("project", "snippet_path")
-            .map(str::to_string);
+        let dir = self.settings.snippet_path.clone();
         let problem = match dir {
             None => Some("no snippet_path configured".to_string()),
             Some(dir) => {
@@ -562,12 +559,16 @@ pub fn params_for(parser: &mut Parser, id: ItemId, parsed: &Parsed, args: &[Stri
 mod tests {
     use super::*;
     use crate::config::Config;
+    use crate::settings::Settings;
 
     /// The Python swallows a tag error on a manual page; the same line in a Lua source is
     /// a structure diagnostic, and now both are.
     #[test]
     fn a_malformed_tag_on_a_manual_page_is_reported_with_its_file_and_line() {
-        let mut parser = Parser::new(Config::default());
+        let Ok(settings) = Settings::from_config(&Config::default()) else {
+            panic!("an empty configuration must be valid");
+        };
+        let mut parser = Parser::new(Config::default(), settings);
         parser.parse_manual(
             "index",
             "manual.md",

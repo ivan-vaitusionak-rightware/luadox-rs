@@ -32,6 +32,7 @@ use std::str::FromStr;
 use crate::config::Config;
 use crate::diag::Category;
 use crate::parse::Parser;
+use crate::settings::Settings;
 
 #[derive(Debug)]
 pub enum Error {
@@ -131,29 +132,27 @@ pub struct Outcome {
 
 pub fn run(options: &Options) -> Result<Outcome, Error> {
     let config = build_config(options)?;
-    let renderer = match options.renderer {
-        Some(renderer) => renderer,
-        None => config.get_or("project", "renderer", "html").parse()?,
-    };
+    let settings = Settings::from_config(&config)?;
+    let renderer = settings.renderer;
 
-    let files = input_files(&config);
+    let files = input_files(&settings.files);
     if files.is_empty() {
         return Err(Error::NoInput);
     }
 
-    let encoding = config.get_or("project", "encoding", "utf8");
+    let encoding = &settings.encoding;
     if !matches!(encoding.to_ascii_lowercase().as_str(), "utf8" | "utf-8") {
         return Err(Error::Config(format!(
             "encoding \"{encoding}\" is not supported; luadox reads utf-8"
         )));
     }
-    if config.get_bool("project", "follow", true) && !options.nofollow {
+    if settings.follow && !options.nofollow {
         return Err(Error::Config(
             "follow = true is not supported: set follow = false, or list every file".to_string(),
         ));
     }
 
-    let mut parser = Parser::new(config);
+    let mut parser = Parser::new(config, settings);
     for name in parser.diagnostics.unknown_allowed.clone() {
         let known: Vec<&str> = Category::ALL.iter().map(|c| c.as_str()).collect();
         parser.diagnostics.add(
@@ -172,7 +171,7 @@ pub fn run(options: &Options) -> Result<Outcome, Error> {
         let name = path.to_string_lossy().to_string();
         parser.parse_source(&name, &text);
     }
-    let pages = parser.config.items("manual").to_vec();
+    let pages = parser.settings.manual.clone();
     for (name, path) in pages {
         let text = read(Path::new(&path))?;
         parser.parse_manual(&name, &path, &text);
@@ -185,7 +184,7 @@ pub fn run(options: &Options) -> Result<Outcome, Error> {
     let toprefs = prerender::process(&mut parser);
     let document = match renderer {
         Renderer::Html => {
-            let out = html_out_dir(options, &parser.config);
+            let out = parser.settings.html_out_dir();
             let written = write_html(&mut parser, &toprefs, &out)?;
             if let Some(path) = &options.diagnostics_json {
                 write_diagnostics(&parser, path, options.diagnostics_root.as_deref())?;
@@ -200,7 +199,7 @@ pub fn run(options: &Options) -> Result<Outcome, Error> {
         Renderer::Json => render::json::render(&mut parser, &toprefs).write(),
     };
 
-    let out = out_path(options, &parser.config, renderer.extension());
+    let out = parser.settings.out_path(renderer.extension());
     if let Some(dir) = out.parent().filter(|d| !d.as_os_str().is_empty()) {
         std::fs::create_dir_all(dir).map_err(|e| Error::Io(format!("{}: {e}", dir.display())))?;
     }
@@ -240,6 +239,9 @@ fn build_config(options: &Options) -> Result<Config, Error> {
     if options.nofollow {
         config.set("project", "follow", "false");
     }
+    if let Some(renderer) = options.renderer {
+        config.set("project", "renderer", renderer.as_str());
+    }
     for (key, value) in [
         ("name", &options.name),
         ("out", &options.out),
@@ -261,42 +263,32 @@ fn build_config(options: &Options) -> Result<Config, Error> {
     Ok(config)
 }
 
-/// Expands the `files` option: one or more globs per line, each optionally prefixed with
-/// a module alias.
-fn input_files(config: &Config) -> Vec<PathBuf> {
+/// Expands the `files` globs.
+fn input_files(patterns: &[String]) -> Vec<PathBuf> {
     let mut out: Vec<PathBuf> = Vec::new();
     let mut seen = std::collections::HashSet::new();
-    for line in config.get("project", "files").unwrap_or("").trim().lines() {
-        for spec in util::shlex_split(line) {
-            // `alias=path`, where an alias may not contain a path separator.
-            let pattern = match spec.split_once('=') {
-                Some((alias, rest)) if !alias.contains('/') && !alias.contains('\\') => {
-                    rest.to_string()
-                }
-                _ => spec,
-            };
-            let Ok(entries) = glob::glob(&pattern) else {
-                continue;
-            };
-            let mut found: Vec<PathBuf> = entries.filter_map(Result::ok).collect();
-            // Case-insensitive, then exact: deterministic, and the order the Python
-            // happens to produce on Windows.
-            //
-            // `glob.glob` does not sort at all -- it returns `os.scandir` order, which on
-            // NTFS is case-insensitive alphabetical and on ext4 is hash order. So the
-            // order files are read in, which decides the module list in a sidebar, the
-            // order of the search index and the previous/next chain, is a property of the
-            // machine that built the docs. Sorting here makes it a property of the input.
-            found.sort_by(|a, b| {
-                let key = |p: &PathBuf| p.to_string_lossy().to_lowercase();
-                key(a).cmp(&key(b)).then_with(|| a.cmp(b))
-            });
-            for path in found {
-                let path = std::fs::canonicalize(&path).unwrap_or(path);
-                let path = strip_verbatim(&path);
-                if seen.insert(path.clone()) {
-                    out.push(path);
-                }
+    for pattern in patterns {
+        let Ok(entries) = glob::glob(pattern) else {
+            continue;
+        };
+        let mut found: Vec<PathBuf> = entries.filter_map(Result::ok).collect();
+        // Case-insensitive, then exact: deterministic, and the order the Python happens
+        // to produce on Windows.
+        //
+        // `glob.glob` does not sort at all -- it returns `os.scandir` order, which on
+        // NTFS is case-insensitive alphabetical and on ext4 is hash order. So the order
+        // files are read in, which decides the module list in a sidebar, the order of
+        // the search index and the previous/next chain, is a property of the machine
+        // that built the docs. Sorting here makes it a property of the input.
+        found.sort_by(|a, b| {
+            let key = |p: &PathBuf| p.to_string_lossy().to_lowercase();
+            key(a).cmp(&key(b)).then_with(|| a.cmp(b))
+        });
+        for path in found {
+            let path = std::fs::canonicalize(&path).unwrap_or(path);
+            let path = strip_verbatim(&path);
+            if seen.insert(path.clone()) {
+                out.push(path);
             }
         }
     }
@@ -355,33 +347,6 @@ fn write_html(
             .map_err(|e| Error::Io(format!("{}: {e}", target.display())))?;
     }
     Ok(written + 1)
-}
-
-fn html_out_dir(options: &Options, config: &Config) -> PathBuf {
-    options
-        .out
-        .clone()
-        .or_else(|| config.get("project", "out").map(str::to_string))
-        .or_else(|| config.get("project", "outdir").map(str::to_string))
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("out"))
-}
-
-fn out_path(options: &Options, config: &Config, extension: &str) -> PathBuf {
-    let configured = options
-        .out
-        .clone()
-        .or_else(|| config.get("project", "out").map(str::to_string))
-        .or_else(|| config.get("project", "outdir").map(str::to_string));
-    let Some(dst) = configured else {
-        return PathBuf::from(format!("./luadox{extension}"));
-    };
-    let path = PathBuf::from(&dst);
-    if path.is_file() || dst.ends_with(extension) {
-        path
-    } else {
-        path.join(format!("luadox{extension}"))
-    }
 }
 
 /// Writes every diagnostic as JSON, so a run can be compared against another
