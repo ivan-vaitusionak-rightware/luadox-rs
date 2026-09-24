@@ -68,14 +68,15 @@ Re-pinning moved 14 of 594 output files and took the diagnostics baseline from 1
 
 ```sh
 cargo build --release                         # the tool
-cargo test --release                          # 34 unit tests
+cargo test --release                          # 65 unit tests
 cargo clippy --release --all-targets -- -D warnings
 cargo fmt --all
 
 python harness/oracle_run.py --levels 0,1,2 --record   # golden run, ~7 s
 python harness/candidate_run.py                        # the Rust over the same corpus
 python harness/differ.py                               # grade it
-python spec/run.py                                     # the 16 fixtures
+python spec/run.py                                     # the 22 fixtures
+python harness/foreign_corpora.py                      # six public luadox projects
 
 python harness/dump_decls.py                           # declaration dump
 python harness/compare_decls.py                        # parser spike vs oracle
@@ -157,7 +158,7 @@ Exit code 1, as the oracle's. **0.20 s** against the oracle's 3.4 s for the same
 And `python spec/run.py`, the second corpus, grading all three renderers:
 
 ```
-17/17 fixtures match
+22/22 fixtures match
 ```
 
 ### What is covered
@@ -503,6 +504,37 @@ would be indistinguishable from it.
 `module` refs are excluded because the corpus contains no `@module` tag at all — all 72
 are invented by the resolver when a file turns out to have documented elements. A parser
 cannot decide that and should not be graded on it.
+
+## The third corpus: projects that use luadox
+
+The production corpus and the fixtures were both written by the people who wrote this
+tool. `harness/foreign_corpora.py` renders six public GitHub projects that document
+themselves with luadox -- found by searching for `luadox.conf` and for the generated
+footer -- through the oracle and the Rust, and compares the output file by file. Its
+first run found seven divergences on 138 Lua files, none of which either earlier corpus
+could have shown:
+
+| Project | Files | What it exercised | Fixture added |
+|---|---|---|---|
+| jtackaberry/rtk | 36 | a directory as input; Lua 5.3/5.4 syntax the 5.1 grammar refused; a module assigning its own table right after its block | `module_self_table` |
+| hickey/meshchat | 3 | `@module` and `@section` in one block; pipe tables; manual pages other than the landing page | `module_then_section`, `markdown_table`, `manual_pages` |
+| MathieuCGit/Reaper_Tools (ReaCAT) | 7 | `a, self.b = f()`, where the field is the target before the `=` | `multiple_assignment` |
+| OpenFunscripter/OFS | 1 | a stub file on the command line, `follow = true` | -- |
+| Fernando-A-Rocha/mta-collectibles | 15 | fifteen files with no config at all | -- |
+| FatalistError/guns4d | 26 | a `@tparam` with one argument, on which the oracle exits without output | -- |
+
+After the fixes, what remains is the improvements list: a multi-line `value` the oracle
+drops, four fields the oracle's regex invents from `if x == nil then` lines in rtk, and
+one indented continuation line in meshchat's landing page (CODE_INDENT). OFS and
+mta-collectibles are byte-identical on all three renderers; ReaCAT differs only in one
+`value`; meshchat only in that one paragraph.
+
+It also found three defects in the Python fork itself, which the Rust does not share:
+the fork has no default sidebar template in its data directory, so any project without
+`sidebar_template` in its config dies with `FileNotFoundError`; without `encoding = utf8`
+it reads the search template in the locale codepage and writes `â›”` for `⛔`; and an
+element whose top-level symbol lost its registration dies with `KeyError` in
+`Reference.topref`, which is what stops guns4d.
 
 ## Layout
 
