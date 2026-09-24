@@ -25,6 +25,7 @@ use crate::ir::{Content, Fragment, ItemId, Kind, Member, Page, RefId, SeeRef};
 use crate::markdown;
 use crate::parse::{Parser, RefStyle};
 use crate::util;
+use crate::Error;
 
 /// A rendered file and where it goes, relative to the output directory.
 pub struct Output {
@@ -55,7 +56,7 @@ struct Renderer<'a> {
     project_title: String,
 }
 
-pub fn render(parser: &mut Parser, toprefs: &[ItemId]) -> Result<Vec<Output>, String> {
+pub fn render(parser: &mut Parser, toprefs: &[ItemId]) -> Result<Vec<Output>, Error> {
     let templates = load_templates(parser)?;
     let search = parser.add_search_ref();
 
@@ -167,31 +168,23 @@ pub fn config_files(parser: &Parser) -> (Vec<PathBuf>, Vec<String>) {
     (found, missing)
 }
 
-fn load_templates(parser: &Parser) -> Result<Templates, String> {
-    let read = |option: &str, path: Option<&str>, asset: &str| -> Result<String, String> {
+fn load_templates(parser: &Parser) -> Result<Templates, Error> {
+    let read = |path: Option<&str>, asset: &str| -> Result<String, Error> {
         match path {
             // A configured template is read in text mode by the Python, so its line
             // endings are normalised; reading it as a string does the same.
             Some(path) => std::fs::read_to_string(path)
                 .map(|s| s.replace("\r\n", "\n"))
-                .map_err(|e| format!("{option} \"{path}\": {e}")),
+                .map_err(Error::io(path)),
             None => Ok(assets::text(asset)),
         }
     };
     let paths = &parser.settings.templates;
     Ok(Templates {
-        head: read("head_template", paths.head.as_deref(), "head.tmpl.html")?,
-        foot: read("foot_template", paths.foot.as_deref(), "foot.tmpl.html")?,
-        search: read(
-            "search_template",
-            paths.search.as_deref(),
-            "search.tmpl.html",
-        )?,
-        sidebar: read(
-            "sidebar_template",
-            paths.sidebar.as_deref(),
-            "sidebar.tmpl.html",
-        )?,
+        head: read(paths.head.as_deref(), "head.tmpl.html")?,
+        foot: read(paths.foot.as_deref(), "foot.tmpl.html")?,
+        search: read(paths.search.as_deref(), "search.tmpl.html")?,
+        sidebar: read(paths.sidebar.as_deref(), "sidebar.tmpl.html")?,
     })
 }
 

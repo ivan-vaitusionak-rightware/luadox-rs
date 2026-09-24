@@ -19,6 +19,7 @@ use std::collections::{BTreeSet, HashSet};
 use crate::ir::{Content, Fragment, ItemId, Kind, RefId, SeeRef};
 use crate::parse::Parser;
 use crate::util;
+use crate::Error;
 
 /// LuaDox type names that have a different spelling in LuaLS. Everything else -- most
 /// importantly a class name -- is passed through so cross references keep working.
@@ -64,7 +65,7 @@ struct Renderer<'a> {
     mixin_phrase: String,
 }
 
-pub fn render(parser: &mut Parser, toprefs: &[ItemId]) -> Result<String, String> {
+pub fn render(parser: &mut Parser, toprefs: &[ItemId]) -> Result<String, Error> {
     let classnames = toprefs
         .iter()
         .filter(|id| parser.item(**id).kind == Kind::Class)
@@ -125,7 +126,7 @@ pub fn render(parser: &mut Parser, toprefs: &[ItemId]) -> Result<String, String>
 }
 
 /// `name[:type]` tokens, whitespace-separated and quotable across several indented lines.
-fn parse_globals(value: &str) -> Result<Vec<(String, String)>, String> {
+fn parse_globals(value: &str) -> Result<Vec<(String, String)>, Error> {
     let mut out = Vec::new();
     for line in value.lines() {
         for token in util::shlex_split(line) {
@@ -137,9 +138,7 @@ fn parse_globals(value: &str) -> Result<Vec<(String, String)>, String> {
             // whole definitions file syntactically invalid, so this fails rather than
             // dropping it silently.
             if !is_dotted_identifier(&name) {
-                return Err(format!(
-                    "invalid [luals] globals token \"{token}\": expected name[:type]"
-                ));
+                return Err(Error::LualsGlobal(token.clone()));
             }
             out.push((
                 name,
@@ -696,8 +695,8 @@ mod tests {
     #[test]
     fn a_globals_token_needs_a_dotted_identifier() {
         assert_eq!(
-            parse_globals("app:Application env"),
-            Ok(vec![
+            parse_globals("app:Application env").ok(),
+            Some(vec![
                 ("app".into(), "Application".into()),
                 ("env".into(), "any".into())
             ])

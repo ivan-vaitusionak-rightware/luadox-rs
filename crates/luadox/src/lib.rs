@@ -26,26 +26,48 @@ pub mod tags;
 pub mod util;
 
 use std::fmt;
+use std::io;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
-use crate::config::Config;
+use crate::config::{Config, ConfigError};
 use crate::diag::Category;
 use crate::parse::Parser;
 use crate::settings::Settings;
 
 #[derive(Debug)]
 pub enum Error {
-    Config(String),
+    ConfigFile {
+        path: PathBuf,
+        source: ConfigError,
+    },
     NoInput,
     UnknownRenderer(String),
-    Io(String),
+    UnsupportedEncoding(String),
+    FollowUnsupported,
+    /// A `--manual` argument that is not `id=filename`.
+    ManualSpec(String),
+    /// A `[luals] globals` token that is not `name[:type]`.
+    LualsGlobal(String),
+    Io {
+        path: PathBuf,
+        source: io::Error,
+    },
+    WriterPanicked,
+}
+
+impl Error {
+    /// The `map_err` for an I/O operation on `path`.
+    pub fn io(path: impl AsRef<Path>) -> impl FnOnce(io::Error) -> Self {
+        let path = path.as_ref().to_path_buf();
+        move |source| Self::Io { path, source }
+    }
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Config(msg) => write!(f, "{msg}"),
+            Self::ConfigFile { path, source } => write!(f, "{}: {source}", path.display()),
             Self::NoInput => write!(
                 f,
                 "no input files or directories specified on command line or config file"
@@ -58,12 +80,34 @@ impl fmt::Display for Error {
                     valid.join(", ")
                 )
             }
-            Self::Io(msg) => write!(f, "{msg}"),
+            Self::UnsupportedEncoding(encoding) => write!(
+                f,
+                "encoding \"{encoding}\" is not supported; luadox reads utf-8"
+            ),
+            Self::FollowUnsupported => write!(
+                f,
+                "follow = true is not supported: set follow = false, or list every file"
+            ),
+            Self::ManualSpec(spec) => write!(f, "--manual takes id=filename, not \"{spec}\""),
+            Self::LualsGlobal(token) => write!(
+                f,
+                "invalid [luals] globals token \"{token}\": expected name[:type]"
+            ),
+            Self::Io { path, source } => write!(f, "{}: {source}", path.display()),
+            Self::WriterPanicked => write!(f, "writer thread panicked"),
         }
     }
 }
 
-impl std::error::Error for Error {}
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::ConfigFile { source, .. } => Some(source),
+            Self::Io { source, .. } => Some(source),
+            _ => None,
+        }
+    }
+}
 
 /// The output formats. A name that is not one of these is an error at the edge -- the
 /// command line or the config file -- so no string reaches the pipeline that could fall
@@ -142,14 +186,10 @@ pub fn run(options: &Options) -> Result<Outcome, Error> {
 
     let encoding = &settings.encoding;
     if !matches!(encoding.to_ascii_lowercase().as_str(), "utf8" | "utf-8") {
-        return Err(Error::Config(format!(
-            "encoding \"{encoding}\" is not supported; luadox reads utf-8"
-        )));
+        return Err(Error::UnsupportedEncoding(encoding.clone()));
     }
     if settings.follow && !options.nofollow {
-        return Err(Error::Config(
-            "follow = true is not supported: set follow = false, or list every file".to_string(),
-        ));
+        return Err(Error::FollowUnsupported);
     }
 
     let mut parser = Parser::new(settings);
@@ -195,18 +235,18 @@ pub fn run(options: &Options) -> Result<Outcome, Error> {
                 output: out.join(format!("{written} files")),
             });
         }
-        Renderer::Luals => render::luals::render(&mut parser, &toprefs).map_err(Error::Config)?,
+        Renderer::Luals => render::luals::render(&mut parser, &toprefs)?,
         Renderer::Json => render::json::render(&mut parser, &toprefs).write(),
     };
 
     let out = parser.settings.out_path(renderer.extension());
     if let Some(dir) = out.parent().filter(|d| !d.as_os_str().is_empty()) {
-        std::fs::create_dir_all(dir).map_err(|e| Error::Io(format!("{}: {e}", dir.display())))?;
+        std::fs::create_dir_all(dir).map_err(Error::io(&dir))?;
     }
     // LF unconditionally. The Python opens its output in text mode, so on Windows the
     // same run writes CRLF and the recorded bytes become a function of the host; the
     // fixtures store LF and the comparison normalises. See spec/html.md section 11.
-    std::fs::write(&out, document).map_err(|e| Error::Io(format!("{}: {e}", out.display())))?;
+    std::fs::write(&out, document).map_err(Error::io(&out))?;
 
     if let Some(path) = &options.diagnostics_json {
         write_diagnostics(&parser, path, options.diagnostics_root.as_deref())?;
@@ -220,14 +260,17 @@ pub fn run(options: &Options) -> Result<Outcome, Error> {
 }
 
 fn read(path: &Path) -> Result<String, Error> {
-    std::fs::read_to_string(path).map_err(|e| Error::Io(format!("{}: {e}", path.display())))
+    std::fs::read_to_string(path).map_err(Error::io(&path))
 }
 
 fn build_config(options: &Options) -> Result<Config, Error> {
     let mut config = match &options.config {
         Some(path) => {
             let text = read(path)?;
-            Config::parse(&text).map_err(|e| Error::Config(format!("{}: {e}", path.display())))?
+            Config::parse(&text).map_err(|source| Error::ConfigFile {
+                path: path.clone(),
+                source,
+            })?
         }
         None => Config::default(),
     };
@@ -254,9 +297,7 @@ fn build_config(options: &Options) -> Result<Config, Error> {
     }
     for spec in &options.manual {
         let Some((id, path)) = spec.split_once('=') else {
-            return Err(Error::Config(format!(
-                "--manual takes id=filename, not \"{spec}\""
-            )));
+            return Err(Error::ManualSpec(spec.clone()));
         };
         config.set("manual", id, path);
     }
@@ -311,7 +352,7 @@ fn write_html(
     toprefs: &[crate::ir::ItemId],
     out: &Path,
 ) -> Result<usize, Error> {
-    std::fs::create_dir_all(out).map_err(|e| Error::Io(format!("{}: {e}", out.display())))?;
+    std::fs::create_dir_all(out).map_err(Error::io(&out))?;
 
     // The files project.css, project.js and project.favicon name, copied flat. One that
     // does not exist is reported and skipped, and the run continues -- but its tag is
@@ -328,12 +369,11 @@ fn write_html(
     }
     for path in found {
         if let Some(name) = path.file_name() {
-            std::fs::copy(&path, out.join(name))
-                .map_err(|e| Error::Io(format!("{}: {e}", path.display())))?;
+            std::fs::copy(&path, out.join(name)).map_err(Error::io(&path))?;
         }
     }
 
-    let pages = render::html::render(parser, toprefs).map_err(Error::Config)?;
+    let pages = render::html::render(parser, toprefs)?;
     write_pages(&pages, out)?;
     Ok(pages.len() + 1)
 }
@@ -347,13 +387,11 @@ fn write_pages(pages: &[render::html::Output], out: &Path) -> Result<(), Error> 
     let write_page = |page: &render::html::Output| -> Result<(), Error> {
         let target = out.join(&page.path);
         if let Some(dir) = target.parent() {
-            std::fs::create_dir_all(dir)
-                .map_err(|e| Error::Io(format!("{}: {e}", dir.display())))?;
+            std::fs::create_dir_all(dir).map_err(Error::io(&dir))?;
         }
         // LF unconditionally, as spec/html.md section 11 recommends: the Python writes
         // through text mode, so its bytes are a property of the host.
-        std::fs::write(&target, &page.bytes)
-            .map_err(|e| Error::Io(format!("{}: {e}", target.display())))
+        std::fs::write(&target, &page.bytes).map_err(Error::io(&target))
     };
     let threads = std::thread::available_parallelism()
         .map_or(1, |n| n.get())
@@ -368,10 +406,7 @@ fn write_pages(pages: &[render::html::Output], out: &Path) -> Result<(), Error> 
             .collect();
         handles
             .into_iter()
-            .map(|h| {
-                h.join()
-                    .unwrap_or_else(|_| Err(Error::Io("writer thread panicked".into())))
-            })
+            .map(|h| h.join().unwrap_or(Err(Error::WriterPanicked)))
             .collect()
     });
     results.into_iter().collect()
@@ -433,10 +468,9 @@ fn write_diagnostics(parser: &Parser, path: &Path, root: Option<&Path>) -> Resul
         Json::Arr(records.into_iter().map(|r| r.4).collect()),
     );
     if let Some(dir) = path.parent().filter(|d| !d.as_os_str().is_empty()) {
-        std::fs::create_dir_all(dir).map_err(|e| Error::Io(format!("{}: {e}", dir.display())))?;
+        std::fs::create_dir_all(dir).map_err(Error::io(&dir))?;
     }
-    std::fs::write(path, payload.write() + "\n")
-        .map_err(|e| Error::Io(format!("{}: {e}", path.display())))
+    std::fs::write(path, payload.write() + "\n").map_err(Error::io(&path))
 }
 
 fn relative(file: &str, base: &Path) -> String {
