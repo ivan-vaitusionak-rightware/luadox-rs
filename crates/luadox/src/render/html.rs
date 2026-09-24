@@ -21,7 +21,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use crate::assets;
-use crate::ir::{Content, Fragment, ItemId, Kind, Member, RefId, SeeRef};
+use crate::ir::{Content, Fragment, ItemId, Kind, Member, Page, RefId, SeeRef};
 use crate::markdown;
 use crate::parse::Parser;
 use crate::util;
@@ -102,13 +102,11 @@ pub fn render(parser: &mut Parser, toprefs: &[ItemId]) -> Result<Vec<Output>, St
         if item.empty && item.implicit {
             continue;
         }
-        let (kind, name) = (item.kind, item.name.clone());
-        let path = if kind == Kind::Manual && name == "index" {
-            format!("{name}.html")
-        } else {
-            format!("{}/{}.html", kind.as_str(), name)
+        let path = match item.page() {
+            Some(Page::Landing) => format!("{}.html", item.name),
+            _ => format!("{}/{}.html", item.kind.as_str(), item.name),
         };
-        let html = r.page(*topref);
+        let html = r.render_page(*topref);
         out.push(Output {
             path,
             bytes: html.into_bytes(),
@@ -128,7 +126,7 @@ pub fn render(parser: &mut Parser, toprefs: &[ItemId]) -> Result<Vec<Output>, St
         .parser
         .of_kind(Kind::Manual)
         .iter()
-        .any(|id| r.parser.item(*id).name == "index");
+        .any(|id| r.parser.item(*id).page() == Some(Page::Landing));
     if !has_index {
         out.push(Output {
             path: "index.html".to_string(),
@@ -248,7 +246,7 @@ impl Renderer<'_> {
         };
         let via = self.parser.topref(ctx);
         let item = self.parser.item(via);
-        if (item.kind == Kind::Manual && item.name == "index") || item.symbol == "--search" {
+        if matches!(item.page(), Some(Page::Landing | Page::Search)) {
             String::new()
         } else {
             "../".to_string()
@@ -275,14 +273,13 @@ impl Renderer<'_> {
         };
 
         let own = self.parser.topref(id);
-        let own_is_index =
-            self.parser.item(own).kind == Kind::Manual && self.parser.item(own).name == "index";
+        let own_is_landing = self.parser.item(own).page() == Some(Page::Landing);
 
         let mut prefix = self.root();
-        if !own_is_index {
+        if !own_is_landing {
             prefix += &format!("{}/", self.parser.item(topref).kind.as_str());
         }
-        let fragment = if own_is_index && !item.symbol.is_empty() {
+        let fragment = if own_is_landing && !item.symbol.is_empty() {
             // A manual does not use fully qualified fragments.
             if item.scopes.is_empty() {
                 String::new()
@@ -403,7 +400,7 @@ impl Renderer<'_> {
 
     // -- the page frame --------------------------------------------------------
 
-    fn page(&mut self, topref: ItemId) -> String {
+    fn render_page(&mut self, topref: ItemId) -> String {
         let mut lines = Vec::new();
         self.frame_open(topref, &mut lines);
         match self.parser.item(topref).kind {
@@ -507,7 +504,7 @@ impl Renderer<'_> {
             .chain(self.modules.iter())
             .copied()
             .collect();
-        let is_search = self.parser.item(topref).symbol == "--search";
+        let page = self.parser.item(topref).page();
         let name = self.parser.item(topref).name.clone();
         let (mut prev, mut next, mut found) = (None, None, false);
         for id in order {
@@ -515,7 +512,7 @@ impl Renderer<'_> {
                 next = Some(id);
                 break;
             }
-            if self.parser.item(id).topsym == name || is_search {
+            if self.parser.item(id).topsym == name || page == Some(Page::Search) {
                 found = true;
             } else {
                 prev = Some(id);
@@ -525,7 +522,7 @@ impl Renderer<'_> {
         out.push("<div class=\"topbar\">".to_string());
         out.push("<div class=\"group one\">".to_string());
         if self.has_manual_index {
-            let path = if self.parser.item(topref).kind == Kind::Manual && name == "index" {
+            let path = if page == Some(Page::Landing) {
                 ""
             } else {
                 "../"

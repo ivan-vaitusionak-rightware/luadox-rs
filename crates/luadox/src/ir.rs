@@ -108,6 +108,18 @@ impl Kind {
     }
 }
 
+/// What a top-level element is in the html output. The landing page is the manual page
+/// named `index` and the search page is the one `Kind::Pseudo` element; both sit at the
+/// document root, where every other page sits one directory down.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Page {
+    Landing,
+    Search,
+    Class,
+    Module,
+    Manual,
+}
+
 /// Modifiers accumulated from tags. One named field per flag, so a consumer asks for the
 /// flag it wants instead of indexing a bag of `Any`.
 #[derive(Debug, Clone, Default)]
@@ -431,5 +443,18 @@ impl Item {
 
     pub fn scope(&self) -> Option<ItemId> {
         self.scopes.last().copied()
+    }
+
+    /// The page this element is, for a top-level element; `None` for one that lives on
+    /// another's page.
+    pub fn page(&self) -> Option<Page> {
+        Some(match self.kind {
+            Kind::Class => Page::Class,
+            Kind::Module => Page::Module,
+            Kind::Manual if self.name == "index" => Page::Landing,
+            Kind::Manual => Page::Manual,
+            Kind::Pseudo => Page::Search,
+            Kind::Field | Kind::Function | Kind::Section | Kind::Table => return None,
+        })
     }
 }
