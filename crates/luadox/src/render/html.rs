@@ -18,6 +18,7 @@
 //! helper between the two renderers is a bug.
 
 use std::collections::BTreeMap;
+use std::fmt::{self, Write as _};
 use std::path::{Path, PathBuf};
 
 use crate::assets;
@@ -38,6 +39,33 @@ struct Templates {
     foot: String,
     search: String,
     sidebar: String,
+}
+
+/// A file under construction. The Python collects lines and joins them with `\n`; the
+/// same bytes are written here as each line arrives, into the one buffer the file is.
+struct Lines(String);
+
+impl Lines {
+    fn new() -> Self {
+        Self(String::new())
+    }
+
+    fn push(&mut self, line: &str) {
+        self.0.push_str(line);
+        self.0.push('\n');
+    }
+
+    fn line(&mut self, args: fmt::Arguments<'_>) {
+        // Writing into a String cannot fail.
+        self.0.write_fmt(args).unwrap_or_default();
+        self.0.push('\n');
+    }
+
+    /// The lines joined, without the newline the last one was pushed with.
+    fn finish(mut self) -> String {
+        self.0.pop();
+        self.0
+    }
 }
 
 struct Renderer<'a> {
@@ -394,7 +422,7 @@ impl Renderer<'_> {
     // -- the page frame --------------------------------------------------------
 
     fn render_page(&mut self, topref: ItemId) -> String {
-        let mut lines = Vec::new();
+        let mut lines = Lines::new();
         self.frame_open(topref, &mut lines);
         match self.parser.item(topref).kind {
             Kind::Class | Kind::Module => self.classmod(topref, &mut lines),
@@ -402,10 +430,10 @@ impl Renderer<'_> {
             _ => {}
         }
         self.frame_close(&mut lines);
-        lines.join("\n")
+        lines.finish()
     }
 
-    fn frame_open(&mut self, topref: ItemId, out: &mut Vec<String>) {
+    fn frame_open(&mut self, topref: ItemId, out: &mut Lines) {
         self.parser.focus(topref);
         let root = self.root();
 
@@ -473,21 +501,21 @@ impl Renderer<'_> {
             ("root", root.as_str()),
             ("bodyclass", bodyclass.as_str()),
         ]);
-        out.push(format_template(&self.templates.head, &fields));
+        out.push(&format_template(&self.templates.head, &fields));
 
         self.topbar(topref, &root, out);
         self.sidebar(topref, &root, out);
-        out.push("<div class=\"body\">".to_string());
+        out.push("<div class=\"body\">");
     }
 
-    fn frame_close(&mut self, out: &mut Vec<String>) {
-        out.push("</div>".to_string());
+    fn frame_close(&mut self, out: &mut Lines) {
+        out.push("</div>");
         let root = self.root();
         let fields = BTreeMap::from([("root", root.as_str()), ("version", self.version.as_str())]);
-        out.push(format_template(&self.templates.foot, &fields));
+        out.push(&format_template(&self.templates.foot, &fields));
     }
 
-    fn topbar(&mut self, topref: ItemId, root: &str, out: &mut Vec<String>) {
+    fn topbar(&mut self, topref: ItemId, root: &str, out: &mut Lines) {
         // The walk stops one past the current page; on the search and landing pages the
         // very first entry counts as the match, so they get a Next and no Previous.
         let order: Vec<ItemId> = self
@@ -512,31 +540,31 @@ impl Renderer<'_> {
             }
         }
 
-        out.push("<div class=\"topbar\">".to_string());
-        out.push("<div class=\"group one\">".to_string());
+        out.push("<div class=\"topbar\">");
+        out.push("<div class=\"group one\">");
         if self.has_manual_index {
             let path = if page == Some(Page::Landing) {
                 ""
             } else {
                 "../"
             };
-            out.push(format!(
+            out.line(format_args!(
                 "<div class=\"button description\"><a href=\"{path}index.html\"><span>{}</span></a></div>",
                 self.hometext
             ));
         } else {
-            out.push(format!(
+            out.line(format_args!(
                 "<div class=\"description\"><span>{}</span></div>",
                 self.hometext
             ));
         }
-        out.push("</div>".to_string());
-        out.push("<div class=\"group two\">".to_string());
+        out.push("</div>");
+        out.push("<div class=\"group two\">");
         self.user_links(root, out);
-        out.push("</div>".to_string());
-        out.push("<div class=\"group three\">".to_string());
+        out.push("</div>");
+        out.push("<div class=\"group three\">");
         if let Some(prev) = prev {
-            out.push(format!(
+            out.line(format_args!(
                 "<div class=\"button iconleft\"><a href=\"{}\" title=\"{}\"><img src=\"{root}img/i-left.svg?{}\" alt=\"\"/><span>Previous</span></a></div>",
                 self.href(prev),
                 self.parser.item(prev).name,
@@ -544,19 +572,19 @@ impl Renderer<'_> {
             ));
         }
         if let Some(next) = next {
-            out.push(format!(
+            out.line(format_args!(
                 "<div class=\"button iconright\"><a href=\"{}\" title=\"{}\"><span>Next</span><img src=\"{root}img/i-right.svg?{}\" alt=\"\"/></a></div>",
                 self.href(next),
                 self.parser.item(next).name,
                 self.version
             ));
         }
-        out.push("</div>".to_string());
-        out.push("</div>".to_string());
+        out.push("</div>");
+        out.push("</div>");
     }
 
     /// Every config section whose name starts with `link`, in section-name order.
-    fn user_links(&self, root: &str, out: &mut Vec<String>) {
+    fn user_links(&self, root: &str, out: &mut Lines) {
         for link in &self.parser.settings.links {
             let mut class = String::new();
             let img = match &link.icon {
@@ -572,7 +600,7 @@ impl Renderer<'_> {
                 }
                 None => String::new(),
             };
-            out.push(format!(
+            out.line(format_args!(
                 "<div class=\"button{class}\"><a href=\"{}\" title=\"{}\">{img}<span>{}</span></a></div>",
                 link.url.replace("{root}", root),
                 link.tooltip,
@@ -581,23 +609,20 @@ impl Renderer<'_> {
         }
     }
 
-    fn sidebar(&mut self, topref: ItemId, root: &str, out: &mut Vec<String>) {
-        out.push("<div class=\"sidebar\">".to_string());
+    fn sidebar(&mut self, topref: ItemId, root: &str, out: &mut Lines) {
+        out.push("<div class=\"sidebar\">");
         let fields = BTreeMap::from([("root", root), ("version", self.version.as_str())]);
-        out.push(format_template(&self.templates.sidebar, &fields));
-        out.push(format!("<form action=\"{root}search.html\">"));
-        out.push(
-            "<input class=\"search\" name=\"q\" type=\"search\" placeholder=\"Search\" />"
-                .to_string(),
-        );
-        out.push("</form>".to_string());
+        out.push(&format_template(&self.templates.sidebar, &fields));
+        out.line(format_args!("<form action=\"{root}search.html\">"));
+        out.push("<input class=\"search\" name=\"q\" type=\"search\" placeholder=\"Search\" />");
+        out.push("</form>");
 
         let name = self.parser.item(topref).name.clone();
         let collections = self.parser.item(topref).collections.clone();
         if !collections.is_empty() {
-            out.push("<div class=\"sections\">".to_string());
-            out.push("<div class=\"heading\">Contents</div>".to_string());
-            out.push("<ul>".to_string());
+            out.push("<div class=\"sections\">");
+            out.push("<div class=\"heading\">Contents</div>");
+            out.push("<ul>");
             for col in collections {
                 let item = self.parser.item(col);
                 if item.kind == Kind::Manual {
@@ -613,71 +638,71 @@ impl Renderer<'_> {
                 } else {
                     item.heading.clone()
                 };
-                out.push(format!(
+                out.line(format_args!(
                     "<li><a href=\"#{}\">{heading}</a></li>",
                     item.symbol
                 ));
             }
-            out.push("</ul>".to_string());
-            out.push("</div>".to_string());
+            out.push("</ul>");
+            out.push("</div>");
         }
 
         let manuals = self.parser.of_kind(Kind::Manual).to_vec();
         if !manuals.is_empty() {
-            out.push("<div class=\"manual\">".to_string());
-            out.push("<div class=\"heading\">Manual</div>".to_string());
-            out.push("<ul>".to_string());
+            out.push("<div class=\"manual\">");
+            out.push("<div class=\"heading\">Manual</div>");
+            out.push("<ul>");
             for id in manuals {
                 if self.parser.item(id).scope().is_some() {
                     continue;
                 }
                 let selected = self.selected(id, &name);
-                out.push(format!(
+                out.line(format_args!(
                     "<li{selected}><a href=\"{}\">{}</a></li>",
                     self.href(id),
                     self.parser.item(id).heading
                 ));
             }
-            out.push("</ul>".to_string());
-            out.push("</div>".to_string());
+            out.push("</ul>");
+            out.push("</div>");
         }
 
         if !self.classes.is_empty() {
-            out.push("<div class=\"classes\">".to_string());
-            out.push("<div class=\"heading\">Classes</div>".to_string());
-            out.push("<ul>".to_string());
+            out.push("<div class=\"classes\">");
+            out.push("<div class=\"heading\">Classes</div>");
+            out.push("<ul>");
             for id in self.classes.clone() {
                 let selected = self.selected(id, &name);
-                out.push(format!(
+                out.line(format_args!(
                     "<li{selected}><a href=\"{}\">{}</a></li>",
                     self.href(id),
                     self.parser.item(id).display
                 ));
             }
-            out.push("</ul>".to_string());
-            out.push("</div>".to_string());
+            out.push("</ul>");
+            out.push("</div>");
         }
 
         if !self.modules.is_empty() {
-            out.push("<div class=\"modules\">".to_string());
-            out.push("<div class=\"heading\">Modules</div>".to_string());
-            out.push("<ul>".to_string());
+            out.push("<div class=\"modules\">");
+            out.push("<div class=\"heading\">Modules</div>");
+            out.push("<ul>");
             for id in self.modules.clone() {
                 let item = self.parser.item(id);
                 if item.empty && item.implicit {
                     continue;
                 }
                 let selected = self.selected(id, &name);
-                out.push(format!(
+                out.line(format_args!(
                     "<li{selected}><a href=\"{}\">{}</a></li>",
                     self.href(id),
                     self.parser.item(id).name
                 ));
             }
-            out.push("</ul>".to_string());
-            out.push("</div>".to_string());
+            out.push("</ul>");
+            out.push("</div>");
         }
-        out.push("</div>".to_string());
+        out.push("</div>");
     }
 
     fn selected(&self, id: ItemId, current: &str) -> &'static str {
@@ -690,12 +715,12 @@ impl Renderer<'_> {
 
     // -- pages -----------------------------------------------------------------
 
-    fn manual(&mut self, topref: ItemId, out: &mut Vec<String>) {
-        out.push("<div class=\"manual\">".to_string());
+    fn manual(&mut self, topref: ItemId, out: &mut Lines) {
+        out.push("<div class=\"manual\">");
         if !self.parser.item(topref).content.is_empty() {
             self.parser.resolve_item_content(topref);
             let content = &self.parser.item(topref).content;
-            out.push(self.content_html(content));
+            out.push(&self.content_html(content));
         }
         for sec in self.parser.item(topref).collections.clone() {
             // The context stays on the manual page: a manual section's markdown resolves
@@ -706,16 +731,16 @@ impl Renderer<'_> {
             let (symbol, heading) = (item.symbol.clone(), item.heading.clone());
             // The heading is emitted raw -- it has been through the reference rewrite, so
             // a `@{ref}` in a heading lands as literal markdown.
-            out.push(format!("<h{level} id=\"{symbol}\">{heading}"));
-            out.push(self.permalink(&symbol));
-            out.push(format!("</h{level}>"));
+            out.line(format_args!("<h{level} id=\"{symbol}\">{heading}"));
+            out.push(&self.permalink(&symbol));
+            out.line(format_args!("</h{level}>"));
             let content = &self.parser.item(sec).content;
-            out.push(self.content_html(content));
+            out.push(&self.content_html(content));
         }
-        out.push("</div>".to_string());
+        out.push("</div>");
     }
 
-    fn classmod(&mut self, topref: ItemId, out: &mut Vec<String>) {
+    fn classmod(&mut self, topref: ItemId, out: &mut Lines) {
         for col in self.parser.item(topref).collections.clone() {
             self.parser.focus(col);
             let item = self.parser.item(col);
@@ -731,15 +756,15 @@ impl Renderer<'_> {
                     .replace("<p>", "")
                     .replace("</p>", "")
             };
-            out.push("<div class=\"section\">".to_string());
-            out.push(format!(
+            out.push("<div class=\"section\">");
+            out.line(format_args!(
                 "<h2 class=\"{}\" id=\"{symbol}\">{heading}",
                 kind.as_str()
             ));
-            out.push(self.since(col));
-            out.push(self.permalink(&symbol));
-            out.push("</h2>".to_string());
-            out.push("<div class=\"inner\">".to_string());
+            out.push(&self.since(col));
+            out.push(&self.permalink(&symbol));
+            out.push("</h2>");
+            out.push("<div class=\"inner\">");
 
             if kind == Kind::Class {
                 self.hierarchy(col, out);
@@ -748,7 +773,7 @@ impl Renderer<'_> {
             self.parser.resolve_item_content(col);
             if !self.parser.item(col).content.is_empty() {
                 let content = &self.parser.item(col).content;
-                out.push(self.content_html(content));
+                out.push(&self.content_html(content));
             }
 
             let columns = self.columns(col);
@@ -756,8 +781,8 @@ impl Renderer<'_> {
             self.field_details(col, &columns, out);
             self.function_details(col, &columns, out);
 
-            out.push("</div>".to_string());
-            out.push("</div>".to_string());
+            out.push("</div>");
+            out.push("</div>");
         }
     }
 
@@ -768,12 +793,12 @@ impl Renderer<'_> {
         }
     }
 
-    fn hierarchy(&mut self, col: ItemId, out: &mut Vec<String>) {
+    fn hierarchy(&mut self, col: ItemId, out: &mut Lines) {
         let chain = self.parser.hierarchy(col);
         if chain.len() > 1 {
-            out.push("<div class=\"hierarchy\">".to_string());
-            out.push("<div class=\"heading\">Class Hierarchy</div>".to_string());
-            out.push("<ul>".to_string());
+            out.push("<div class=\"hierarchy\">");
+            out.push("<div class=\"heading\">Class Hierarchy</div>");
+            out.push("<ul>");
             for (n, cls) in chain.iter().enumerate() {
                 let (html, self_class) = if *cls == col {
                     (self.parser.item(*cls).name.clone(), " self")
@@ -786,12 +811,12 @@ impl Renderer<'_> {
                 } else {
                     String::new()
                 };
-                out.push(format!(
+                out.line(format_args!(
                     "<li class=\"class{self_class}\">{prefix}<span>{html}</span></li>"
                 ));
             }
-            out.push("</ul>".to_string());
-            out.push("</div>".to_string());
+            out.push("</ul>");
+            out.push("</div>");
         }
         // The hierarchy above shows only the first parent; list them all when there are
         // several, so multiple inheritance is visible.
@@ -805,10 +830,10 @@ impl Renderer<'_> {
                 })
                 .collect::<Vec<_>>()
                 .join(", ");
-            out.push("<div class=\"inherits\">".to_string());
-            out.push("<div class=\"heading\">Inherits</div>".to_string());
-            out.push(format!("<div>{links}</div>"));
-            out.push("</div>".to_string());
+            out.push("<div class=\"inherits\">");
+            out.push("<div class=\"heading\">Inherits</div>");
+            out.line(format_args!("<div>{links}</div>"));
+            out.push("</div>");
         }
     }
 
@@ -857,25 +882,25 @@ impl Renderer<'_> {
         columns
     }
 
-    fn synopsis(&mut self, col: ItemId, columns: &Columns, out: &mut Vec<String>) {
+    fn synopsis(&mut self, col: ItemId, columns: &Columns, out: &mut Lines) {
         let fields = self.parser.item(col).fields.clone();
         let functions = self.parser.item(col).functions.clone();
         if fields.is_empty() && functions.is_empty() {
             return;
         }
-        out.push("<div class=\"synopsis\">".to_string());
+        out.push("<div class=\"synopsis\">");
         if !columns.fields_compact {
-            out.push("<h3>Synopsis</h3>".to_string());
+            out.push("<h3>Synopsis</h3>");
         }
 
         if !fields.is_empty() {
             if !functions.is_empty() || !columns.fields_compact {
-                out.push(format!(
+                out.line(format_args!(
                     "<div class=\"heading\">{}</div>",
                     columns.fields_title
                 ));
             }
-            out.push(format!(
+            out.line(format_args!(
                 "<table class=\"fields {}\">",
                 if columns.fields_compact {
                     "compact"
@@ -884,18 +909,18 @@ impl Renderer<'_> {
                 }
             ));
             for id in fields {
-                out.push("<tr>".to_string());
+                out.push("<tr>");
                 let enum_value = self.enum_value(col, id);
                 let item = self.parser.item(id);
                 let (name, title) = (item.name.clone(), item.title.clone());
                 if columns.fields_compact {
                     let marker = self.deprecated_marker(id);
                     let link = self.permalink(&name);
-                    out.push(format!(
+                    out.line(format_args!(
                         "<td class=\"name\"><var id=\"{name}\">{title}</var>{enum_value}{marker}{link}</td>"
                     ));
                 } else {
-                    out.push(format!(
+                    out.line(format_args!(
                         "<td class=\"name\"><a href=\"#{name}\"><var>{title}</var></a>{enum_value}</td>"
                     ));
                 }
@@ -903,17 +928,17 @@ impl Renderer<'_> {
                 let types = self.parser.item(id).types.clone();
                 if !types.is_empty() {
                     let html = self.types_html(&types);
-                    out.push(format!("<td class=\"meta types\">{html}</td>"));
+                    out.line(format_args!("<td class=\"meta types\">{html}</td>"));
                 } else if columns.fields_has_type {
-                    out.push("<td class=\"meta\"></td>".to_string());
+                    out.push("<td class=\"meta\"></td>");
                 }
                 if let Some(meta) = self.parser.item(id).meta.clone().filter(|m| !m.is_empty()) {
                     let html = self.markdown(&meta);
-                    out.push(format!("<td class=\"meta\">{html}</td>"));
+                    out.line(format_args!("<td class=\"meta\">{html}</td>"));
                     nmeta = nmeta.saturating_sub(1);
                 }
                 for _ in 0..nmeta {
-                    out.push("<td class=\"meta\"></td>".to_string());
+                    out.push("<td class=\"meta\"></td>");
                 }
                 let html = if columns.fields_compact {
                     self.synopsis_whole(id)
@@ -921,21 +946,21 @@ impl Renderer<'_> {
                     self.synopsis_first_sentence(id)
                 };
                 if !html.is_empty() {
-                    out.push(format!("<td class=\"doc\">{html}</td>"));
+                    out.line(format_args!("<td class=\"doc\">{html}</td>"));
                 }
-                out.push("</tr>".to_string());
+                out.push("</tr>");
             }
-            out.push("</table>".to_string());
+            out.push("</table>");
         }
 
         if !functions.is_empty() {
             if !self.parser.item(col).fields.is_empty() || !columns.functions_compact {
-                out.push(format!(
+                out.line(format_args!(
                     "<div class=\"heading\">{}</div>",
                     columns.functions_title
                 ));
             }
-            out.push(format!(
+            out.line(format_args!(
                 "<table class=\"functions {}\">",
                 if columns.functions_compact {
                     "compact"
@@ -944,7 +969,7 @@ impl Renderer<'_> {
                 }
             ));
             for id in functions {
-                out.push("<tr>".to_string());
+                out.push("<tr>");
                 let item = self.parser.item(id);
                 let in_class = item
                     .scope()
@@ -966,34 +991,34 @@ impl Renderer<'_> {
                         .join(", ");
                     let marker = self.deprecated_marker(id);
                     let link = self.permalink(&name);
-                    out.push(format!(
+                    out.line(format_args!(
                         "<td class=\"name\"><var id=\"{name}\">{display}</var>({params}){marker}{link}</td>"
                     ));
                 } else {
-                    out.push(format!(
+                    out.line(format_args!(
                         "<td class=\"name\"><a href=\"#{name}\"><var>{display}</var></a>()</td>"
                     ));
                 }
                 let mut nmeta = columns.functions_meta;
                 if let Some(meta) = self.parser.item(id).meta.clone().filter(|m| !m.is_empty()) {
                     // Raw, unlike a field's, which goes through markdown.
-                    out.push(format!("<td class=\"meta\">{meta}</td>"));
+                    out.line(format_args!("<td class=\"meta\">{meta}</td>"));
                     nmeta = nmeta.saturating_sub(1);
                 }
                 for _ in 0..nmeta {
-                    out.push("<td class=\"meta\"></td>".to_string());
+                    out.push("<td class=\"meta\"></td>");
                 }
                 let html = if columns.functions_compact {
                     self.synopsis_whole(id)
                 } else {
                     self.synopsis_first_sentence(id)
                 };
-                out.push(format!("<td class=\"doc\">{html}</td>"));
-                out.push("</tr>".to_string());
+                out.line(format_args!("<td class=\"doc\">{html}</td>"));
+                out.push("</tr>");
             }
-            out.push("</table>".to_string());
+            out.push("</table>");
         }
-        out.push("</div>".to_string());
+        out.push("</div>");
     }
 
     /// A synopsis cell of a row that has a detail box below it: the first sentence.
@@ -1041,58 +1066,58 @@ impl Renderer<'_> {
         }
     }
 
-    fn field_details(&mut self, col: ItemId, columns: &Columns, out: &mut Vec<String>) {
+    fn field_details(&mut self, col: ItemId, columns: &Columns, out: &mut Lines) {
         let fields = self.parser.item(col).fields.clone();
         if fields.is_empty() || columns.fields_compact {
             return;
         }
         if !self.parser.item(col).functions.is_empty() {
-            out.push(format!(
+            out.line(format_args!(
                 "<h3 class=\"fields\">{}</h3>",
                 columns.fields_title
             ));
         }
-        out.push("<dl class=\"fields\">".to_string());
+        out.push("<dl class=\"fields\">");
         for id in fields {
             let enum_value = self.enum_value(col, id);
             let item = self.parser.item(id);
             let (name, display) = (item.name.clone(), item.display.clone());
-            out.push(format!("<dt id=\"{name}\">"));
-            out.push(format!(
+            out.line(format_args!("<dt id=\"{name}\">"));
+            out.line(format_args!(
                 "<span class=\"icon\"></span><var>{display}</var>{enum_value}"
             ));
             let types = self.parser.item(id).types.clone();
             if !types.is_empty() {
                 let html = self.types_html(&types);
-                out.push(format!("<span class=\"tag type\">{html}</span>"));
+                out.line(format_args!("<span class=\"tag type\">{html}</span>"));
             }
             if let Some(meta) = self.parser.item(id).meta.clone().filter(|m| !m.is_empty()) {
-                out.push(format!("<span class=\"tag meta\">{meta}</span>"));
+                out.line(format_args!("<span class=\"tag meta\">{meta}</span>"));
             }
-            out.push(self.since(id));
-            out.push(self.permalink(&name));
-            out.push("</dt>".to_string());
-            out.push("<dd>".to_string());
+            out.push(&self.since(id));
+            out.push(&self.permalink(&name));
+            out.push("</dt>");
+            out.push("<dd>");
             self.parser.resolve_item_content(id);
             let content = &self.parser.item(id).content;
-            out.push(self.content_html(content));
-            out.push("</dd>".to_string());
+            out.push(&self.content_html(content));
+            out.push("</dd>");
         }
-        out.push("</dl>".to_string());
+        out.push("</dl>");
     }
 
-    fn function_details(&mut self, col: ItemId, columns: &Columns, out: &mut Vec<String>) {
+    fn function_details(&mut self, col: ItemId, columns: &Columns, out: &mut Lines) {
         let functions = self.parser.item(col).functions.clone();
         if functions.is_empty() || columns.functions_compact {
             return;
         }
         if !self.parser.item(col).fields.is_empty() {
-            out.push(format!(
+            out.line(format_args!(
                 "<h3 class=\"functions\">{}</h3>",
                 columns.functions_title
             ));
         }
-        out.push("<dl class=\"functions\">".to_string());
+        out.push("<dl class=\"functions\">");
         for id in functions {
             let item = self.parser.item(id);
             let (name, display) = (item.name.clone(), item.display.clone());
@@ -1102,20 +1127,20 @@ impl Renderer<'_> {
                 .map(|p| format!("<em>{}</em>", p.name))
                 .collect::<Vec<_>>()
                 .join(", ");
-            out.push(format!("<dt id=\"{name}\">"));
-            out.push(format!(
+            out.line(format_args!("<dt id=\"{name}\">"));
+            out.line(format_args!(
                 "<span class=\"icon\"></span><var>{display}</var>({params})"
             ));
             if let Some(meta) = self.parser.item(id).meta.clone().filter(|m| !m.is_empty()) {
-                out.push(format!("<span class=\"tag meta\">{meta}</span>"));
+                out.line(format_args!("<span class=\"tag meta\">{meta}</span>"));
             }
-            out.push(self.since(id));
-            out.push(self.permalink(&name));
-            out.push("</dt>".to_string());
-            out.push("<dd>".to_string());
+            out.push(&self.since(id));
+            out.push(&self.permalink(&name));
+            out.push("</dt>");
+            out.push("<dd>");
             self.parser.resolve_item_content(id);
             let content = &self.parser.item(id).content;
-            out.push(self.content_html(content));
+            out.push(&self.content_html(content));
 
             let params = self.parser.item(id).params.clone();
             // Only when at least one parameter carries a type or a description.
@@ -1123,70 +1148,74 @@ impl Renderer<'_> {
                 .iter()
                 .any(|p| !p.types.is_empty() || !p.content.is_empty())
             {
-                out.push("<div class=\"heading\">Parameters</div>".to_string());
-                out.push("<table class=\"parameters\">".to_string());
+                out.push("<div class=\"heading\">Parameters</div>");
+                out.push("<table class=\"parameters\">");
                 for param in &params {
-                    out.push("<tr>".to_string());
-                    out.push(format!("<td class=\"name\"><var>{}</var></td>", param.name));
+                    out.push("<tr>");
+                    out.line(format_args!(
+                        "<td class=\"name\"><var>{}</var></td>",
+                        param.name
+                    ));
                     let types = self.types_html(&param.types);
-                    out.push(format!("<td class=\"types\">({types})</td>"));
+                    out.line(format_args!("<td class=\"types\">({types})</td>"));
                     let mut content = param.content.clone();
                     self.parser.resolve_content(&mut content);
                     let html = self.content_html(&content);
-                    out.push(format!("<td class=\"doc\">{html}</td>"));
-                    out.push("</tr>".to_string());
+                    out.line(format_args!("<td class=\"doc\">{html}</td>"));
+                    out.push("</tr>");
                 }
-                out.push("</table>".to_string());
+                out.push("</table>");
             }
 
             let returns = self.parser.item(id).returns.clone();
             if !returns.is_empty() {
-                out.push("<div class=\"heading\">Return Values</div>".to_string());
-                out.push("<table class=\"returns\">".to_string());
+                out.push("<div class=\"heading\">Return Values</div>");
+                out.push("<table class=\"returns\">");
                 for (n, ret) in returns.iter().enumerate() {
-                    out.push("<tr>".to_string());
+                    out.push("<tr>");
                     if returns.len() > 1 {
-                        out.push(format!("<td class=\"name\">{}.</td>", n + 1));
+                        out.line(format_args!("<td class=\"name\">{}.</td>", n + 1));
                     }
                     let types = self.types_html(&ret.types);
-                    out.push(format!("<td class=\"types\">({types})</td>"));
+                    out.line(format_args!("<td class=\"types\">({types})</td>"));
                     let mut content = ret.content.clone();
                     self.parser.resolve_content(&mut content);
                     let html = self.content_html(&content);
-                    out.push(format!("<td class=\"doc\">{html}</td>"));
-                    out.push("</tr>".to_string());
+                    out.line(format_args!("<td class=\"doc\">{html}</td>"));
+                    out.push("</tr>");
                 }
-                out.push("</table>".to_string());
+                out.push("</table>");
             }
-            out.push("</dd>".to_string());
+            out.push("</dd>");
         }
-        out.push("</dl>".to_string());
+        out.push("</dl>");
     }
 
     // -- the search page, the landing page and the index ------------------------
 
     fn search_page(&mut self) -> String {
-        let mut lines = Vec::new();
+        let mut lines = Lines::new();
         self.frame_open(self.search, &mut lines);
         let root = self.root();
         let fields = BTreeMap::from([("root", root.as_str()), ("version", self.version.as_str())]);
-        lines.push(format_template(&self.templates.search, &fields));
+        lines.push(&format_template(&self.templates.search, &fields));
         self.frame_close(&mut lines);
-        lines.join("\n")
+        lines.finish()
     }
 
     /// The same frame with an empty body, reusing the search pseudo-page so the link
     /// paths come out right.
     fn landing_page(&mut self) -> String {
-        let mut lines = Vec::new();
+        let mut lines = Lines::new();
         self.frame_open(self.search, &mut lines);
         self.frame_close(&mut lines);
-        lines.join("\n")
+        lines.finish()
     }
 
     fn search_index(&mut self) -> String {
         self.parser.focus(self.search);
-        let mut lines = vec!["var docs = [".to_string()];
+        let mut lines = Lines::new();
+        lines.push("var docs = [");
         for kind in [
             Kind::Class,
             Kind::Module,
@@ -1196,11 +1225,11 @@ impl Renderer<'_> {
         ] {
             let ids = self.parser.of_kind(kind).to_vec();
             for id in ids {
-                lines.push(self.search_entry(id, kind));
+                lines.push(&self.search_entry(id, kind));
             }
         }
-        lines.push("];".to_string());
-        lines.join("\n")
+        lines.push("];");
+        lines.finish()
     }
 
     fn search_entry(&mut self, id: ItemId, kind: Kind) -> String {
