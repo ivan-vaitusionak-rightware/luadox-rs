@@ -211,7 +211,7 @@ rather than dead:
   section is scoped `[topref]`.
 
 Both are ported anyway. `Category::ALL` is the union of what the two Python branches
-declare, and it is printed verbatim when `allow_incomplete` names something unknown, so
+declare, and an unknown name in `allow_incomplete` is an error that lists them, so
 dropping a member would change output.
 
 ### The three design decisions that cost the most to get right

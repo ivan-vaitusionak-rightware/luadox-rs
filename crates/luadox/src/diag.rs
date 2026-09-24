@@ -2,9 +2,13 @@
 //!
 //! A category is an enum, not a string: the Python's two branches disagreed on which
 //! categories exist, and a typo in `allow_incomplete` there silently accepted nothing.
+//! Here it is an error at the edge, where the name is parsed.
 
 use std::collections::BTreeSet;
 use std::fmt;
+use std::str::FromStr;
+
+use crate::Error;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Category {
@@ -45,9 +49,16 @@ impl Category {
             Self::Untyped => "untyped",
         }
     }
+}
 
-    pub fn parse(name: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|c| c.as_str() == name)
+impl FromStr for Category {
+    type Err = Error;
+
+    fn from_str(name: &str) -> Result<Self, Error> {
+        Self::ALL
+            .into_iter()
+            .find(|c| c.as_str() == name)
+            .ok_or_else(|| Error::UnknownCategory(name.to_string()))
     }
 }
 
@@ -69,31 +80,15 @@ pub struct Entry {
 pub struct Diagnostics {
     allowed: BTreeSet<Category>,
     entries: Vec<Entry>,
-    /// Names in `allow_incomplete` that are not categories, kept so the run can say so
-    /// once rather than silently accepting nothing.
-    pub unknown_allowed: Vec<String>,
 }
 
 impl Diagnostics {
-    /// Parses `allow_incomplete`, which is a comma- or whitespace-separated list.
-    pub fn from_allow_incomplete(value: &str) -> Self {
-        let mut allowed = BTreeSet::new();
-        let mut unknown = Vec::new();
-        for name in value
-            .split([',', ' ', '\t', '\n', '\r'])
-            .filter(|s| !s.is_empty())
-        {
-            match Category::parse(name) {
-                Some(cat) => {
-                    allowed.insert(cat);
-                }
-                None => unknown.push(name.to_string()),
-            }
-        }
+    /// Diagnostics whose `allowed` categories leave the documentation incomplete without
+    /// failing the run.
+    pub fn allowing(allowed: BTreeSet<Category>) -> Self {
         Self {
             allowed,
             entries: Vec::new(),
-            unknown_allowed: unknown,
         }
     }
 

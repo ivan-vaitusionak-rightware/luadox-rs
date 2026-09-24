@@ -43,6 +43,8 @@ pub enum Error {
     },
     NoInput,
     UnknownRenderer(String),
+    /// An `allow_incomplete` name that is not a diagnostic category.
+    UnknownCategory(String),
     UnsupportedEncoding(String),
     FollowUnsupported,
     /// A `--manual` argument that is not `id=filename`.
@@ -78,6 +80,14 @@ impl fmt::Display for Error {
                     f,
                     "unknown renderer \"{name}\", valid types are: {}",
                     valid.join(", ")
+                )
+            }
+            Self::UnknownCategory(name) => {
+                let known: Vec<&str> = Category::ALL.iter().map(|c| c.as_str()).collect();
+                write!(
+                    f,
+                    "unknown allow_incomplete category \"{name}\" (known: {})",
+                    known.join(", ")
                 )
             }
             Self::UnsupportedEncoding(encoding) => write!(
@@ -160,7 +170,8 @@ pub struct Options {
     pub out: Option<String>,
     pub name: Option<String>,
     pub snippet_path: Option<String>,
-    pub allow_incomplete: Option<String>,
+    /// Empty when the command line did not name any, leaving the configuration's list.
+    pub allow_incomplete: Vec<Category>,
     pub manual: Vec<String>,
     pub diagnostics_json: Option<PathBuf>,
     pub diagnostics_root: Option<PathBuf>,
@@ -193,19 +204,6 @@ pub fn run(options: &Options) -> Result<Outcome, Error> {
     }
 
     let mut parser = Parser::new(settings);
-    for name in parser.diagnostics.unknown_allowed.clone() {
-        let known: Vec<&str> = Category::ALL.iter().map(|c| c.as_str()).collect();
-        parser.diagnostics.add(
-            Category::Structure,
-            format!(
-                "ignoring unknown allow_incomplete category {name} (known: {})",
-                known.join(", ")
-            ),
-            None,
-            None,
-        );
-    }
-
     for path in &files {
         let text = read(path)?;
         let name = path.to_string_lossy().to_string();
@@ -289,11 +287,18 @@ fn build_config(options: &Options) -> Result<Config, Error> {
         ("name", &options.name),
         ("out", &options.out),
         ("snippet_path", &options.snippet_path),
-        ("allow_incomplete", &options.allow_incomplete),
     ] {
         if let Some(value) = value {
             config.set("project", key, value.clone());
         }
+    }
+    if !options.allow_incomplete.is_empty() {
+        let names: Vec<&str> = options
+            .allow_incomplete
+            .iter()
+            .map(|c| c.as_str())
+            .collect();
+        config.set("project", "allow_incomplete", names.join(","));
     }
     for spec in &options.manual {
         let Some((id, path)) = spec.split_once('=') else {

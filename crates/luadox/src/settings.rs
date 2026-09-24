@@ -5,9 +5,11 @@
 //! -- which of `out` and `outdir` wins, what a page is titled when no `title` is set --
 //! is written in one place rather than once per renderer.
 
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 use crate::config::Config;
+use crate::diag::Category;
 use crate::util;
 use crate::{Error, Renderer};
 
@@ -29,7 +31,9 @@ pub struct Settings {
     pub js: Vec<String>,
     pub favicon: Vec<String>,
     pub templates: Templates,
-    pub allow_incomplete: String,
+    /// The diagnostic categories that leave the documentation incomplete without failing
+    /// the run.
+    pub allow_incomplete: BTreeSet<Category>,
     pub encoding: String,
     pub follow: bool,
     /// The `[manual]` pages as `(name, path)`, in file order, which is their render
@@ -119,7 +123,12 @@ impl Settings {
                 search: project("search_template"),
                 sidebar: project("sidebar_template"),
             },
-            allow_incomplete: config.get_or("project", "allow_incomplete", ""),
+            allow_incomplete: config
+                .get_or("project", "allow_incomplete", "")
+                .split([',', ' ', '\t', '\n', '\r'])
+                .filter(|name| !name.is_empty())
+                .map(str::parse)
+                .collect::<Result<_, _>>()?,
             encoding: config.get_or("project", "encoding", "utf8"),
             follow: config.get_bool("project", "follow", true),
             manual: config.items("manual").to_vec(),
@@ -365,6 +374,19 @@ mod tests {
         assert!(matches!(
             Settings::from_config(&config),
             Err(Error::UnknownRenderer(name)) if name == "pdf"
+        ));
+    }
+
+    #[test]
+    fn allow_incomplete_is_a_set_of_categories_and_an_unknown_name_is_an_error() {
+        assert_eq!(
+            settings("[project]\nallow_incomplete = types, untyped\n").allow_incomplete,
+            BTreeSet::from([Category::Types, Category::Untyped])
+        );
+        let config = Config::parse("[project]\nallow_incomplete = typos\n").unwrap_or_default();
+        assert!(matches!(
+            Settings::from_config(&config),
+            Err(Error::UnknownCategory(name)) if name == "typos"
         ));
     }
 

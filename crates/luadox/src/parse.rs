@@ -144,7 +144,7 @@ impl Parser {
             named: HashSet::new(),
             topsymed: HashSet::new(),
             within_topsym: HashMap::new(),
-            diagnostics: Diagnostics::from_allow_incomplete(&settings.allow_incomplete),
+            diagnostics: Diagnostics::allowing(settings.allow_incomplete.clone()),
             settings,
             ctx: Context::default(),
             requires: Vec::new(),

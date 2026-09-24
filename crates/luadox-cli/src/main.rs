@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::Parser;
+use luadox::diag::Category;
 use luadox::{Options, Renderer};
 
 #[derive(Parser)]
@@ -31,8 +32,8 @@ struct Args {
 
     /// diagnostic categories that may leave the documentation incomplete without failing
     /// the run
-    #[arg(long, value_name = "CATS")]
-    allow_incomplete: Option<String>,
+    #[arg(long, value_name = "CATS", value_delimiter = ',')]
+    allow_incomplete: Vec<Category>,
 
     /// add a manual page
     #[arg(short, long, value_name = "ID=FILE")]
