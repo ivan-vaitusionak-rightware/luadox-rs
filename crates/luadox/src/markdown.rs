@@ -578,9 +578,9 @@ mod tests {
     use crate::ir::Markdown;
 
     fn content(text: &str) -> Content {
-        let mut md = Markdown::new(false);
-        md.append(text);
-        Content(vec![Fragment::Markdown(md)])
+        Content(vec![Fragment::Markdown(Markdown::Resolved(
+            text.to_string(),
+        ))])
     }
 
     #[test]
@@ -616,9 +616,9 @@ mod tests {
 
     #[test]
     fn an_admonition_body_counts_because_it_lands_in_the_same_cell() {
-        let mut inner = Markdown::new(false);
-        inner.append("```lua\nx()\n```");
-        let body = Content(vec![Fragment::Markdown(inner)]);
+        let body = Content(vec![Fragment::Markdown(Markdown::Resolved(
+            "```lua\nx()\n```".to_string(),
+        ))]);
         let c = Content(vec![Fragment::Admonition {
             level: crate::ir::AdmonitionLevel::Note,
             title: "Note".to_string(),

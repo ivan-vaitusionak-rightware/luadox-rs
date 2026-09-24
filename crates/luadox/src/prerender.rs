@@ -222,7 +222,7 @@ fn apply_deprecated(parser: &mut Parser, id: ItemId) {
     };
     let mut body = Content::default();
     if !explanation.is_empty() {
-        body.md(true).append(explanation);
+        body.md().append(explanation);
     }
     parser.item_mut(id).content.insert(
         0,

@@ -94,7 +94,7 @@ impl Parser {
                 let Some(done) = stack.pop() else { break };
                 if done.tag.as_ref().is_some_and(|t| t.as_code().is_some()) {
                     if let Some(body) = bodies.get_mut(done.body) {
-                        let md = body.md(true);
+                        let md = body.md();
                         md.rstrip();
                         md.append("```\n");
                     }
@@ -113,7 +113,7 @@ impl Parser {
                 let at = *dedent.get_or_insert(indent);
                 let line: String = text.chars().skip(at).collect();
                 if let Some(body) = bodies.get_mut(parent) {
-                    body.md(true).append(line);
+                    body.md().append(line);
                 }
                 continue;
             };
@@ -133,13 +133,13 @@ impl Parser {
             if let Some((lang, snippet)) = tag.as_code() {
                 if let Some(heading) = tag.code_heading() {
                     if let Some(content) = bodies.get_mut(parent) {
-                        content.md(true).append(format!("##### {heading}\n"));
+                        content.md().append(format!("##### {heading}\n"));
                     }
                 }
                 let lang = lang.unwrap_or("lua").to_string();
                 let snippet = snippet.map(str::to_string);
                 if let Some(content) = bodies.get_mut(parent) {
-                    content.md(true).append(format!("```{lang}"));
+                    content.md().append(format!("```{lang}"));
                 }
                 dedent = None;
                 if let Some(snippet) = snippet {
@@ -169,7 +169,7 @@ impl Parser {
                 Tag::Deprecated(desc) => {
                     if let Some(desc) = desc {
                         if let Some(content) = bodies.get_mut(body) {
-                            content.md(true).append(desc.clone());
+                            content.md().append(desc.clone());
                         }
                     }
                     if let Some(content) = bodies.get_mut(parent) {
@@ -185,7 +185,7 @@ impl Parser {
                 Tag::Param { types, name, desc } => {
                     if let Some(desc) = desc {
                         if let Some(content) = bodies.get_mut(body) {
-                            content.md(true).append(desc.clone());
+                            content.md().append(desc.clone());
                         }
                     }
                     // A repeated `@tparam` for the same name replaces the first in place,
@@ -198,7 +198,7 @@ impl Parser {
                 Tag::Return { types, desc } => {
                     if let Some(desc) = desc {
                         if let Some(content) = bodies.get_mut(body) {
-                            content.md(true).append(desc.clone());
+                            content.md().append(desc.clone());
                         }
                     }
                     returns.push((types.clone(), body));
@@ -269,7 +269,7 @@ impl Parser {
                 match std::fs::read_to_string(&path) {
                     Ok(text) => {
                         if let Some(content) = bodies.get_mut(parent) {
-                            let md = content.md(true);
+                            let md = content.md();
                             for line in text.lines() {
                                 md.append(line);
                             }
@@ -291,9 +291,7 @@ impl Parser {
         // Keep the omission visible, so an allowed `snippets` category cannot publish an
         // empty code block.
         if let Some(content) = bodies.get_mut(parent) {
-            content
-                .md(true)
-                .append(format!("MISSING SNIPPET: {snippet}"));
+            content.md().append(format!("MISSING SNIPPET: {snippet}"));
         }
     }
 
@@ -416,14 +414,11 @@ impl Parser {
         for index in 0..content.0.len() {
             match content.0.get_mut(index) {
                 Some(Fragment::Markdown(md)) => {
-                    if md.is_resolved() || !md.resolve {
+                    let Markdown::Pending(lines) = md else {
                         continue;
-                    }
-                    let raw = md.raw();
-                    let resolved = self.resolve_text(&raw);
-                    if let Some(Fragment::Markdown(md)) = content.0.get_mut(index) {
-                        md.set_resolved(resolved);
-                    }
+                    };
+                    let resolved = self.resolve_text(&lines.join("\n"));
+                    *md = Markdown::Resolved(resolved);
                 }
                 Some(Fragment::Admonition { .. }) => {
                     let Some(Fragment::Admonition { content: body, .. }) = content.0.get_mut(index)
@@ -470,22 +465,19 @@ impl Parser {
     /// fragment that is not markdown yields nothing, which is how a section that opens
     /// with an admonition keeps its own name as its heading.
     pub fn take_first_sentence(&mut self, content: &mut Content) -> String {
-        let Some(Fragment::Markdown(md)) = content.0.first() else {
-            return String::new();
-        };
-        let raw = md.raw();
-        let already = md.is_resolved() || !md.resolve;
-        let resolved = if already {
-            raw
-        } else {
-            Cow::Owned(self.resolve_text(&raw))
+        let resolved = match content.0.first() {
+            Some(Fragment::Markdown(Markdown::Resolved(text))) => Cow::Borrowed(text.as_str()),
+            Some(Fragment::Markdown(Markdown::Pending(lines))) => {
+                Cow::Owned(self.resolve_text(&lines.join("\n")))
+            }
+            _ => return String::new(),
         };
         let (first, rest) = util::first_sentence(&resolved);
         let (first, rest) = (first.to_string(), rest.to_string());
         if rest.is_empty() {
             content.0.remove(0);
         } else if let Some(slot) = content.0.first_mut() {
-            *slot = Fragment::Markdown(Markdown::resolved(rest));
+            *slot = Fragment::Markdown(Markdown::Resolved(rest));
         }
         first
     }

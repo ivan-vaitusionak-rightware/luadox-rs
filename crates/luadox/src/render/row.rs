@@ -39,9 +39,9 @@ mod tests {
     use crate::ir::{Content, Fragment, Markdown};
 
     fn row(text: &str) -> RowContent {
-        let mut md = Markdown::new(false);
-        md.append(text);
-        let content = Content(vec![Fragment::Markdown(md)]);
+        let content = Content(vec![Fragment::Markdown(Markdown::Resolved(
+            text.to_string(),
+        ))]);
         match RowContent::try_from(&content) {
             Ok(row) => row,
             Err(e) => panic!("prose must fit a row, got {e}"),

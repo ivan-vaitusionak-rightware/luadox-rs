@@ -199,63 +199,43 @@ impl RawLine {
     }
 }
 
+/// The markdown text of a content tree, accumulated line by line as a block is read. Its
+/// cross references resolve against the page being rendered, so they stay pending until a
+/// renderer asks for the text.
 #[derive(Debug, Clone)]
-pub struct Markdown {
-    lines: Vec<String>,
-    value: Option<String>,
-    /// Whether cross references in the text still have to be resolved to links. False for
-    /// text that was resolved before being split, such as the remainder left behind by
-    /// `first_sentence`.
-    pub resolve: bool,
+pub enum Markdown {
+    /// Lines as written, whose `@{ref}` cross references still have to be resolved.
+    Pending(Vec<String>),
+    /// Text with its cross references resolved -- or with none left to resolve, such as
+    /// the remainder `first_sentence` leaves behind.
+    Resolved(String),
 }
 
 impl Markdown {
-    pub fn new(resolve: bool) -> Self {
-        Self {
-            lines: Vec::new(),
-            value: None,
-            resolve,
-        }
-    }
-
-    pub fn resolved(value: String) -> Self {
-        Self {
-            lines: Vec::new(),
-            value: Some(value),
-            resolve: false,
-        }
-    }
-
     pub fn append(&mut self, line: impl Into<String>) {
-        self.lines.push(line.into());
+        match self {
+            Self::Pending(lines) => lines.push(line.into()),
+            Self::Resolved(text) => {
+                text.push('\n');
+                text.push_str(&line.into());
+            }
+        }
     }
 
     /// Drops trailing whitespace from everything accumulated so far, which is how a code
     /// block avoids a blank line before its closing fence.
     pub fn rstrip(&mut self) {
-        let joined = self.lines.join("\n");
-        self.lines = vec![joined.trim_end().to_string()];
-    }
-
-    /// The text as written, before cross references are resolved.
-    pub fn raw(&self) -> Cow<'_, str> {
-        match &self.value {
-            Some(v) => Cow::Borrowed(v),
-            None => Cow::Owned(self.lines.join("\n")),
+        match self {
+            Self::Pending(lines) => *lines = vec![lines.join("\n").trim_end().to_string()],
+            Self::Resolved(text) => text.truncate(text.trim_end().len()),
         }
     }
 
-    pub fn is_resolved(&self) -> bool {
-        self.value.is_some()
-    }
-
-    pub fn set_resolved(&mut self, value: String) {
-        self.lines.clear();
-        self.value = Some(value);
-    }
-
     pub fn get(&self) -> Cow<'_, str> {
-        self.raw()
+        match self {
+            Self::Pending(lines) => Cow::Owned(lines.join("\n")),
+            Self::Resolved(text) => Cow::Borrowed(text),
+        }
     }
 }
 
@@ -324,11 +304,15 @@ impl Content {
         self.0.insert(at.min(self.0.len()), fragment);
     }
 
-    /// The trailing markdown fragment, appending a new one when the last fragment is
-    /// something else.
-    pub fn md(&mut self, resolve: bool) -> &mut Markdown {
-        if !matches!(self.0.last(), Some(Fragment::Markdown(_))) {
-            self.0.push(Fragment::Markdown(Markdown::new(resolve)));
+    /// The trailing pending markdown fragment, appending a new one when the last fragment
+    /// is something else.
+    pub fn md(&mut self) -> &mut Markdown {
+        if !matches!(
+            self.0.last(),
+            Some(Fragment::Markdown(Markdown::Pending(_)))
+        ) {
+            self.0
+                .push(Fragment::Markdown(Markdown::Pending(Vec::new())));
         }
         match self.0.last_mut() {
             Some(Fragment::Markdown(md)) => md,
