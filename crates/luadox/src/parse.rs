@@ -9,7 +9,6 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::config::Config;
 use crate::diag::{Category, Diagnostics};
 use crate::ir::{Flags, Item, ItemId, Kind, Order, RawLine, RefId, SeeRef};
 use crate::lua::{self, SourceFile};
@@ -51,7 +50,6 @@ pub struct Parser {
     /// Elements whose `@within` target was traced to a page, once per element.
     pub within_topsym: HashMap<ItemId, String>,
     pub diagnostics: Diagnostics,
-    pub config: Config,
     pub settings: Settings,
     pub ctx: Context,
     /// Modules discovered through `require()`, for a run that follows them.
@@ -61,7 +59,7 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(config: Config, settings: Settings) -> Self {
+    pub fn new(settings: Settings) -> Self {
         Self {
             items: Vec::new(),
             refs: HashMap::new(),
@@ -76,7 +74,6 @@ impl Parser {
             topsymed: HashSet::new(),
             within_topsym: HashMap::new(),
             diagnostics: Diagnostics::from_allow_incomplete(&settings.allow_incomplete),
-            config,
             settings,
             ctx: Context::default(),
             requires: Vec::new(),

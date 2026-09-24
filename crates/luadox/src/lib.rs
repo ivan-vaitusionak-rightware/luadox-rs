@@ -152,7 +152,7 @@ pub fn run(options: &Options) -> Result<Outcome, Error> {
         ));
     }
 
-    let mut parser = Parser::new(config, settings);
+    let mut parser = Parser::new(settings);
     for name in parser.diagnostics.unknown_allowed.clone() {
         let known: Vec<&str> = Category::ALL.iter().map(|c| c.as_str()).collect();
         parser.diagnostics.add(

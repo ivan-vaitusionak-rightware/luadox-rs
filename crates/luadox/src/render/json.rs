@@ -18,11 +18,11 @@ pub fn render(parser: &mut Parser, toprefs: &[ItemId]) -> Json {
     let mut project = Json::obj();
     project.set("apiVersion", "v1alpha1".into());
     project.set("kind", "luadox".into());
-    if let Some(name) = parser.config.get("project", "name").map(str::to_string) {
-        project.set("name", name.into());
+    if let Some(name) = &parser.settings.name {
+        project.set("name", name.as_str().into());
     }
-    if let Some(title) = parser.config.get("project", "title").map(str::to_string) {
-        project.set("title", title.into());
+    if let Some(title) = &parser.settings.title {
+        project.set("title", title.as_str().into());
     }
 
     let mut classes = Vec::new();

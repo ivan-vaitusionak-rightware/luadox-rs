@@ -568,7 +568,7 @@ mod tests {
         let Ok(settings) = Settings::from_config(&Config::default()) else {
             panic!("an empty configuration must be valid");
         };
-        let mut parser = Parser::new(Config::default(), settings);
+        let mut parser = Parser::new(settings);
         parser.parse_manual(
             "index",
             "manual.md",
