@@ -1,0 +1,17 @@
+{
+  "allowed": [],
+  "diagnostics": [
+    {
+      "category": "types",
+      "file": "multiple_assignment.lua",
+      "line": 9,
+      "message": "type name \"tab\" does not resolve to a documented class or table"
+    },
+    {
+      "category": "types",
+      "file": "multiple_assignment.lua",
+      "line": 9,
+      "message": "type name \"tab\" does not resolve to a documented class or table"
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "apiVersion": "v1alpha1",
+  "kind": "luadox",
+  "name": "LuaDox Fixture",
+  "title": "Fixture",
+  "classes": [
+    {
+      "id": "14146b39b2d575703652cbe7b114afcfb44201ed",
+      "type": "class",
+      "name": "Chord",
+      "sections": [
+        {
+          "id": "14146b39b2d575703652cbe7b114afcfb44201ed",
+          "type": "class",
+          "symbol": "Chord",
+          "heading": "Chord",
+          "content": [
+            {
+              "type": "markdown",
+              "value": "A chord, analysed from notes."
+            }
+          ],
+          "fields": [
+            {
+              "id": "5532392c122f3a2df019c7fce527be37269c1eae",
+              "name": "Chord.root",
+              "display": "Chord.root",
+              "types": [
+                {
+                  "name": "string"
+                }
+              ],
+              "value": "Chord.analyze(notes)",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "The root note, assigned alongside a local in one statement."
+                }
+              ]
+            },
+            {
+              "id": "17f597a84c69ccd471208f012ebf3282e580506e",
+              "name": "Chord.second",
+              "display": "Chord.second",
+              "types": [
+                {
+                  "name": "int"
+                }
+              ],
+              "value": "1, 2",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Two locals in one statement; the one before the `=` is documented."
+                }
+              ]
+            }
+          ],
+          "functions": [
+            {
+              "id": "c737d03b335f06e29384aa1117acf50f2ef199ba",
+              "name": "Chord.analyze",
+              "display": "Chord.analyze",
+              "content": [
+                {
+                  "type": "markdown",
+                  "value": "Sorts notes and finds the root."
+                }
+              ],
+              "params": [
+                {
+                  "name": "notes",
+                  "types": [
+                    {
+                      "name": "tab"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "the notes to analyse"
+                    }
+                  ]
+                }
+              ],
+              "returns": [
+                {
+                  "types": [
+                    {
+                      "name": "tab"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "the notes in chord order"
+                    }
+                  ]
+                },
+                {
+                  "types": [
+                    {
+                      "name": "string"
+                    }
+                  ],
+                  "content": [
+                    {
+                      "type": "markdown",
+                      "value": "the root note"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "manuals": []
+}

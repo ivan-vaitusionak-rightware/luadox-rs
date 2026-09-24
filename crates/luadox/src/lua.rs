@@ -12,12 +12,13 @@
 
 use std::collections::{BTreeMap, HashSet};
 
+use full_moon::ast::punctuated::Punctuated;
 use full_moon::ast::{
     Assignment, Expression, Field, FunctionBody, FunctionDeclaration, Index, LocalAssignment,
     LocalFunction, Suffix, Var,
 };
 use full_moon::node::Node;
-use full_moon::tokenizer::{Token, TokenType};
+use full_moon::tokenizer::{Position, Token, TokenType};
 use full_moon::visitors::Visitor;
 
 /// An assignment as the source writes it: the name assigned to, and the literal
@@ -220,6 +221,10 @@ impl Collector<'_> {
     /// value that fits on its line keeps its spacing exactly as written.
     fn text(&self, node: &impl Node) -> Option<String> {
         let (start, end) = node.range()?;
+        self.text_between(start, end)
+    }
+
+    fn text_between(&self, start: Position, end: Position) -> Option<String> {
         let raw = self.source.get(start.bytes()..end.bytes())?;
         if raw.contains('\n') {
             Some(raw.split_whitespace().collect::<Vec<_>>().join(" "))
@@ -235,17 +240,26 @@ impl Collector<'_> {
             .collect()
     }
 
-    fn add_assignment(&mut self, line: u32, symbol: String, value: Option<&Expression>) {
-        let value = match value {
-            // `X = function(a, b)` is a field with no value in the Python, because
-            // `_parse_field` matches the assignment first and then refuses a value that
-            // starts with `function`.
-            Some(Expression::Function(_)) | None => None,
-            Some(expr) => self.text(expr),
-        };
+    fn add_assignment(&mut self, line: u32, symbol: String, value: Option<String>) {
         self.assignments
             .entry(line)
             .or_insert(FieldDecl { symbol, value });
+    }
+
+    /// The literal a field is assigned: the whole right-hand side, several expressions
+    /// included, which is what the Python takes after the `=`.
+    fn value_text(&self, expressions: &Punctuated<Expression>) -> Option<String> {
+        let first = expressions.iter().next()?;
+        // `X = function(a, b)` is a field with no value in the Python, because
+        // `_parse_field` matches the assignment first and then refuses a value that
+        // starts with `function`.
+        if matches!(first, Expression::Function(_)) {
+            return None;
+        }
+        let last = expressions.iter().last()?;
+        let (start, _) = first.range()?;
+        let (_, end) = last.range()?;
+        self.text_between(start, end)
     }
 
     /// The name the Python's `_parse_field` regexes would produce.
@@ -296,8 +310,11 @@ impl Visitor for Collector<'_> {
         self.functions.entry(line).or_insert(decl);
     }
 
+    // Of several targets, the one written last is the field: the Python's regex takes
+    // the name directly before the `=`, so `local_var, self.field = f()` documents
+    // `self.field`.
     fn visit_assignment(&mut self, node: &Assignment) {
-        let Some(var) = node.variables().iter().next() else {
+        let Some(var) = node.variables().iter().last() else {
             return;
         };
         let Some(pos) = var.start_position() else {
@@ -306,19 +323,19 @@ impl Visitor for Collector<'_> {
         let Some(name) = self.var_name(var) else {
             return;
         };
-        let value = node.expressions().iter().next();
+        let value = self.value_text(node.expressions());
         self.add_assignment(pos.line() as u32, name, value);
     }
 
     fn visit_local_assignment(&mut self, node: &LocalAssignment) {
-        let Some(name) = node.names().iter().next() else {
+        let Some(name) = node.names().iter().last() else {
             return;
         };
         let Some(pos) = node.local_token().start_position() else {
             return;
         };
         let line = pos.line() as u32;
-        let value = node.expressions().iter().next();
+        let value = self.value_text(node.expressions());
         self.add_assignment(line, name.token().to_string(), value);
     }
 
@@ -338,7 +355,11 @@ impl Visitor for Collector<'_> {
             ), // a token always has a position
             _ => return,
         };
-        self.add_assignment(line, name, Some(value));
+        let value = match value {
+            Expression::Function(_) => None,
+            value => self.text(value),
+        };
+        self.add_assignment(line, name, value);
     }
 }
 
@@ -429,6 +450,22 @@ function L:real() end
         assert_eq!(d.symbol, "M.f");
         assert_eq!(d.value, None);
         assert!(!file.functions.contains_key(&1));
+    }
+
+    /// The Python's `_parse_field` regex takes the name directly before the `=` and
+    /// everything after it.
+    #[test]
+    fn a_multiple_assignment_documents_the_last_target_with_the_whole_right_hand_side() {
+        let Some(d) = field("notes, self.root = analyze(notes)\n", 1) else {
+            panic!("an assignment is a declaration");
+        };
+        assert_eq!(d.symbol, "self.root");
+        assert_eq!(d.value.as_deref(), Some("analyze(notes)"));
+        let Some(d) = field("local first, second = 1, 2\n", 1) else {
+            panic!("a local assignment is a declaration");
+        };
+        assert_eq!(d.symbol, "second");
+        assert_eq!(d.value.as_deref(), Some("1, 2"));
     }
 
     #[test]
