@@ -21,6 +21,7 @@ pub mod markdown;
 pub mod parse;
 pub mod prerender;
 pub mod render;
+pub mod settings;
 pub mod tags;
 pub mod util;
 
