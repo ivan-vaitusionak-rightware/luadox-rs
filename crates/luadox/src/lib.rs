@@ -178,9 +178,10 @@ pub struct Options {
     pub nofollow: bool,
 }
 
-/// What a run reports on the way out: the process exit code plus the lines a human reads.
+/// What a run reports on the way out: whether the documentation is incomplete in a way
+/// the project did not allow, plus the lines a human reads.
 pub struct Outcome {
-    pub exit_code: i32,
+    pub failed: bool,
     pub summary: Vec<String>,
     pub output: PathBuf,
 }
@@ -228,7 +229,7 @@ pub fn run(options: &Options) -> Result<Outcome, Error> {
                 write_diagnostics(&parser, path, options.diagnostics_root.as_deref())?;
             }
             return Ok(Outcome {
-                exit_code: parser.diagnostics.exit_code(),
+                failed: parser.diagnostics.failed(),
                 summary: parser.diagnostics.summary(),
                 output: out.join(format!("{written} files")),
             });
@@ -251,7 +252,7 @@ pub fn run(options: &Options) -> Result<Outcome, Error> {
     }
 
     Ok(Outcome {
-        exit_code: parser.diagnostics.exit_code(),
+        failed: parser.diagnostics.failed(),
         summary: parser.diagnostics.summary(),
         output: out,
     })

@@ -101,7 +101,7 @@ fn main() -> ExitCode {
                 eprintln!("{line}");
             }
             eprintln!("rendered to {}", outcome.output.display());
-            ExitCode::from(outcome.exit_code as u8)
+            ExitCode::from(u8::from(outcome.failed))
         }
         Err(e) => {
             eprintln!("error: {e}");

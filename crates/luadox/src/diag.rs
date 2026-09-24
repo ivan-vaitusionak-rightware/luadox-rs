@@ -122,13 +122,11 @@ impl Diagnostics {
             .count()
     }
 
-    /// 1 if any category with entries was not accepted with `allow_incomplete`.
-    pub fn exit_code(&self) -> i32 {
-        let failing = self
-            .entries
+    /// Whether any category with entries was not accepted with `allow_incomplete`.
+    pub fn failed(&self) -> bool {
+        self.entries
             .iter()
-            .any(|e| !self.allowed.contains(&e.category));
-        i32::from(failing)
+            .any(|e| !self.allowed.contains(&e.category))
     }
 
     /// One line per category, allowed ones first marked as such: what a run reports on
