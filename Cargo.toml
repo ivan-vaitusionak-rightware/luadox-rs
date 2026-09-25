@@ -1,13 +1,7 @@
-# The Rust luadox.  Laid out the way it will sit under `scripts/rust` in the ui
-# repository -- same toolchain pin, same lint wall -- so landing it there is a directory
-# move rather than a port.
-#
-# `spike/` and `fallback-probe/` stay outside the workspace: they are Phase 1 evidence,
-# pinned to the crates they were measuring, and nothing here depends on them.
+# luadox, rewritten in Rust.
 [workspace]
 resolver = "2"
-members = ["crates/luadox", "crates/luadox-cli", "crates/md-probe"]
-exclude = ["spike", "fallback-probe", "oracle"]
+members = ["crates/luadox", "crates/luadox-cli"]
 
 [workspace.package]
 version = "0.1.0"
@@ -22,7 +16,6 @@ full_moon = { version = "=2.2.0", features = ["lua54", "luajit"] }
 blake2 = "0.10"
 glob = "0.3"
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
 clap = { version = "4", features = ["derive"] }
 # 0.50 and newer are edition 2024, which needs Cargo 1.85; the workspace is pinned to
 # 1.83.  0.49.0 is the newest that builds here.  Pinned exactly, like the parser: a

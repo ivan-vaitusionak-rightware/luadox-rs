@@ -1,15 +1,8 @@
-# The Python oracle is a clone of the fork, with its own history. Its exact commit is
-# recorded in golden/provenance.json and its patches in oracle-patches/, so it can be
-# rebuilt; it is not vendored here.
-/oracle/
 /_build/
-/spike/target/
-
-__pycache__/
-/fallback-probe/target/
 /target/
+__pycache__/
 
-# Golden data is recorded from the production corpus and names its files and symbols;
-# it is rebuilt with `harness/oracle_run.py --record` and not vendored here.
+# Local comparison data against the Python tool; never checked in.
+/oracle/
 /golden/
 /_foreign/

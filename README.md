@@ -61,7 +61,5 @@ python spec/run.py           # renderer fixtures against checked-in expected out
 ```
 crates/luadox/        the library: parsing, resolution and the three renderers
 crates/luadox-cli/    the luadox binary
-crates/md-probe/      a measurement tool for the markdown renderer
-spec/                 renderer specifications and fixtures
-harness/              scripts that compare the output against the Python tool
+spec/                 renderer specifications, fixtures and the fixture runner
 ```
