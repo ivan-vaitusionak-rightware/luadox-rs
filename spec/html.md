@@ -4,7 +4,7 @@ What `luadox -r html` writes, rule by rule, so Phase 4 can be implemented agains
 document instead of against `render/html.py`.
 
 **Authority.** The oracle is the clone at `<repo>/oracle` — `origin/luals-all` plus
-`oracle-patches/`. Every rule below was read out of `luadox/render/html.py` (843 lines)
+six patches. Every rule below was read out of `luadox/render/html.py` (843 lines)
 at that commit **and** confirmed against a fixture under `spec/fixtures/` or against the
 recorded corpus run in `_build/oracle/html`, except where marked *unverified*. Where this
 document and the oracle disagree, the oracle wins.
@@ -286,7 +286,7 @@ appears as `?<version>` on every asset URL in the templates and in the generated
 topbar and search markup.
 
 Two implementations that ship the same assets will still differ here if either re-encodes
-a byte, so the harness normalises `?<hex>` to `?ASSETS_VERSION` on both sides. A port
+a byte, so spec/run.py normalises `?<hex>` to `?ASSETS_VERSION` on both sides. A port
 should compute the value the same way over the same bundle; parity on the *value* is not
 required, parity on *where it appears* is.
 

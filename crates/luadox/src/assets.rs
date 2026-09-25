@@ -4,8 +4,7 @@
 //! renderer reads `sidebar.tmpl.html` from the bundle when no `project.sidebar_template`
 //! is configured, and no branch of the fork contains that file. A run without one dies in
 //! the renderer's constructor with `FileNotFoundError`. The production config sets one, so nobody
-//! has noticed. This ships a default, which is the fix rather than the bug, and it is
-//! recorded in `harness/improvements.toml` because it is a deviation.
+//! has noticed. This ships a default, a deliberate deviation from the Python.
 
 /// One file of the bundle, at the path the Python would list it under.
 pub struct Asset {
@@ -93,7 +92,7 @@ pub fn text(path: &str) -> String {
 /// concatenated in sorted-path order with no separators and no names.
 ///
 /// Two implementations that ship the same assets still differ here if either re-encodes a
-/// byte -- these are stored with LF where the Python's checkout has CRLF -- so the harness
+/// byte -- these are stored with LF where the Python's checkout has CRLF -- so spec/run.py
 /// normalises `?<hex>` to a fixed token on both sides. Parity on the *value* is not
 /// required; parity on *where it appears* is.
 pub fn version() -> String {

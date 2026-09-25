@@ -1,8 +1,8 @@
 //! A JSON value whose object keys stay in the order they were inserted, written exactly
 //! the way Python's `json.dump(obj, f, indent=2)` writes one.
 //!
-//! Key order is not cosmetic here: `doc.json` is the differential harness's structured
-//! comparison, and the Python's dicts are insertion-ordered, so a renderer that sorts its
+//! Key order is not cosmetic here: `doc.json` is compared structurally against the
+//! Python's output, and the Python's dicts are insertion-ordered, so a renderer that sorts its
 //! keys would produce a document that is equal but not identical. `ensure_ascii` is
 //! matched too -- the corpus is pure ASCII today, so nothing would show, and a silent
 //! divergence waiting for the first non-ASCII character is worse than a one-line setting.

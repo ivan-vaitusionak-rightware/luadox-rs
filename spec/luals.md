@@ -4,7 +4,7 @@ What `luadox -r luals` writes, rule by rule, so Phase 3 can be implemented again
 document instead of against `render/luals.py`.
 
 **Authority.** The oracle is the clone at `<repo>/oracle` — `origin/luals-all` plus
-`oracle-patches/`, built as the repository README describes. Every rule below was read
+six patches. Every rule below was read
 out of `luadox/render/luals.py` (422 lines) at that commit **and** confirmed against a
 fixture under `spec/fixtures/`, except where the rule is marked *unverified*. Where this
 document and the oracle disagree, the oracle wins and this document is wrong — say so
@@ -588,8 +588,8 @@ category, at the same line, with two different messages.
 > Both runs exit 1.
 
 The upstream `origin/pr4-review` removes the duplicate; the oracle has it. A Phase 3
-implementation that emits it once is *better* and should be recorded in
-`harness/improvements.toml`, not silently matched.
+implementation that emits it once is *better*, and that is a deliberate deviation, not a
+silent match.
 
 ---
 

@@ -352,11 +352,9 @@ fn html_block_tag(line: &str) -> Option<String> {
 // page without anybody changing the tool. 0.50 and newer are edition 2024, which needs
 // Cargo 1.85 against this workspace's 1.83 pin, so 0.49.0 is the newest that builds.
 //
-// harness/markdown_parity.py renders every markdown fragment of the corpus through both
-// this and the Python's commonmark, and they agree on all 4014 distinct fragments. The
-// divergences spec/html.md section 10.2 names are real -- the same harness shows them on
-// constructed input -- and the corpus contains none of them. It is the guard that keeps
-// that true.
+// This and the Python's commonmark agree on all 4014 distinct markdown fragments of the
+// production corpus. The divergences spec/html.md section 10.2 names are real on
+// constructed input, and the corpus contains none of them.
 
 /// The options the oracle's `commonmark` run is equivalent to: raw HTML through, no GFM
 /// extensions, no smart punctuation.

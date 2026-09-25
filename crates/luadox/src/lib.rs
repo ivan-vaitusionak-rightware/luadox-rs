@@ -5,10 +5,6 @@
 //! ```text
 //!   config  ->  lua (parse)  ->  parse (scan + register)  ->  prerender  ->  render
 //! ```
-//!
-//! Phase 2 of the rewrite covers everything up to and including the json renderer, which
-//! is the document made inspectable and therefore what the differential harness compares.
-//! The LuaLS and html renderers are Phase 3 and Phase 4.
 
 pub mod assets;
 pub mod config;
