@@ -1,7 +1,6 @@
 """
-Normalisations applied to both sides before a differential compare.
+Normalisations applied to both expected and actual output before they are compared.
 
-Every rule here exists because the two implementations are allowed to differ on it.
 A rule that is not needed is a rule that hides a real difference, so each one names
 what it hides.
 """

@@ -1,12 +1,11 @@
 # Renderer fixtures
 
 Sixteen minimal Lua (and one Markdown) inputs, each written to exercise one rule from
-[`../luals.md`](../luals.md) or [`../html.md`](../html.md), with the oracle's output for
-it checked in beside it.
+[`../luals.md`](../luals.md) or [`../html.md`](../html.md), with the expected output for
+it checked in beside it. `python spec/run.py` renders every fixture and compares.
 
-Nothing under `expected/` is written by hand. Every byte of it comes from running the
-Python oracle — see *Regenerating* below. If you believe an expected file is wrong, the
-fix is a change to the oracle or to the input, never an edit of `expected/`.
+`expected/` was recorded from the Python luadox. A change that alters it is a behaviour
+change, and the updated files go in with the change that causes it.
 
 ## Layout
 
@@ -15,7 +14,6 @@ src/<name>.lua            the input
 src/manual.md             the one manual-page input (used by the `manual` fixture)
 snippets/hello.lua        the snippet @example lua hello.lua resolves to
 sidebar.tmpl.html         supplies the sidebar template every fixture needs (see below)
-regenerate.py             the only thing that writes expected/
 expected/<name>/
     luadox.lua                the luals renderer's whole output
     html/class/*.html         the class pages
@@ -26,24 +24,13 @@ expected/<name>/
     diagnostics-luals.json    every diagnostic of the luals run
     diagnostics-html.json     every diagnostic of the html run
     exit.json                 each run's exit code
-expected/provenance.json  the oracle commit, the fixture list, the asset digests
+expected/provenance.json  the recording commit, the fixture list, the asset digests
 ```
 
-## Regenerating
+## Configuration
 
-```sh
-python spec/fixtures/regenerate.py              # all fixtures
-python spec/fixtures/regenerate.py enum xrefs   # just these two
-python spec/fixtures/regenerate.py --check      # regenerate into a temp tree and
-                                                # fail on any difference
-```
-
-The oracle is the clone at `<repo>/oracle` — `origin/luals-all` plus `oracle-patches/`,
-built as the repository README describes. Its commit is recorded in
-`expected/provenance.json`; **the oracle moves**, so regenerate and re-read the specs
-when a patch lands rather than assuming these files still describe it.
-
-Each fixture is rendered twice, into a scratch directory, from a generated config:
+Each fixture is rendered twice, into a scratch directory, from a config that
+`../fixture_setup.py` generates:
 
 ```ini
 [project]
@@ -62,7 +49,7 @@ sidebar_template = <abs>/sidebar.tmpl.html
 configured sidebar template. That is the latent break the plan names in §0; the fixture
 config works around it the same way the production config does.
 
-Two fixtures need more than that, and `regenerate.py` holds the extra lines:
+Two fixtures need more than that, and `../fixture_setup.py` holds the extra lines:
 
 - `manual` adds `[manual] index = <abs>/src/manual.md`.
 - `luals_config` adds a `[luals]` section with `globals`, `mixin_suffix` and
@@ -77,7 +64,7 @@ Two fixtures need more than that, and `regenerate.py` holds the extra lines:
 - The `?<assets_version>` cache-buster **is** kept verbatim. Its value for the pinned
   oracle is `658dac8`. A candidate implementation that ships the same assets encoded
   differently will differ on it, so normalise `?<hex>` to `?ASSETS_VERSION` on both sides
-  before comparing, exactly as `harness/normalize.py` does for the corpus.
+  before comparing, as `../normalize.py` does.
 - **Line endings are reduced to LF on copy.** The oracle opens its output files in text
   mode, so every `\n` it writes becomes `os.linesep`; the three default templates are read
   as *bytes* and keep whatever the git checkout gave them, which with `core.autocrlf=true`

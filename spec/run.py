@@ -1,23 +1,20 @@
 """
-Runs the Rust luadox over every fixture and compares its json against the oracle's.
+Runs luadox over every fixture and compares its output against the checked-in expected output.
 
 The production corpus does not use eleven of the tags the tool supports -- `@module`,
 `@scope`, `@rename`, `@alias`, `@type`, `@meta`, `@order`, `@field`, `@fullnames`,
-`@usage`, `@code` -- so nothing in the differential harness would notice if they broke.
-These fixtures are the second corpus that does.
+`@usage`, `@code` -- so these fixtures are what exercises them.
 
     python spec/run.py                # every fixture
     python spec/run.py naming xrefs   # just these
     python spec/run.py --show 40      # more of each difference
 
-The expected output is produced by spec/fixtures/regenerate.py from the pinned oracle
-and checked in, so this needs no oracle to run -- only a built binary.
+It needs only a built binary.
 
 All three renderers are graded: the json document structurally, the LuaLS definition
 file and every recorded html page byte for byte. The asset bundle's `?<version>`
-cache-buster is normalised on both sides -- it is a sha256 over bytes the two
-implementations store differently, so parity on its *value* is not required and parity on
-*where it appears* is.
+cache-buster is normalised on both sides: parity on *where it appears* is required, not on
+its value.
 """
 
 from __future__ import annotations
@@ -38,14 +35,9 @@ EXPECTED = FIXTURES / 'expected'
 BINARY = ROOT / 'target' / 'release' / ('luadox.exe' if sys.platform == 'win32'
                                         else 'luadox')
 
-sys.path.insert(0, str(ROOT / 'harness'))
+import fixture_setup  # noqa: E402
 import normalize  # noqa: E402
-from differ import diff_json  # noqa: E402
-
-# Kept in step with regenerate.py: a fixture is one source file, plus a manual page and
-# extra config where it needs them.
-sys.path.insert(0, str(FIXTURES))
-import regenerate  # noqa: E402
+from fixture_setup import diff_json  # noqa: E402
 
 
 def render(name: str, renderer: str, out: Path) -> tuple[int, Path, dict | None]:
@@ -54,7 +46,7 @@ def render(name: str, renderer: str, out: Path) -> tuple[int, Path, dict | None]
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp = Path(tmpdir)
         config = tmp / 'fixture.conf'
-        regenerate.write_config(config, name)
+        fixture_setup.write_config(config, name)
         target = out / renderer
         diag = out / ('diagnostics-' + renderer + '.json')
         argv = [str(BINARY), '-c', str(config), '-r', renderer, '-o', str(target),
@@ -88,7 +80,7 @@ def compare_bytes(expected: Path, actual: Path, show: int) -> list[str]:
     if want == got:
         return []
     return list(difflib.unified_diff(
-        want, got, 'oracle', 'rust', lineterm='', n=1))[:show]
+        want, got, 'expected', 'actual', lineterm='', n=1))[:show]
 
 
 def compare_html(expected_dir: Path, actual_dir: Path, show: int) -> tuple[int, int, list[str]]:
@@ -118,8 +110,8 @@ def main() -> int:
 
     if not BINARY.exists():
         raise SystemExit(f'no binary at {BINARY}; cargo build --release')
-    names = args.names or regenerate.fixtures()
-    unknown = sorted(set(names) - set(regenerate.fixtures()))
+    names = args.names or fixture_setup.fixtures()
+    unknown = sorted(set(names) - set(fixture_setup.fixtures()))
     if unknown:
         raise SystemExit('no such fixture: {}'.format(', '.join(unknown)))
 
@@ -176,18 +168,16 @@ def main() -> int:
 
 
 def diagnostics_delta(expected_path: Path, actual: dict | None) -> str:
-    """Diagnostics never fail a fixture; they are reported the way the differ reports
-    them, as a delta."""
+    """Diagnostics never fail a fixture; they are reported as a delta."""
     if actual is None or not expected_path.exists():
         return ''
     expected = json.loads(expected_path.read_text(encoding='utf-8'))
 
     def keyed(payload):
-        # The same rule regenerate.py recorded the expectation with: a path inside a
-        # message names this machine, and only the tail below the fixture tree is
-        # behaviour.
+        # A path inside a message names this machine; only the tail below the fixture tree
+        # is behaviour.
         return {(e['category'], e['file'], e['line'],
-                 normalize.message(e['message'], FIXTURES, regenerate.FIXTURES_TOKEN))
+                 normalize.message(e['message'], FIXTURES, fixture_setup.FIXTURES_TOKEN))
                 for e in payload['diagnostics']}
 
     a, b = keyed(expected), keyed(actual)
